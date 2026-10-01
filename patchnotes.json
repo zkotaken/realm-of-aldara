@@ -1,6 +1,24 @@
 {
  "entries": [
   {
+   "v": "147",
+   "date": "October 1, 2026",
+   "type": "update",
+   "title": "Smoother frame rate, sun shafts and camera zoom",
+   "notes": [
+    "Dynamic resolution: when frames run long the game trims the render resolution first (every effect stays on) and gives it back once things are smooth.",
+    "Render resolution Auto now follows your quality preset, up to 4K on Ultra. The FPS counter shows the current resolution.",
+    "Lights are drawn from cached glow sprites, which saves time every frame.",
+    "The game drops to 30 frames a second while another window has focus, to save power and heat (can be turned off in Settings).",
+    "Sun shafts and depth haze on High and Ultra.",
+    "The screen edges pulse red when your health is below 30%.",
+    "Camera zoom with the mouse wheel or the + and - keys, middle-click resets it.",
+    "F8 hides the interface for a clean view.",
+    "Backpack items show how their stats compare to what you are wearing.",
+    "New option: Sound in the background."
+   ]
+  },
+  {
    "v": "146",
    "date": "October 1, 2026",
    "type": "update",

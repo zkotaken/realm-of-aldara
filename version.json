@@ -1,10 +1,10 @@
 {
- "version": "146",
- "size": 24477199,
- "sha256": "93ff0ea97879007fbaf6e3520e11fb32d63f9ad75e692942edf598b80c54bbae",
+ "version": "147",
+ "size": 24490465,
+ "sha256": "46922ac7a720cd3ece6a7144b18e46ff7152abd4f20522e6752350a6108d6462",
  "file": "game.html",
  "date": "October 1, 2026",
- "title": "Sharper graphics",
+ "title": "Smoother frame rate, sun shafts and camera zoom",
  "launcher": "4",
  "launcher_sha256": "9d9cc00ee0a817bf88303333890a1a22121e0c24e54a56d963769845ecb398aa",
  "assets": [
@@ -141,5 +141,5 @@
  ],
  "exe": "Realm of Aldara Launcher.exe",
  "exe_build": "2",
- "exe_sha256": "8f9970c0bbbe9b3fb227f32a5a8c47160e9073e073fd491b2f40b67698ddcc3f"
+ "exe_sha256": "a7e308e0dccc3859cdb3ebfd2010630849a713796e2c90f7f942f151c2947b84"
 }
