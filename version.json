@@ -1,10 +1,10 @@
 {
- "version": "148",
- "size": 24494099,
- "sha256": "a07e9c56352dfc0ec0a3dd130936a47a9c1998b4f564a16f5f394334887689dd",
+ "version": "149",
+ "size": 24496186,
+ "sha256": "2ca36332c90f21234c21aec1ab1760b1dcab59205e03b2eed23444a438b94f91",
  "file": "game.html",
  "date": "October 1, 2026",
- "title": "New HUD layout",
+ "title": "Smooth sliding along mountains",
  "launcher": "4",
  "launcher_sha256": "9d9cc00ee0a817bf88303333890a1a22121e0c24e54a56d963769845ecb398aa",
  "assets": [
@@ -141,5 +141,5 @@
  ],
  "exe": "Realm of Aldara Launcher.exe",
  "exe_build": "2",
- "exe_sha256": "cca9f76ab815137925149f233ce5880a127ec9547754025a874c514062decb1a"
+ "exe_sha256": "ce1519e6a6f2800aa0078cddb8705f658b84e6ea2521598622481ea5d946a179"
 }

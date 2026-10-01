@@ -1,6 +1,17 @@
 {
  "entries": [
   {
+   "v": "149",
+   "date": "October 1, 2026",
+   "type": "update",
+   "title": "Smooth sliding along mountains",
+   "notes": [
+    "Running into a mountainside, a cliff, the coast or a building at an angle now slides you smoothly along it instead of catching on its edge or stopping dead.",
+    "Hitting a wall nearly head-on still lets you glide along it at a little over half speed, so you can steer around mountains without fighting them.",
+    "In a tight pocket between two walls you now stand still instead of shaking back and forth."
+   ]
+  },
+  {
    "v": "148",
    "date": "October 1, 2026",
    "type": "update",
