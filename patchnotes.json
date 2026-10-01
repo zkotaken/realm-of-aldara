@@ -1,6 +1,17 @@
 {
  "entries": [
   {
+   "v": "146",
+   "date": "October 1, 2026",
+   "type": "update",
+   "title": "Sharper graphics",
+   "notes": [
+    "The world now draws at your screen's full resolution. Before, zooming in drew a smaller picture and stretched it, which made everything blurry.",
+    "Characters, monsters, bosses, pets, text and effects stay crisp at every World zoom level, and on high-density displays.",
+    "New Render resolution setting on the Graphics page: Auto (sharp, eases off on very large screens), Full, High, Medium, or Low (the old look). Lower it if the game runs slowly."
+   ]
+  },
+  {
    "v": "145",
    "date": "October 1, 2026",
    "type": "update",

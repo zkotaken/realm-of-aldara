@@ -1,10 +1,10 @@
 {
- "version": "145",
- "size": 24475123,
- "sha256": "7b7d4a9a7f0d1a3d4739146c1595632923ad65ce1fddf97c171b2468ce048b5f",
+ "version": "146",
+ "size": 24477199,
+ "sha256": "93ff0ea97879007fbaf6e3520e11fb32d63f9ad75e692942edf598b80c54bbae",
  "file": "game.html",
  "date": "October 1, 2026",
- "title": "Music, display modes and a new raid title",
+ "title": "Sharper graphics",
  "launcher": "4",
  "launcher_sha256": "9d9cc00ee0a817bf88303333890a1a22121e0c24e54a56d963769845ecb398aa",
  "assets": [
@@ -141,5 +141,5 @@
  ],
  "exe": "Realm of Aldara Launcher.exe",
  "exe_build": "2",
- "exe_sha256": "ead68197397f05bc496c3eedbb11fa0b4b41038080a6c9fc56e9cd28e3f1a83f"
+ "exe_sha256": "8f9970c0bbbe9b3fb227f32a5a8c47160e9073e073fd491b2f40b67698ddcc3f"
 }
