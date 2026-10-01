@@ -4,5 +4,7 @@
  "sha256": "21c9daa2ea34ca519a89f73f1edbbd8b3113ac018a07ccd2c47e5aa13b3a18f2",
  "file": "game.html",
  "date": "October 1, 2026",
- "title": "The Aldara Launcher"
+ "title": "The Aldara Launcher",
+ "launcher": "2",
+ "launcher_sha256": "7d2f5f62b25aedb00eb6dcd97b94ce9dadab0bd09e5f10ed7e6fc06a34bef6ba"
 }
