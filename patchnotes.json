@@ -1,6 +1,16 @@
 {
  "entries": [
   {
+   "v": "144",
+   "date": "October 1, 2026",
+   "type": "hotfix",
+   "title": "Glowing titles really glow",
+   "notes": [
+    "Glowing titles (Legend of Aldara, The Ascended, Voidwalker, Dungeon Conqueror, Godforged, The Relentless) now shine over your head: a halo of light that breathes, a band of light that sweeps across the letters, and small twinkles.",
+    "The same glow shows on the title under your portrait and in the titles list in your Inventory."
+   ]
+  },
+  {
    "v": "143",
    "date": "October 1, 2026",
    "type": "update",

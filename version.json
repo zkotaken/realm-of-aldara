@@ -1,10 +1,10 @@
 {
- "version": "143",
- "size": 24811909,
- "sha256": "721edd245492938a432f3798d689757765a7f3a062a13b73f0fcddc20cfc6dd6",
+ "version": "144",
+ "size": 24814373,
+ "sha256": "147931706787d2bfb5d89afd80e6940eebb5d170c2026f03e945bbfac3b194d0",
  "file": "game.html",
  "date": "October 1, 2026",
- "title": "New bosses, new sounds, and the game gets its own program",
+ "title": "Glowing titles really glow",
  "launcher": "3",
  "launcher_sha256": "c148ff46d3893c21d3023385bbf52993ae9966b4eee078e14d10c7f0fa72e6c7"
 }
