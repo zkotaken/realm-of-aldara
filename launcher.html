@@ -131,16 +131,14 @@ async function renderSettings(){ if(!GPUS){ try{ GPUS=await api('/api/gpus'); }c
     <div class="row"><div class="t"><b>Check for updates</b><span>${S.checkErr?'Last check failed: '+esc(S.checkErr):S.latest?'Newest version online: '+esc(S.latest.version):'Not checked yet.'}</span></div><button class="btn" id="chkBtn">Check now</button></div>
     <div class="row"><div class="t"><b>Graphics card</b><span>Which card draws the game. Takes effect the next time you open the game.</span></div><select id="gpuSel">${opts.map(o=>`<option value="${esc(o[0])}" ${o[0]===GPUS.current?'selected':''}>${esc(o[1])}</option>`).join('')}</select></div>
     ${S.separate?`<div class="row"><div class="t"><b>Game files</b><span>${S.installed?'Installed in '+esc(S.dir||''):'Not installed yet.'}</span></div></div>`:''}
-    <div class="row"><div class="t"><b>Your saves</b><span>Characters are stored on this computer. Updates never touch them.</span></div><button class="btn" id="saveBtn">Open folder</button></div>
-    <div class="row" style="flex-wrap:wrap"><div class="t"><b>Update source</b><span>Where the launcher looks for new versions. Leave as is unless you were told to change it.</span></div><input type="text" id="feedIn" value="${esc(S.feed||'')}" spellcheck="false"><button class="btn" id="feedBtn">Save</button></div>`;
+    <div class="row"><div class="t"><b>Your saves</b><span>Characters are stored on this computer. Updates never touch them.</span></div><button class="btn" id="saveBtn">Open folder</button></div>`;
   $('autoTog').onclick=async()=>{ S=await api('/api/launcher/settings',{auto:!S.auto}); renderSettings(); renderBar(); if(S.auto) maybeUpdate(); };
   $('chkBtn').onclick=()=>check(true);
   $('gpuSel').onchange=async e=>{ try{ await api('/api/gpu',{gpu:e.target.value}); GPUS.current=e.target.value; toast('Graphics card saved. It is used the next time you open the game.'); }catch(er){ toast('Could not save the graphics card'); } };
-  $('saveBtn').onclick=()=>api('/api/launcher/saves',{}).catch(()=>{});
-  $('feedBtn').onclick=async()=>{ try{ S=await api('/api/launcher/settings',{feed:$('feedIn').value}); toast('Update source saved'); check(true); }catch(e){ toast(String(e.message||e)); } }; }
+  $('saveBtn').onclick=()=>api('/api/launcher/saves',{}).catch(()=>{}); }
 function mb(n){ return (n/1048576).toFixed(1)+' MB'; }
 function renderBar(){ const l=$('stLine'), p=$('prog'), pi=$('progI'), play=$('play'); l.className='l';
-  const newer=S.latest&&verLess(S.installed,S.latest.version), inst=!!S.installed||!S.separate;
+  const newer=S.latest&&(verLess(S.installed,S.latest.version)||S.missing>0), inst=!!S.installed||!S.separate;
   if(S.busy&&!inst){ const f=S.tot>0?S.got/S.tot:0; l.textContent='Installing Realm of Aldara '+(S.latest?S.latest.version:'')+'...  '+(S.tot>0?Math.round(f*100)+'%  ('+mb(S.got)+' of '+mb(S.tot)+')':mb(S.got)); p.classList.add('show'); pi.style.width=(f*100).toFixed(1)+'%'; play.disabled=true; play.textContent='INSTALLING'; }
   else if(!inst){ p.classList.remove('show'); play.disabled=false; play.textContent='INSTALL';
     if(S.err){ l.textContent=S.err; l.className='l err'; }
@@ -150,7 +148,7 @@ function renderBar(){ const l=$('stLine'), p=$('prog'), pi=$('progI'), play=$('p
   else if(S.busy){ const f=S.tot>0?S.got/S.tot:0; l.textContent='Downloading version '+(S.latest?S.latest.version:'')+'...  '+(S.tot>0?Math.round(f*100)+'%  ('+mb(S.got)+' of '+mb(S.tot)+')':mb(S.got)); p.classList.add('show'); pi.style.width=(f*100).toFixed(1)+'%'; play.disabled=true; play.textContent='UPDATING'; }
   else { p.classList.remove('show'); play.disabled=false;
     if(S.err){ l.textContent=S.err; l.className='l err'; play.textContent='PLAY'; }
-    else if(newer){ l.textContent='Version '+S.latest.version+' is available.'; play.textContent=S.auto?'PLAY':'UPDATE'; if(!S.auto){ play.dataset.upd='1'; } }
+    else if(newer){ l.textContent=verLess(S.installed,S.latest.version)?'Version '+S.latest.version+' is available.':'New game files (music) are ready to download.'; play.textContent=S.auto?'PLAY':'UPDATE'; if(!S.auto){ play.dataset.upd='1'; } }
     else if(!S.checked){ l.textContent='Checking for updates...'; play.textContent='PLAY'; }
     else if(S.checkErr){ l.textContent='Could not reach the update server. You can still play version '+S.installed+'.'; l.className='l err'; play.textContent='PLAY'; }
     else { l.textContent='Up to date.'; l.className='l ok'; play.textContent='PLAY'; }
@@ -160,7 +158,7 @@ function renderBar(){ const l=$('stLine'), p=$('prog'), pi=$('progI'), play=$('p
 async function loadNotes(){ try{ NOTES=await api('/api/launcher/notes'); }catch(e){ NOTES={entries:[]}; } if(!SEEN&&NOTES.entries&&NOTES.entries[0]) { SEEN=NOTES.entries[0].v||''; try{ localStorage.setItem('aldara_seen_notes',SEEN); }catch(e){} } renderHome(); renderNotes(); }
 async function poll(){ clearTimeout(POLL); try{ S=await api('/api/launcher/state'); }catch(e){} renderBar();
   if(S.busy) POLL=setTimeout(poll,250); else if(WAS_BUSY){ WAS_BUSY=false; if(!S.err){ renderHome(); toast(INSTALLING?'Realm of Aldara '+S.installed+' is installed. Press Play to start.':'Updated to version '+S.installed); INSTALLING=false; await loadNotes(); if(LAUNCH){ LAUNCH=false; launchGame(); return; } } else { LAUNCH=false; UPD_FAIL=true; } } }
-async function maybeUpdate(){ if(S.separate&&!S.installed) return; if(S.latest&&verLess(S.installed,S.latest.version)&&!S.busy){ S=await api('/api/launcher/update'); WAS_BUSY=true; renderBar(); poll(); } }
+async function maybeUpdate(){ if(S.separate&&!S.installed) return; if(S.latest&&(verLess(S.installed,S.latest.version)||S.missing>0)&&!S.busy){ S=await api('/api/launcher/update'); WAS_BUSY=true; renderBar(); poll(); } }
 async function check(manual){ try{ S=await api('/api/launcher/check'); }catch(e){} renderBar(); if($('v-settings').classList.contains('on')) renderSettings(); await loadNotes();
   if(S.auto) maybeUpdate(); else if(manual) toast(S.latest&&verLess(S.installed,S.latest.version)?'Version '+S.latest.version+' is available':'You have the newest version'); }
 function show(v){ document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v)); document.querySelectorAll('.view').forEach(x=>x.classList.toggle('on',x.id==='v-'+v));
@@ -184,7 +182,7 @@ $('play').onclick=async()=>{ const p=$('play'); if(p.disabled) return;
   p.disabled=true; p.textContent='CHECKING'; $('stLine').textContent='Making sure you have the newest version...';
   if(UPD_FAIL){ launchGame(); return; }
   try{ S=await api('/api/launcher/check'); }catch(e){}
-  if(S.latest&&verLess(S.installed,S.latest.version)){ LAUNCH=true; S=await api('/api/launcher/update'); WAS_BUSY=true; renderBar(); poll(); return; }
+  if(S.latest&&(verLess(S.installed,S.latest.version)||S.missing>0)){ LAUNCH=true; S=await api('/api/launcher/update'); WAS_BUSY=true; renderBar(); poll(); return; }
   launchGame(); };
 
 addEventListener('keydown',e=>{ if(e.key==='Enter'&&document.activeElement.tagName!=='INPUT') $('play').click(); });

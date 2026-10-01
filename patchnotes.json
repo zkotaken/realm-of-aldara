@@ -1,6 +1,25 @@
 {
  "entries": [
   {
+   "v": "145",
+   "date": "October 1, 2026",
+   "type": "update",
+   "title": "Music, display modes and a new raid title",
+   "notes": [
+    "Music: every town, zone and dungeon has its own tracks, crossfading as you travel between them. Quiet places leave a little silence between songs.",
+    "Boss music: an intro plays when a boss comes into view, its battle theme fades in when the fight starts, and it fades out when the boss falls (or you do).",
+    "A Music volume slider is on the Sound page.",
+    "Settings: Sound is now a page inside Settings, and the graphics card options are on the Graphics page.",
+    "Display mode setting on the Graphics page: Windowed, Borderless windowed or Fullscreen. The desktop game remembers your choice.",
+    "New glowing title, Breaker of the Eclipse, for completing the Vault of the Eclipse raid.",
+    "Fixed skill cooldown numbers getting stuck at 1 on the skill bar.",
+    "Jewelry can now be dismantled, and Auto Dismantle includes weaker jewelry.",
+    "Knights now hear their swing and grunt when attacking thin air.",
+    "The Celestial Phoenix pet is back to its original model.",
+    "Launcher: the update source option is gone. The launcher now updates itself, and downloads the music with the game."
+   ]
+  },
+  {
    "v": "144",
    "date": "October 1, 2026",
    "type": "hotfix",
