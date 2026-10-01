@@ -1,6 +1,18 @@
 {
  "entries": [
   {
+   "v": "148",
+   "date": "October 1, 2026",
+   "type": "update",
+   "title": "New HUD layout",
+   "notes": [
+    "The bottom of the screen now holds only what you use in a fight: your health and mana orbs, the skill bar, vials and auto-combat.",
+    "Character, Inventory, Skills, Quests, Map, Dungeons, Vault, Guild, Play Together and Settings have moved to their own menu in the bottom-right corner, grouped by type, like a classic MMO.",
+    "On smaller windows the menu stands up along the right edge instead.",
+    "Settings now has a gear icon."
+   ]
+  },
+  {
    "v": "147",
    "date": "October 1, 2026",
    "type": "update",

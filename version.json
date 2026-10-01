@@ -1,10 +1,10 @@
 {
- "version": "147",
- "size": 24490465,
- "sha256": "46922ac7a720cd3ece6a7144b18e46ff7152abd4f20522e6752350a6108d6462",
+ "version": "148",
+ "size": 24494099,
+ "sha256": "a07e9c56352dfc0ec0a3dd130936a47a9c1998b4f564a16f5f394334887689dd",
  "file": "game.html",
  "date": "October 1, 2026",
- "title": "Smoother frame rate, sun shafts and camera zoom",
+ "title": "New HUD layout",
  "launcher": "4",
  "launcher_sha256": "9d9cc00ee0a817bf88303333890a1a22121e0c24e54a56d963769845ecb398aa",
  "assets": [
@@ -141,5 +141,5 @@
  ],
  "exe": "Realm of Aldara Launcher.exe",
  "exe_build": "2",
- "exe_sha256": "a7e308e0dccc3859cdb3ebfd2010630849a713796e2c90f7f942f151c2947b84"
+ "exe_sha256": "cca9f76ab815137925149f233ce5880a127ec9547754025a874c514062decb1a"
 }
