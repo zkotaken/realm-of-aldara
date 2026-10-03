@@ -17,7 +17,7 @@ namespace Aldara
         public abstract class Win
         {
             public string id, title; public VisualElement panel, body; public bool open; public bool dirty = true;
-            public virtual float X => -1; public virtual float Y => 60; public abstract float W { get; } public virtual float H => -1; public virtual float MaxH => 790;
+            public virtual bool Full => false; public virtual float X => -1; public virtual float Y => 60; public abstract float W { get; } public virtual float H => -1; public virtual float MaxH => 790;
             public abstract void Render(VisualElement body);
             public virtual void Tick() { }
             public virtual void OnOpen() { }
@@ -28,9 +28,11 @@ namespace Aldara
         void Awake() { I = this; }
         void Start()
         {
-            var go = new GameObject("WindowsUI"); go.transform.SetParent(transform, false); doc = go.AddComponent<UIDocument>(); doc.panelSettings = Resources.Load<PanelSettings>("UI/AldaraPanel"); doc.sortingOrder = 5;
-            root = doc.rootVisualElement; root.pickingMode = PickingMode.Ignore; root.style.flexGrow = 1;
-            Register(new AldaraInvWin()); Register(new AldaraAttWin()); Register(new AldaraSkillWin()); Register(new AldaraSubWin()); Register(new AldaraVaultWin()); Register(new AldaraMenuWin());
+            // its own GameObject: a UIDocument under another one nests inside that one
+            var go = new GameObject("WindowsUI"); go.SetActive(false); doc = go.AddComponent<UIDocument>();
+            doc.panelSettings = Resources.Load<PanelSettings>("UI/AldaraPanel"); doc.sortingOrder = 5; go.SetActive(true);
+            root = doc.rootVisualElement; root.pickingMode = PickingMode.Ignore; root.style.position = Position.Absolute; root.style.left = root.style.top = root.style.right = root.style.bottom = 0;
+            Register(new AldaraInvWin()); Register(new AldaraAttWin()); Register(new AldaraSkillWin()); Register(new AldaraSubWin()); Register(new AldaraVaultWin()); Register(new AldaraMenuWin()); Register(new AldaraMapWin());
             AldaraSettings.Apply();
         }
         public void Register(Win w) { wins[w.id] = w; }
@@ -71,6 +73,11 @@ namespace Aldara
         void Build(Win w)
         {
             var p = E(root, "win_" + w.id); w.panel = p;
+            if (w.Full)
+            {   // a full-screen view (the world map)
+                p.style.position = Position.Absolute; p.style.left = p.style.top = p.style.right = p.style.bottom = 0;
+                w.body = E(p, "body"); w.body.style.flexGrow = 1; p.style.display = DisplayStyle.None; return;
+            }
             p.style.position = Position.Absolute; p.style.width = w.W; p.style.top = w.Y;
             if (w.X < 0) { p.style.left = Length.Percent(50); p.style.translate = new Translate(Length.Percent(-50), 0); } else p.style.left = w.X;
             if (w.H > 0) p.style.height = w.H; else p.style.maxHeight = w.MaxH;
@@ -100,10 +107,9 @@ namespace Aldara
             var kb = Keyboard.current;
             if (kb != null && AldaraSave.Ready && !AldaraHud.Typing && AldaraKeys.listening == null)
             {
-                foreach (var w in new[] { "inv", "att", "skills", "vault" }) if (AldaraKeys.Pressed(w)) Toggle(w);
-                foreach (var w in new[] { "quest", "dun", "guild", "coop", "map" }) if (AldaraKeys.Pressed(w)) AldaraMenus.Open(w);
+                foreach (var w in new[] { "inv", "att", "skills", "vault", "map", "quest", "dun", "guild", "coop" }) if (AldaraKeys.Pressed(w)) { if (Has(w)) Toggle(w); else AldaraMenus.Open(w); }
                 // Esc closes whatever is open; with nothing open it opens the Game Menu
-                if (kb.escapeKey.wasPressedThisFrame) { if (AnyOpen()) CloseAll(); else Toggle("set", true); }
+                if (kb.escapeKey.wasPressedThisFrame) { if (IsOpen("map")) Toggle("map", false); else if (AnyOpen()) CloseAll(); else Toggle("set", true); }
                 if (kb.f11Key.wasPressedThisFrame && !Application.isEditor) AldaraMenuWin.ToggleFullscreen();
             }
             if (!AldaraSave.Ready) { CloseAll(); return; }

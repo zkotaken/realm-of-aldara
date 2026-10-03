@@ -10,7 +10,7 @@ namespace Aldara
     public class AldaraVaultWin : AldaraWindows.Win
     {
         public AldaraVaultWin() { id = "vault"; title = "Vault"; }
-        public override float Y => 78; public override float W => 880;
+        public override float Y => 78; public override float W => 880; public override float MaxH => 920;
         static AldaraHero Hr { get { return AldaraHero.I; } }
         string filter = "all", q = ""; float sl, sr; bool focusSearch;
         public override void OnOpen() { AldaraGear.VaultLoad(); }
@@ -76,7 +76,7 @@ namespace Aldara
             var h = Row(c, 0, Justify.SpaceBetween); Pad(h, 8, 10); BorderBottom(h, 1, C("#2e3446"));
             T(h, title, 13, C("#e8c46a"), true, false, false, 0, false, false); T(h, count, 11, C("#8a8474"), true, false, false, 0, false, false);
             list = new ScrollView(ScrollViewMode.Vertical); c.Add(list); list.style.height = 712; list.contentContainer.style.paddingTop = list.contentContainer.style.paddingBottom = 6;
-            list.contentContainer.style.paddingLeft = list.contentContainer.style.paddingRight = 6; list.horizontalScrollerVisibility = ScrollerVisibility.Hidden; list.mouseWheelScrollSize = 60;
+            list.contentContainer.style.paddingLeft = list.contentContainer.style.paddingRight = 6; list.horizontalScrollerVisibility = ScrollerVisibility.Hidden; list.mouseWheelScrollSize = 60; Thin(list);
             return c;
         }
         static void Empty(VisualElement list, string s) { var l = T(list, s, 12, C("#7a7464"), false, false, true); Pad(l, 18, 18); l.style.unityTextAlign = TextAnchor.MiddleCenter; }

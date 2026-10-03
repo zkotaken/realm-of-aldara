@@ -23,7 +23,7 @@ namespace Aldara
             ApplyGapLater(tabs);
             if (tab == "game") { Game(body); return; }
             var sv = new ScrollView(ScrollViewMode.Vertical); body.Add(sv); sv.style.flexGrow = 1; sv.style.flexShrink = 1; sv.horizontalScrollerVisibility = ScrollerVisibility.Hidden; sv.mouseWheelScrollSize = 60;
-            sv.contentContainer.style.paddingRight = 6;
+            sv.contentContainer.style.paddingRight = 6; Thin(sv);
             float s0 = scroll; sv.schedule.Execute(() => sv.scrollOffset = new Vector2(0, s0)); sv.verticalScroller.valueChanged += v => scroll = v;
             var c = sv.contentContainer;
             if (tab == "settings") Settings(c); else Controls(c);

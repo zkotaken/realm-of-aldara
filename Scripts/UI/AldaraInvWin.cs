@@ -47,17 +47,6 @@ namespace Aldara
             leftSv.schedule.Execute(() => { leftSv.scrollOffset = new Vector2(0, ls); rightSv.scrollOffset = new Vector2(0, rs); });
             leftSv.verticalScroller.valueChanged += v => leftScroll = v; rightSv.verticalScroller.valueChanged += v => rightScroll = v;
         }
-        static void Thin(ScrollView sv)
-        {
-            sv.horizontalScrollerVisibility = ScrollerVisibility.Hidden; sv.verticalScrollerVisibility = ScrollerVisibility.Auto;
-            var s = sv.verticalScroller; s.style.width = 8;
-            foreach (var b in s.Query<RepeatButton>().ToList()) b.style.display = DisplayStyle.None;
-            var dr = s.Q(className: "unity-base-slider__dragger"); if (dr != null) { dr.style.backgroundColor = C("#3a4050"); Border(dr, 0, Color.clear, 4); dr.style.width = 6; dr.style.left = 1; }
-            var tr = s.Q(className: "unity-base-slider__tracker"); if (tr != null) { tr.style.backgroundColor = new Color(0, 0, 0, 0.25f); Border(tr, 0, Color.clear, 4); }
-            s.style.backgroundColor = Color.clear; Border(s, 0, Color.clear);
-            sv.mouseWheelScrollSize = 60;
-        }
-
         // ---------- left column ----------
         void BuildLeft(VisualElement col)
         {

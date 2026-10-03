@@ -139,6 +139,17 @@ namespace Aldara
             var b = new Btn(text, click, skin, size); if (parent != null) parent.Add(b); return b;
         }
 
+        public static void Thin(ScrollView sv)
+        {
+            sv.horizontalScrollerVisibility = ScrollerVisibility.Hidden; sv.verticalScrollerVisibility = ScrollerVisibility.Auto;
+            var s = sv.verticalScroller; s.style.width = 8;
+            foreach (var b in s.Query<RepeatButton>().ToList()) b.style.display = DisplayStyle.None;
+            var dr = s.Q(className: "unity-base-slider__dragger"); if (dr != null) { dr.style.backgroundColor = C("#3a4050"); Border(dr, 0, Color.clear, 4); dr.style.width = 6; dr.style.left = 1; }
+            var tr = s.Q(className: "unity-base-slider__tracker"); if (tr != null) { tr.style.backgroundColor = new Color(0, 0, 0, 0.25f); Border(tr, 0, Color.clear, 4); }
+            s.style.backgroundColor = Color.clear; Border(s, 0, Color.clear);
+            sv.mouseWheelScrollSize = 60;
+        }
+
         /// is the pointer over a window or a clickable HUD piece (so a click there does not attack in the world)
         public static bool PointerOverUi(Vector2 screenPos)
         {

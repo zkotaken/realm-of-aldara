@@ -149,7 +149,7 @@ namespace Aldara
             mmArrow = new VisualElement { pickingMode = PickingMode.Ignore }; mmArrow.style.position = Position.Absolute; mmArrow.style.width = 10; mmArrow.style.height = 10; mmArrow.style.left = mmr.width / 2 - 5; mmArrow.style.top = mmr.height / 2 - 5;
             mmArrow.style.backgroundColor = new Color(0.55f, 0.85f, 1f); mmArrow.style.borderTopLeftRadius = mmArrow.style.borderTopRightRadius = mmArrow.style.borderBottomLeftRadius = mmArrow.style.borderBottomRightRadius = 5;
             mmArrow.style.borderLeftWidth = mmArrow.style.borderRightWidth = mmArrow.style.borderTopWidth = mmArrow.style.borderBottomWidth = 2; mmArrow.style.borderLeftColor = mmArrow.style.borderRightColor = mmArrow.style.borderTopColor = mmArrow.style.borderBottomColor = Color.white;
-            mmView.Add(mmArrow);
+            mmView.Add(mmArrow); mmView.pickingMode = PickingMode.Position; mmView.RegisterCallback<ClickEvent>(e => { if (AldaraWindows.I) AldaraWindows.I.Toggle("map", true); });
             Img("minimap_ring", ShotR("minimap_ring"));
             Begin("zone"); Img("zone", ShotR("zone")); zone = Txt("zone");
             // ---- chat (bottom left) ----
@@ -229,7 +229,7 @@ namespace Aldara
         void Update()
         {
             if (root == null) return; var H = AldaraHero.I; var P = AldaraPlayer.I;
-            root.style.display = AldaraSave.Ready && H && P ? DisplayStyle.Flex : DisplayStyle.None;
+            root.style.display = AldaraSave.Ready && H && P && !(AldaraWindows.I && AldaraWindows.I.IsOpen("map")) ? DisplayStyle.Flex : DisplayStyle.None;
             if (!AldaraSave.Ready || !H) return;
             if (portraitCls != H.cls) { portraitCls = H.cls; var t = Tex("portrait_" + H.cls); if (t) portraitEl.style.backgroundImage = Background.FromTexture2D(t); }
             ufName.text = (H.heroName + " the " + char.ToUpper(H.cls[0]) + H.cls.Substring(1)).ToUpper(); ufLvl.text = H.lvl.ToString();
