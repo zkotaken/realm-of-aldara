@@ -23,7 +23,7 @@ namespace Aldara
 
         // ---- state (saved as tree.unlocked, sp, spTotal, sub, subTree, subPaid) ----
         public static List<string> unlocked = new List<string>(), subTree = new List<string>();
-        public static int sp, spTotal; public static string sub;
+        public static int sp, spTotal; public static string sub; public static Dictionary<string, int> subPaid = new Dictionary<string, int>();
         public static readonly string[] TE_KEYS = { "atk", "hp", "mana", "cdr", "crit", "spd", "ls", "dmg", "block", "mreg", "xp", "gold", "mcost" };
         public static Dictionary<string, float> TE = Zero();
         static Dictionary<string, float> Zero() { var e = new Dictionary<string, float>(); foreach (var k in TE_KEYS) e[k] = 0; return e; }
@@ -44,6 +44,50 @@ namespace Aldara
         public static Sub[] SubList() { Sub[] l; return B.subs.TryGetValue(H.cls, out l) ? l : new Sub[0]; }
         public static Sub SubCur() { if (sub == null) return null; foreach (var s in SubList()) if (s.id == sub) return s; return null; }
         public static bool SubHas(string id) { return subTree.Contains(id); }
+        static readonly int[] SUBT_OLDCOST = { 0, 2, 4, 3, 5, 3, 8 };
+        public static int SubCost() { return Mathf.RoundToInt(3000 + H.lvl * 600); }
+        public static bool SubNodeReady(Sub S, SubNode n) { if (n.root) return true; return S.nodes.Any(x => x.tier == n.tier - 1 && (x.root || SubHas(x.id))); }
+        /// the signature skill's cooldown: its own (or its base skill's) times SUB_CD_X
+        public static float SubSkillCd(Sub S)
+        {
+            float cd = S.skill["over"]?["cd"] != null ? (float)S.skill["over"]["cd"] : 0;
+            if (cd <= 0) { var b = AldaraSkills.I.Get((string)S.skill["base"]); cd = b != null ? b.cd : 0; }
+            return Mathf.Round(cd * B.SUB_CD_X);
+        }
+        static int SubRefund()
+        {
+            var S = SubCur(); int back = 0;
+            if (S != null) foreach (var n in S.nodes) if (!n.root && SubHas(n.id)) { int pd; back += subPaid.TryGetValue(n.id, out pd) ? pd : SUBT_OLDCOST[n.tier]; }
+            var ids = S != null ? S.nodes.Where(n => n.sk != null).Select(n => n.skillId).ToList() : new List<string>();
+            AldaraSkills.I.equipped.RemoveAll(ids.Contains); AldaraSkills.I.owned.RemoveAll(ids.Contains);
+            subTree.Clear(); subPaid.Clear(); sp += back; return back;
+        }
+        public static void SubChoose(string id)
+        {
+            var S = SubList().FirstOrDefault(s => s.id == id); if (S == null) return;
+            if (H.lvl < B.SUB_LEVEL) { AldaraHud.Banner("Subclasses open at level " + B.SUB_LEVEL); return; }
+            if (sub == id) return;
+            if (sub != null) { int c = SubCost(); if (H.gold < c) { AldaraHud.Banner("Changing your path costs " + c.ToString("N0") + " gold"); return; } H.gold -= c; }
+            int back = sub != null ? SubRefund() : 0; if (back > 0) AldaraHud.Banner(back + " skill points refunded");
+            var old = SubCur(); if (old != null) { string oid = (string)old.skill["id"]; AldaraSkills.I.equipped.Remove(oid); AldaraSkills.I.owned.Remove(oid); }
+            sub = id; subTree.Clear(); Sync(); StripSubFromBar();
+            AldaraHud.Banner("You are now a " + S.name); AldaraSave.Dirty();
+        }
+        public static void SubUnlock(string id)
+        {
+            var S = SubCur(); if (S == null) return; var n = S.nodes.FirstOrDefault(x => x.id == id); if (n == null || n.root || SubHas(id)) return;
+            if (H.lvl < n.lvl) { AldaraHud.Banner("Reach level " + n.lvl + " first"); return; }
+            if (!SubNodeReady(S, n)) { AldaraHud.Banner("Unlock the step before it first"); return; }
+            if (sp < n.cost) { AldaraHud.Banner("Not enough skill points (" + n.cost + " needed)"); return; }
+            sp -= n.cost; subTree.Add(id); subPaid[id] = n.cost; Sync(); StripSubFromBar();
+            AldaraHud.Banner("Learned " + n.n); AldaraSave.Dirty();
+        }
+        /// subclass abilities live on their own bar, never on the hotbar
+        static void StripSubFromBar()
+        {
+            var all = new List<string>(); foreach (var s in SubList()) { all.Add((string)s.skill["id"]); foreach (var n in s.nodes) if (n.skillId != null) all.Add(n.skillId); }
+            AldaraSkills.I.equipped.RemoveAll(all.Contains); if (all.Contains(AldaraSkills.I.queued)) AldaraSkills.I.queued = null;
+        }
 
         /// treeEffects with the subclass layers: tree passives, the subclass bonuses and its path tree nodes (from level 30)
         public static void Effects()
@@ -64,6 +108,7 @@ namespace Aldara
             var T0 = For(H.cls); unlocked.Clear(); subTree.Clear();
             sub = raw != null ? (string)raw["sub"] : null; if (sub != null && SubCur() == null) sub = null;
             if (raw != null && raw["subTree"] is JArray st) foreach (var t in st) subTree.Add((string)t);
+            subPaid.Clear(); if (raw != null && raw["subPaid"] is JObject sp0) foreach (var kv in sp0) subPaid[kv.Key] = (int)kv.Value;
             if (raw != null && raw["tree"] is JObject tr && tr["unlocked"] is JArray ua) { foreach (var t in ua) unlocked.Add((string)t); sp = raw["sp"] == null ? 0 : (int)raw["sp"]; spTotal = raw["spTotal"] == null ? 0 : (int)raw["spTotal"]; }
             else
             {   // older saves: what was bought stays learned; the points for your levels are yours to spend
@@ -82,6 +127,7 @@ namespace Aldara
             var keep = S0.owned.Where(id => S0.Get(id) == null).ToList();   // subclass skills the port cannot cast yet stay owned
             S0.owned.Clear(); foreach (var n in T0.nodes) if (n.kind == "active" && Unlocked(n.id)) S0.owned.Add(n.id);
             S0.owned.AddRange(keep);
+            var Sc = SubCur(); if (Sc != null) { string sid = (string)Sc.skill["id"]; if (!S0.owned.Contains(sid)) S0.owned.Add(sid); foreach (var n in Sc.nodes) if (n.sk != null && SubHas(n.id) && !S0.owned.Contains(n.skillId)) S0.owned.Add(n.skillId); }
             S0.equipped.RemoveAll(id => !S0.owned.Contains(id));
             Effects(); if (recompute) H.Recompute();
         }
@@ -110,7 +156,7 @@ namespace Aldara
         public static void Write(JObject j)
         {
             j["tree"] = new JObject { ["unlocked"] = new JArray(unlocked.ToArray()) }; j["sp"] = sp; j["spTotal"] = spTotal;
-            j["sub"] = sub; j["subTree"] = new JArray(subTree.ToArray());
+            j["sub"] = sub; j["subTree"] = new JArray(subTree.ToArray()); var pd = new JObject(); foreach (var kv in subPaid) pd[kv.Key] = kv.Value; j["subPaid"] = pd;
         }
     }
 }

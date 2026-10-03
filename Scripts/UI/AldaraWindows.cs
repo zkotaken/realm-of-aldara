@@ -30,7 +30,7 @@ namespace Aldara
         {
             var go = new GameObject("WindowsUI"); go.transform.SetParent(transform, false); doc = go.AddComponent<UIDocument>(); doc.panelSettings = Resources.Load<PanelSettings>("UI/AldaraPanel"); doc.sortingOrder = 5;
             root = doc.rootVisualElement; root.pickingMode = PickingMode.Ignore; root.style.flexGrow = 1;
-            Register(new AldaraInvWin()); Register(new AldaraAttWin()); Register(new AldaraSkillWin());
+            Register(new AldaraInvWin()); Register(new AldaraAttWin()); Register(new AldaraSkillWin()); Register(new AldaraSubWin());
         }
         public void Register(Win w) { wins[w.id] = w; }
         public bool Has(string id) { return wins.ContainsKey(id); }

@@ -25,7 +25,7 @@ namespace Aldara
             var top = Row(body, 14); top.style.flexWrap = Wrap.Wrap; top.style.marginBottom = 4;
             T(top, Cap(Hr.cls) + " Path", 15, C("#e8c46a"), true, true, false, 1, false, false);
             var S = AldaraTree.SubCur(); int SL = AldaraTree.B.SUB_LEVEL;
-            var sb = B(top, S != null ? "Subclass: " + S.name : Hr.lvl >= SL ? "Choose a subclass" : "Subclass at level " + SL, () => AldaraHud.Banner("The subclass window is coming next"), "btn", 11); sb.Padding(5, 14);
+            var sb = B(top, S != null ? "Subclass: " + S.name : Hr.lvl >= SL ? "Choose a subclass" : "Subclass at level " + SL, () => AldaraWindows.I.Toggle("sub", true), "btn", 11); sb.Padding(5, 14);
             var spl = T(top, "<size=18><b>" + AldaraTree.sp + "</b></size> skill points", 13, C("#8ae8ff"), false, false, false, 0, false, false);
             T(top, "Equipped <b>" + e.Count + "</b> / " + AldaraTree.B.MAX_EQUIPPED, 12, C("#c8c0a8"), false, false, false, 0, false, false);
             var gap = E(top); gap.style.flexGrow = 1;
