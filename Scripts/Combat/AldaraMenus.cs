@@ -19,6 +19,7 @@ namespace Aldara
         void Start() { inst = this; Refresh(); }
         public static void Open(string w)
         {
+            if (AldaraWindows.I && AldaraWindows.I.Has(w)) { AldaraWindows.I.Toggle(w); return; }
             if (!inst) return; Win x = w == "inv" ? Win.Inventory : w == "att" ? Win.Attributes : w == "skills" ? Win.Skills : Win.None;
             if (x == Win.None) { AldaraHud.Banner("Coming soon: " + w); return; }
             inst.Toggle(x);
@@ -27,8 +28,6 @@ namespace Aldara
         void Update()
         {
             AldaraSave.Tick(); var kb = Keyboard.current; if (kb == null || !AldaraSave.Ready || AldaraHud.Typing) return;
-            if (kb.iKey.wasPressedThisFrame) Toggle(Win.Inventory);
-            if (kb.cKey.wasPressedThisFrame) Toggle(Win.Attributes);
             if (kb.kKey.wasPressedThisFrame) Toggle(Win.Skills);
             if (kb.escapeKey.wasPressedThisFrame) open = Win.None;
         }

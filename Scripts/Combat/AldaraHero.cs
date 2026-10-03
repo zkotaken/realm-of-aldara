@@ -39,6 +39,7 @@ namespace Aldara
         public readonly List<Item> inventory = new List<Item>();
         public int vialHp, vialMp; float vialCdHp, vialCdMp;
         public string sub, title;
+        public int effStr, effAgi, effVit, effEne; public MythicSet setBonusSet; public int setBonusCount; public float setBonusPct;
         public Item Eq(string slot) { Item i; return equip.TryGetValue(slot, out i) ? i : null; }
         public void Recompute()
         {
@@ -47,6 +48,7 @@ namespace Aldara
             foreach (var kv in equip) { var e = kv.Value; if (e == null) continue; atkB += e.atk; hpB += e.hp; spB += e.speed; agiB += e.agi; }
             float pm = 1 + AldaraItems.PetPct(Eq("pet"));
             int S_str = Mathf.RoundToInt(str * pm), S_agi = Mathf.RoundToInt((agi + agiB) * pm), S_vit = Mathf.RoundToInt(vit * pm), S_ene = Mathf.RoundToInt(ene * pm);
+            effStr = S_str; effAgi = S_agi; effVit = S_vit; effEne = S_ene;
             float atkFromEne = Mathf.Floor(S_ene / 6f), atkFromAgi = 0;
             if (cls == "mage") atkFromEne = Mathf.Floor(S_ene / 3f);
             if (cls == "archer") atkFromAgi = Mathf.Floor(S_agi / 6f);
@@ -55,11 +57,15 @@ namespace Aldara
             maxHp = baseHp + S_vit * 3 + hpB; speed = 220 + Mathf.Floor(S_agi / 8f) + spB;
             // mythical set bonus: 3 pieces +10%, 5 pieces +20%, 6 pieces +30% attack and HP
             var counts = new Dictionary<string, int>(); foreach (var sl in new[] { "helmet", "chest", "gauntlets", "leggings", "boots", "back" }) { var ms = AldaraItems.MythSetOf(Eq(sl)); if (ms != null) { int c; counts.TryGetValue(ms.id, out c); counts[ms.id] = c + 1; } }
-            int best = 0; foreach (var kv in counts) best = Mathf.Max(best, kv.Value);
-            if (best >= 3) { float pct = best >= 6 ? 0.3f : best >= 5 ? 0.2f : 0.1f; atk = Mathf.Round(atk * (1 + pct)); maxHp = Mathf.Round(maxHp * (1 + pct)); }
+            int best = 0; string bestId = null; foreach (var kv in counts) if (kv.Value > best) { best = kv.Value; bestId = kv.Key; }
+            setBonusSet = null; setBonusCount = 0; setBonusPct = 0;
+            if (best >= 3) { float pct = best >= 6 ? 0.3f : best >= 5 ? 0.2f : 0.1f; atk = Mathf.Round(atk * (1 + pct)); maxHp = Mathf.Round(maxHp * (1 + pct)); setBonusCount = best; setBonusPct = pct; setBonusSet = AldaraItems.MythSetById(bestId); }
             if (oldMax > 0) hp = Mathf.Min(maxHp, hp + (maxHp - oldMax));
             maxMana = Mathf.Round(30 + S_ene * 3 + lvl * 2);
             if (oldMana > 0) mana = Mathf.Min(maxMana, mana + (maxMana - oldMana));
+            // Crown of Kings relic: attack, health and mana up by its value, speed by 1.5 times it
+            float kb = AldaraGear.RelicV("kingsblessing");
+            if (kb > 0) { float m0 = maxHp, n0 = maxMana; atk = Mathf.Round(atk * (1 + kb / 100)); maxHp = Mathf.Round(maxHp * (1 + kb / 100)); maxMana = Mathf.Round(maxMana * (1 + kb / 100)); speed += Mathf.Round(kb * 1.5f); if (oldMax > 0) hp = Mathf.Min(maxHp, hp + (maxHp - m0)); if (oldMana > 0) mana = Mathf.Min(maxMana, mana + (maxMana - n0)); }
             if (P) { P.speed = speed; P.wings = Eq("wings") != null; }
         }
         public bool AddLoot(Item it)
@@ -72,10 +78,10 @@ namespace Aldara
         {
             if (!AldaraItems.CanUse(it, cls)) { AldaraHud.Banner("Your class cannot use that weapon"); return; }
             if (it.type == "wings" && lvl < AldaraItems.WINGS_LEVEL) { AldaraHud.Banner("Wings can be worn from level " + AldaraItems.WINGS_LEVEL); return; }
-            if (it.type == "relic") return;
-            var prev = Eq(it.type); equip[it.type] = it; inventory.Remove(it); if (prev != null) inventory.Add(prev); Recompute(); AldaraSave.Dirty();
+            if (it.type == "relic") { AldaraGear.EquipRelic(it); Recompute(); AldaraSave.Dirty(); AldaraWindows.Refresh("inv"); return; }
+            var prev = Eq(it.type); equip[it.type] = it; inventory.Remove(it); if (prev != null) inventory.Add(prev); Recompute(); AldaraSave.Dirty(); AldaraWindows.Refresh("inv");
         }
-        public void Unequip(string slot) { var it = Eq(slot); if (it == null) return; equip.Remove(slot); inventory.Add(it); Recompute(); AldaraSave.Dirty(); }
+        public void Unequip(string slot) { var it = Eq(slot); if (it == null) return; equip.Remove(slot); inventory.Add(it); Recompute(); AldaraSave.Dirty(); AldaraWindows.Refresh("inv"); }
         public void AutoEquipBest()
         {
             int changed = 0;

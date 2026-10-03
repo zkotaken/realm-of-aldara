@@ -14,6 +14,7 @@ namespace Aldara
         public static int slot = -1;
         public static bool Ready { get { return slot >= 0; } }
         static JObject raw; static float dirtyAt = -1;
+        public static JObject Raw { get { return raw; } }
         public static string BrowserDir { get { return Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData), "RealmOfAldara", "saves"); } }
         public static string UnityDir { get { return Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData), "RealmOfAldara", "saves_unity"); } }
         public static string PathOf(string dir, int s) { return Path.Combine(dir, "saves_slot" + s + ".json"); }
@@ -33,12 +34,12 @@ namespace Aldara
         {
             Directory.CreateDirectory(UnityDir); File.Copy(PathOf(BrowserDir, s), PathOf(UnityDir, s), true);
         }
-        public static void Dirty() { if (Ready && dirtyAt < 0) dirtyAt = Time.unscaledTime; }
+        public static void Dirty() { if (Ready && dirtyAt < 0) dirtyAt = Time.unscaledTime; AldaraWindows.Refresh(); }
         public static void Tick() { if (dirtyAt >= 0 && Time.unscaledTime - dirtyAt > 2f) { dirtyAt = -1; Save(); } }
 
         static float F(JToken t, float d = 0) { return t == null || t.Type == JTokenType.Null ? d : (float)t; }
-        static Item ItemOf(JToken t) { if (t == null || t.Type != JTokenType.Object) return null; var it = t.ToObject<Item>(); it.raw = (JObject)t; return it; }
-        static JObject ItemJ(Item it) { var o = Clean(JObject.FromObject(it)); if (it.raw == null) return o; var m = (JObject)it.raw.DeepClone(); foreach (var kv in o) m[kv.Key] = kv.Value; return m; }
+        public static Item ItemOf(JToken t) { if (t == null || t.Type != JTokenType.Object) return null; var it = t.ToObject<Item>(); it.raw = (JObject)t; return it; }
+        public static JObject ItemJ(Item it) { var o = Clean(JObject.FromObject(it)); if (it.raw == null) return o; var m = (JObject)it.raw.DeepClone(); foreach (var kv in o) m[kv.Key] = kv.Value; return m; }
 
         public static void NewCharacter(int s, string name, string cls)
         {
@@ -61,7 +62,7 @@ namespace Aldara
             AldaraItems.itemSeq = (int)F(j["itemSeq"], 1000);
             if (j["potions"] is JObject po) { H.vialHp = (int)F(po["hp"]); H.vialMp = (int)F(po["mp"]); }
             if (j["stats"] is JObject st) { H.kills = (int)F(st["kills"]); H.bossKills = (int)F(st["bosses"]); H.deaths = (int)F(st["deaths"]); }
-            H.title = (string)j["title"]; H.sub = (string)j["sub"];
+            H.title = (string)j["title"]; H.sub = (string)j["sub"]; AldaraGear.VaultLoad();
             var S = AldaraSkills.I; S.Load(cls);
             if (j["skills"] is JObject sk)
             {
@@ -82,8 +83,6 @@ namespace Aldara
             if (j["x"] == null || Mathf.Abs((float)j["x"] - P.x) > 0.01f || Mathf.Abs((float)j["y"] - P.y) > 0.01f) { j["x"] = P.x; j["y"] = P.y; } j["lvl"] = H.lvl; j["xp"] = H.xp; j["xpNeed"] = H.xpNeed; j["gold"] = H.gold;
             j["baseAtk"] = H.baseAtk; j["baseHp"] = H.baseHp; j["str"] = H.str; j["agi"] = H.agi; j["vit"] = H.vit; j["ene"] = H.ene; j["statPoints"] = H.statPoints;
             var eq = new JObject(); foreach (var sl in new[] { "helmet", "chest", "gauntlets", "leggings", "boots", "weapon", "back", "wings", "accessory", "pet", "relic1", "relic2" }) { var it = H.Eq(sl); eq[sl] = it == null ? null : ItemJ(it); }
-            // keep relics the port does not handle yet
-            if (raw != null && raw["equip"] is JObject old) foreach (var sl in new[] { "relic1", "relic2" }) if (H.Eq(sl) == null && old[sl] != null) eq[sl] = old[sl];
             j["equip"] = eq;
             var inv = new JArray(); foreach (var it in H.inventory) inv.Add(ItemJ(it)); j["inventory"] = inv;
             j["itemSeq"] = AldaraItems.itemSeq;
@@ -95,7 +94,7 @@ namespace Aldara
             while (mine.Count > 0) eqd.Add(mine.Dequeue());
             sk["owned"] = own; sk["equipped"] = eqd; j["skills"] = sk;
             j["potions"] = new JObject { ["hp"] = H.vialHp, ["mp"] = H.vialMp };
-            var st = (j["stats"] as JObject) ?? new JObject(); st["kills"] = H.kills; st["bosses"] = H.bossKills; st["deaths"] = H.deaths; j["stats"] = st;
+            var st = (j["stats"] as JObject) ?? new JObject(); st["kills"] = H.kills; st["bosses"] = H.bossKills; st["deaths"] = H.deaths; j["stats"] = st; j["title"] = H.title;
             Ints(j); raw = j; Directory.CreateDirectory(UnityDir); var p = PathOf(UnityDir, slot);
             File.WriteAllText(p + ".tmp", j.ToString(Newtonsoft.Json.Formatting.None)); if (File.Exists(p)) File.Delete(p); File.Move(p + ".tmp", p);
         }
@@ -106,7 +105,7 @@ namespace Aldara
             else if (t is JArray a) for (int i = 0; i < a.Count; i++) { if (a[i].Type == JTokenType.Float) { double d = (double)a[i]; if (d == System.Math.Floor(d) && System.Math.Abs(d) < 9e15) a[i] = new JValue((long)d); } else Ints(a[i]); }
         }
         // the browser leaves cls / myth / agi out when unused
-        static JObject Clean(JObject o) { foreach (var k in new[] { "cls", "myth" }) if (o[k] == null || o[k].Type == JTokenType.Null || (string)o[k] == "") o.Remove(k); if (o["agi"] != null && (float)o["agi"] == 0) o.Remove("agi"); return o; }
+        static JObject Clean(JObject o) { foreach (var k in new[] { "cls", "myth", "relic" }) if (o[k] == null || o[k].Type == JTokenType.Null || (string)o[k] == "") o.Remove(k); if (o["agi"] != null && (float)o["agi"] == 0) o.Remove("agi"); return o; }
 
         /// swap the hero's body to the class
         public static void ApplyClass(string cls)

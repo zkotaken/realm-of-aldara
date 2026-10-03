@@ -14,7 +14,7 @@ namespace Aldara
         public static void Block(Rect r) { blockR = r; blockF = Time.frameCount; }
         public static bool MouseOverUi()
         {
-            var m = UnityEngine.InputSystem.Mouse.current; if (m == null) return false; var p = m.position.ReadValue(); p.y = Screen.height - p.y;
+            var m = UnityEngine.InputSystem.Mouse.current; if (m == null) return false; var p = m.position.ReadValue(); if (AldaraUI.PointerOverUi(p)) return true; p.y = Screen.height - p.y;
             if (Time.frameCount - blockF < 3 && blockR.Contains(p)) return true;
             foreach (var r in uiRects) if (r.Contains(p)) return true; return false;
         }

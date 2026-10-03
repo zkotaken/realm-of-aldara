@@ -7,7 +7,7 @@ namespace Aldara
     // rollMythicArmor, wings, itemScore). Fields match the browser save format so characters carry over unchanged.
     [System.Serializable] public class Item
     {
-        public int id; public string type, name, rarity, color, cls, myth; public float atk, hp, speed, agi; public int lvl;
+        public int id; public string type, name, rarity, color, cls, myth, relic; public float atk, hp, speed, agi; public int lvl;
         [System.NonSerialized, Newtonsoft.Json.JsonIgnore] public Newtonsoft.Json.Linq.JObject raw;   // every field the browser stored, kept on save
         [Newtonsoft.Json.JsonIgnore] public Color Col { get { return AldaraRules.Hex(string.IsNullOrEmpty(color) ? "#b8b8c8" : color); } }
     }
@@ -35,9 +35,16 @@ namespace Aldara
         static string[] Names(string type) { foreach (var s in B.slots) if (s.type == type) return s.names; return new string[0]; }
         static string[] WNames(string cls) { foreach (var w in B.weapons) if (w.cls == cls) return w.names; return new string[0]; }
         static bool IsMythSlot(string t) { return System.Array.IndexOf(B.mythicSlots, t) >= 0; }
+        public static MythicSet MythSetById(string id) { foreach (var s in B.mythicSets) if (s.id == id) return s; return null; }
         public static MythicSet MythSetOf(Item it)
         {
             if (it == null) return null; foreach (var s in B.mythicSets) if (System.Array.IndexOf(s.pieces, it.name) >= 0) return s; return null;
+        }
+        public static bool OwnsFullMythSet()
+        {
+            var H = AldaraHero.I; var all = new List<Item>(H.inventory); foreach (var kv in H.equip) if (kv.Value != null) all.Add(kv.Value);
+            foreach (var S in B.mythicSets) { bool full = true; foreach (var p in S.pieces) if (!all.Exists(it => it.name == p)) { full = false; break; } if (full) return true; }
+            return false;
         }
         public static float PetPct(Item it) { float v; return it != null && it.type == "pet" && PET_PCT.TryGetValue(it.rarity, out v) ? v : 0; }
         public static float Score(Item it) { return it.atk * 3 + it.speed * 5 + it.hp + it.agi * 4 + PetPct(it) * 400; }
