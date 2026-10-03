@@ -34,6 +34,7 @@ namespace Aldara
             root = doc.rootVisualElement; root.pickingMode = PickingMode.Ignore; root.style.position = Position.Absolute; root.style.left = root.style.top = root.style.right = root.style.bottom = 0;
             Register(new AldaraInvWin()); Register(new AldaraAttWin()); Register(new AldaraSkillWin()); Register(new AldaraSubWin()); Register(new AldaraVaultWin()); Register(new AldaraMenuWin()); Register(new AldaraMapWin());
             AldaraSettings.Apply();
+            if (!GetComponent<AldaraTitle>()) gameObject.AddComponent<AldaraTitle>();
         }
         public void Register(Win w) { wins[w.id] = w; }
         public bool Has(string id) { return wins.ContainsKey(id); }
@@ -112,7 +113,11 @@ namespace Aldara
                 if (kb.escapeKey.wasPressedThisFrame) { if (IsOpen("map")) Toggle("map", false); else if (AnyOpen()) CloseAll(); else Toggle("set", true); }
                 if (kb.f11Key.wasPressedThisFrame && !Application.isEditor) AldaraMenuWin.ToggleFullscreen();
             }
-            if (!AldaraSave.Ready) { CloseAll(); return; }
+            if (!AldaraSave.Ready)
+            {   // on the title screens only the Game Menu (its settings) can be open
+                foreach (var w in wins.Values) if (w.open && w.id != "set") Close(w);
+                if (kb != null && kb.escapeKey.wasPressedThisFrame) Close(wins["set"]);
+            }
             foreach (var w in wins.Values)
             {
                 if (!w.open) continue;

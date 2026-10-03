@@ -45,7 +45,7 @@ namespace Aldara
         void OnGUI()
         {
             Init(); btn = new GUIStyle(GUI.skin.button) { fontSize = 13 };
-            if (!AldaraSave.Ready) { CharacterSelect(); return; }
+            if (!AldaraSave.Ready) { if (!AldaraTitle.I) CharacterSelect(); return; }
             AldaraHud.Typing = false;
             var r = new Rect(Screen.width / 2 - 360, 70, 720, Screen.height - 200);
             switch (open)

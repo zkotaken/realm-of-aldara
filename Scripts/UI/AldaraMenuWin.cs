@@ -43,7 +43,7 @@ namespace Aldara
         void Game(VisualElement body)
         {
             SetBtn(body, "Resume", () => AldaraWindows.I.Toggle("set", false));
-            SetBtn(body, "Log Out to Character Select", () => { AldaraWindows.I.CloseAll(); AldaraSave.Logout(); });
+            SetBtn(body, "Log Out to Character Select", () => { AldaraWindows.I.CloseAll(); AldaraSave.Logout(); if (AldaraTitle.I) AldaraTitle.I.Show("select"); });
             if (!Application.isEditor)
             {
                 SetBtn(body, "Toggle Fullscreen (F11)", ToggleFullscreen);

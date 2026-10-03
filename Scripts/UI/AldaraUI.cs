@@ -15,7 +15,7 @@ namespace Aldara
         static readonly Dictionary<string, Font> fonts = new Dictionary<string, Font>();
         public static Font Font(bool cinzel, bool bold, bool italic = false)
         {
-            string n = cinzel ? (bold ? "Cinzel-Bold" : "Cinzel-Regular") : italic ? "Alegreya-Italic" : bold ? "Alegreya-Bold" : "Alegreya-Regular";
+            string n = cinzel ? (bold ? "Cinzel-Bold" : "Cinzel-Regular") : italic ? (bold ? "Alegreya-Italic-Bold" : "Alegreya-Italic-Regular") : bold ? "Alegreya-Bold" : "Alegreya-Regular";
             if (!fonts.TryGetValue(n, out Font f)) { f = Resources.Load<Font>("Fonts/" + n); fonts[n] = f; }
             return f;
         }
