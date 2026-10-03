@@ -302,7 +302,7 @@ namespace Aldara
             string meta = (it.lvl > 0 ? "Lv " + it.lvl + " · " : "") + (AldaraItems.SLOT_LABEL.ContainsKey(it.type) ? AldaraItems.SLOT_LABEL[it.type] : it.type == "relic" ? "Relic" : it.type) + " · " + it.rarity;
             if (cls != null) meta += " · " + (AldaraItems.CanUse(it, Hr.cls) ? Cap(cls) + " only" : Span(Cap(cls) + " only", "#ff8a7a"));
             var m = T(info, meta, 10, C("#999999")); m.style.marginTop = 1;
-            if (!dismantleMode) { var cm = AldaraGear.Compare(it); if (cm != null) { var cl = T(info, cm, 11, C("#9aa3b5")); cl.style.marginTop = 2; } }
+            if (!dismantleMode && AldaraSettings.On("compare")) { var cm = AldaraGear.Compare(it); if (cm != null) { var cl = T(info, cm, 11, C("#9aa3b5")); cl.style.marginTop = 2; } }
             string d = it.type == "relic" ? AldaraGear.RelicDesc(it) : AldaraItems.Desc(it);
             if (!string.IsNullOrEmpty(d)) { var s = T(info, d, 10, C("#88aa88")); s.style.marginTop = 1; }
             if (dismantleMode) { var dm = T(info, can ? "Dismantle for " + AldaraGear.ScrapValue(it) + " Gold" : "Pets, accessories and relics cannot be dismantled", 10, C("#999999")); dm.style.marginTop = 1; }

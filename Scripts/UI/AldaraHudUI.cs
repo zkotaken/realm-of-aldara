@@ -53,6 +53,23 @@ namespace Aldara
 
         // anchor groups: each piece hangs off the corner or edge it sits by in the browser, so it stays put on any screen
         readonly Dictionary<string, VisualElement> groups = new Dictionary<string, VisualElement>();
+        List<VisualElement> collect; readonly Dictionary<string, List<VisualElement>> pieces = new Dictionary<string, List<VisualElement>>();
+        void Begin(string k) { collect = new List<VisualElement>(); pieces[k] = collect; }
+        /// HUD size, opacity and which pieces show, from the Interface settings
+        public void ApplySettings()
+        {
+            if (root == null) return; var inv = System.Globalization.CultureInfo.InvariantCulture;
+            foreach (var kv in groups)
+            {
+                string k = kv.Key; float s = AldaraSettings.F(k == "tr" ? "mmS" : k == "bl" ? "chatS" : "hudS", 1);
+                kv.Value.style.scale = new Scale(new Vector2(s, s)); kv.Value.style.transformOrigin = new TransformOrigin(0, 0);
+            }
+            root.style.opacity = AldaraSettings.F("hudA", 1);
+            Show("player", AldaraSettings.On("showPlayer")); Show("minimap", AldaraSettings.On("minimap")); Show("zone", AldaraSettings.On("showZone")); Show("chat", AldaraSettings.On("showChat"));
+            showTarget = AldaraSettings.On("showTarget");
+        }
+        bool showTarget = true;
+        void Show(string k, bool on) { List<VisualElement> l; if (pieces.TryGetValue(k, out l)) foreach (var e in l) e.style.visibility = on ? Visibility.Visible : Visibility.Hidden; }
         VisualElement Group(Rect r, out Vector2 origin)
         {
             float cx = r.center.x, cy = r.center.y;
@@ -71,7 +88,7 @@ namespace Aldara
         VisualElement Place(VisualElement e, Rect r, VisualElement parent = null, Rect? parentRect = null)
         {
             e.style.position = Position.Absolute;
-            if (parent == null) { var g = Group(r, out var o); g.Add(e); e.style.left = r.x - o.x; e.style.top = r.y - o.y; }
+            if (parent == null) { var g = Group(r, out var o); g.Add(e); if (collect != null) collect.Add(e); e.style.left = r.x - o.x; e.style.top = r.y - o.y; }
             else { parent.Add(e); e.style.left = r.x - parentRect.Value.x; e.style.top = r.y - parentRect.Value.y; }
             e.style.width = r.width; e.style.height = r.height; return e;
         }
@@ -112,11 +129,13 @@ namespace Aldara
             L = JObject.Parse(Resources.Load<TextAsset>("UI/layout").text);
 
             // ---- unit frame (top left) ----
+            Begin("player");
             Img("unitframe", ShotR("unitframe"));
             portraitEl = Img("portrait_knight", RectR("portrait"));
             ufHpClip = Clip("uf_hp_fill", RectR("uf_hp_fillr"), out ufHpW); ufMpClip = Clip("uf_mp_fill", RectR("uf_mp_fillr"), out ufMpW);
             ufName = Txt("uf_name"); Diamond(R(L["texts"]["uf_lvl"]["rect"])); ufLvl = Txt("uf_lvl"); ufLvl.style.unityTextAlign = TextAnchor.MiddleCenter; ufLvl.style.textShadow = new TextShadow(); ufHpT = Txt("uf_hpt"); ufMpT = Txt("uf_mpt"); stats = Txt("uf_stats");
             ufHpT.style.unityTextAlign = ufMpT.style.unityTextAlign = TextAnchor.MiddleCenter; stats.style.whiteSpace = WhiteSpace.Normal; stats.style.unityTextAlign = TextAnchor.UpperLeft;
+            collect = null;
             // ---- target frame (top centre) ----
             var tfr = ShotR("targetframe"); tfRoot = new VisualElement { pickingMode = PickingMode.Ignore }; Place(tfRoot, tfr);
             Img("targetframe", tfr, tfRoot, tfr);
@@ -124,6 +143,7 @@ namespace Aldara
             var tfi = new VisualElement { pickingMode = PickingMode.Ignore }; tfi.style.backgroundImage = Background.FromTexture2D(Tex("tf_fill")); tfi.style.position = Position.Absolute; tfi.style.width = fr.width; tfi.style.height = fr.height; tfClip.Add(tfi); tfW = fr.width;
             tfName = Txt("tf_name", tfRoot, tfr); tfLvl = Txt("tf_lvl", tfRoot, tfr); tfHpT = Txt("tf_hpt", tfRoot, tfr); tfHpT.style.unityTextAlign = TextAnchor.MiddleCenter;
             // ---- minimap and zone (top right) ----
+            Begin("minimap");
             var mmr = RectR("minimap"); mmView = new VisualElement { pickingMode = PickingMode.Ignore }; Place(mmView, mmr);
             mmView.style.borderTopLeftRadius = mmView.style.borderTopRightRadius = mmView.style.borderBottomLeftRadius = mmView.style.borderBottomRightRadius = mmr.width / 2; mmView.style.overflow = Overflow.Hidden;
             mmArrow = new VisualElement { pickingMode = PickingMode.Ignore }; mmArrow.style.position = Position.Absolute; mmArrow.style.width = 10; mmArrow.style.height = 10; mmArrow.style.left = mmr.width / 2 - 5; mmArrow.style.top = mmr.height / 2 - 5;
@@ -131,9 +151,9 @@ namespace Aldara
             mmArrow.style.borderLeftWidth = mmArrow.style.borderRightWidth = mmArrow.style.borderTopWidth = mmArrow.style.borderBottomWidth = 2; mmArrow.style.borderLeftColor = mmArrow.style.borderRightColor = mmArrow.style.borderTopColor = mmArrow.style.borderBottomColor = Color.white;
             mmView.Add(mmArrow);
             Img("minimap_ring", ShotR("minimap_ring"));
-            Img("zone", ShotR("zone")); zone = Txt("zone");
+            Begin("zone"); Img("zone", ShotR("zone")); zone = Txt("zone");
             // ---- chat (bottom left) ----
-            Img("chat", ShotR("chat"));
+            Begin("chat"); Img("chat", ShotR("chat")); collect = null;
             // ---- bottom bar: base, orb liquid, gloss, claws, slots, vials ----
             Img("ab", ShotR("ab"));
             hpOrbR = RectR("orb_hp"); mpOrbR = RectR("orb_mp");
@@ -177,7 +197,8 @@ namespace Aldara
             // ---- banner ----
             banner = Txt("banner"); var bt = L["texts"]["banner"]; banner.style.left = 0; banner.style.width = RW; banner.style.left = -RW / 2; banner.style.opacity = 0;
             banner.style.textShadow = new TextShadow { color = AldaraRules.Hex("#3a2a0a"), offset = new Vector2(0, 2), blurRadius = 0 };
-            SetupMinimapCamera();
+            SetupMinimapCamera(); collect = null;
+            ApplySettings();
         }
         void Diamond(Rect r)
         {   // the gold level diamond under the portrait
@@ -216,7 +237,7 @@ namespace Aldara
             ufHpT.text = Mathf.CeilToInt(Mathf.Max(0, H.hp)) + " / " + H.maxHp; ufMpT.text = Mathf.FloorToInt(H.mana) + " / " + H.maxMana;
             stats.text = "ATK " + H.atk + "   SPD " + Mathf.RoundToInt(H.speed) + "\nSTR " + H.str + "  AGI " + H.agi + "  VIT " + H.vit + "  ENE " + H.ene + "\nGold " + H.gold.ToString("N0");
             var t0 = H.target; bool show = t0 != null && !t0.dead;
-            tfRoot.style.display = show ? DisplayStyle.Flex : DisplayStyle.None;
+            tfRoot.style.display = show && showTarget ? DisplayStyle.Flex : DisplayStyle.None;
             if (show) { tfName.text = (t0.boss ? "Boss: " : "") + t0.name; tfLvl.text = "Lv " + t0.lvl; tfClip.style.width = tfW * Mathf.Clamp01(t0.hp / t0.maxHp); tfHpT.text = Mathf.CeilToInt(Mathf.Max(0, t0.hp)) + " / " + t0.maxHp; tfLvl.style.color = LvColor(t0.lvl - H.lvl); }
             zone.text = AldaraWorld.ZoneName(P.x, P.y);
             SetOrb(hpOrbClip, hpOrbImg, hpOrbR, H.hp / H.maxHp); SetOrb(mpOrbClip, mpOrbImg, mpOrbR, H.mana / H.maxMana);

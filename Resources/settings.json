@@ -1,0 +1,1335 @@
+{
+ "pages": [
+  {
+   "id": "graphics",
+   "name": "Graphics",
+   "items": [
+    {
+     "k": "sec",
+     "t": "Display"
+    },
+    {
+     "k": "row",
+     "t": "Display mode",
+     "hint": "Borderless windowed is in the desktop game",
+     "id": "optDisp",
+     "c": "select",
+     "opts": [
+      [
+       "windowed",
+       "Windowed"
+      ],
+      [
+       "borderless",
+       "Borderless windowed"
+      ],
+      [
+       "fullscreen",
+       "Fullscreen"
+      ]
+     ],
+     "v": "windowed"
+    },
+    {
+     "k": "row",
+     "t": "Quality preset",
+     "hint": null,
+     "id": "optPreset",
+     "c": "select",
+     "opts": [
+      [
+       "low",
+       "Low"
+      ],
+      [
+       "medium",
+       "Medium"
+      ],
+      [
+       "high",
+       "High"
+      ],
+      [
+       "ultra",
+       "Ultra"
+      ],
+      [
+       "custom",
+       "Custom"
+      ]
+     ],
+     "v": "high"
+    },
+    {
+     "k": "sec",
+     "t": "Characters"
+    },
+    {
+     "k": "row",
+     "t": "3D characters",
+     "hint": null,
+     "id": "opt3d",
+     "c": "check",
+     "v": true
+    },
+    {
+     "k": "row",
+     "t": "High detail characters",
+     "hint": null,
+     "id": "optHi",
+     "c": "check",
+     "v": true
+    },
+    {
+     "k": "row",
+     "t": "Townsfolk crowds",
+     "hint": null,
+     "id": "optCrowd",
+     "c": "select",
+     "opts": [
+      [
+       "all",
+       "Full"
+      ],
+      [
+       "half",
+       "Half"
+      ],
+      [
+       "none",
+       "Off"
+      ]
+     ],
+     "v": "all"
+    },
+    {
+     "k": "sec",
+     "t": "Lighting and effects"
+    },
+    {
+     "k": "row",
+     "t": "Dynamic lighting and day/night",
+     "hint": null,
+     "id": "optLight",
+     "c": "check",
+     "v": true
+    },
+    {
+     "k": "row",
+     "t": "High quality lighting",
+     "hint": null,
+     "id": "optGfx",
+     "c": "check",
+     "v": true
+    },
+    {
+     "k": "row",
+     "t": "Bloom (glow)",
+     "hint": null,
+     "id": "optBloom",
+     "c": "check",
+     "v": true
+    },
+    {
+     "k": "row",
+     "t": "Vignette",
+     "hint": null,
+     "id": "optVig",
+     "c": "check",
+     "v": true
+    },
+    {
+     "k": "row",
+     "t": "Shadows from trees and buildings",
+     "hint": null,
+     "id": "optShadows",
+     "c": "check",
+     "v": true
+    },
+    {
+     "k": "row",
+     "t": "Drifting cloud shadows",
+     "hint": null,
+     "id": "optClouds",
+     "c": "check",
+     "v": true
+    },
+    {
+     "k": "row",
+     "t": "Sun shafts and depth haze",
+     "hint": "Soft beams of daylight and distance haze. High and Ultra.",
+     "id": "optAtmos",
+     "c": "check",
+     "v": true
+    },
+    {
+     "k": "row",
+     "t": "Weather (rain, snow, embers)",
+     "hint": null,
+     "id": "optWeather",
+     "c": "check",
+     "v": true
+    },
+    {
+     "k": "row",
+     "t": "Animated water and lava",
+     "hint": null,
+     "id": "optLiquid",
+     "c": "check",
+     "v": true
+    },
+    {
+     "k": "row",
+     "t": "Real 3D terrain (needs a graphics card)",
+     "hint": null,
+     "id": "optTerrain",
+     "c": "check",
+     "v": false
+    },
+    {
+     "k": "row",
+     "t": "World zoom",
+     "hint": null,
+     "id": "optViewScale",
+     "c": "select",
+     "opts": [
+      [
+       "auto",
+       "Auto (fits your screen)"
+      ],
+      [
+       "1",
+       "100%"
+      ],
+      [
+       "1.25",
+       "125%"
+      ],
+      [
+       "1.5",
+       "150%"
+      ],
+      [
+       "2",
+       "200%"
+      ]
+     ],
+     "v": "auto"
+    },
+    {
+     "k": "row",
+     "t": "Render resolution",
+     "hint": "Sharpness of the world. Lower it if the game runs slowly.",
+     "id": "optRenderRes",
+     "c": "select",
+     "opts": [
+      [
+       "auto",
+       "Auto (by quality preset)"
+      ],
+      [
+       "1",
+       "Full (native)"
+      ],
+      [
+       "0.75",
+       "High (75%)"
+      ],
+      [
+       "0.5",
+       "Medium (50%)"
+      ],
+      [
+       "low",
+       "Low (old)"
+      ]
+     ],
+     "v": "auto"
+    },
+    {
+     "k": "row",
+     "t": "Particle amount",
+     "hint": null,
+     "id": "optParticles",
+     "c": "select",
+     "opts": [
+      [
+       "low",
+       "Low"
+      ],
+      [
+       "medium",
+       "Medium"
+      ],
+      [
+       "high",
+       "High"
+      ],
+      [
+       "ultra",
+       "Ultra"
+      ]
+     ],
+     "v": "high"
+    },
+    {
+     "k": "sec",
+     "t": "Performance"
+    },
+    {
+     "k": "row",
+     "t": "Frame rate limit",
+     "hint": null,
+     "id": "optFpsCap",
+     "c": "select",
+     "opts": [
+      [
+       "0",
+       "Unlimited"
+      ],
+      [
+       "120",
+       "120"
+      ],
+      [
+       "60",
+       "60"
+      ],
+      [
+       "30",
+       "30"
+      ]
+     ],
+     "v": "0"
+    },
+    {
+     "k": "row",
+     "t": "Keep the frame rate up automatically",
+     "hint": "When frames run long, the resolution is trimmed first (every effect stays on); it comes back when things are smooth.",
+     "id": "optAdaptive",
+     "c": "check",
+     "v": true
+    },
+    {
+     "k": "row",
+     "t": "Lower frame rate in the background",
+     "hint": "30 frames a second while another window has focus, to save power and heat.",
+     "id": "optBgThrottle",
+     "c": "check",
+     "v": true
+    },
+    {
+     "k": "sec",
+     "t": "Graphics card"
+    },
+    {
+     "k": "row",
+     "t": "GPU rendering (high-poly models)",
+     "hint": null,
+     "id": "optGpu",
+     "c": "check",
+     "v": false
+    },
+    {
+     "k": "other",
+     "cls": "gpuinfo",
+     "t": "Graphics card in useDetecting..."
+    },
+    {
+     "k": "row",
+     "t": "Preferred graphics card",
+     "hint": null,
+     "id": "gpuPref",
+     "c": "select",
+     "opts": [
+      [
+       "default",
+       "Automatic"
+      ],
+      [
+       "high",
+       "High performance (dedicated card)"
+      ],
+      [
+       "low",
+       "Power saving (integrated)"
+      ]
+     ],
+     "v": "default"
+    },
+    {
+     "k": "btn",
+     "t": "Apply and Restart",
+     "id": "gpuApply"
+    },
+    {
+     "k": "note",
+     "t": ""
+    }
+   ]
+  },
+  {
+   "id": "interface",
+   "name": "Interface",
+   "items": [
+    {
+     "k": "sec",
+     "t": "Size"
+    },
+    {
+     "k": "btns",
+     "b": [
+      {
+       "t": "Compact",
+       "cls": "",
+       "on": "hudPreset('compact')"
+      },
+      {
+       "t": "Normal",
+       "cls": "",
+       "on": "hudPreset('normal')"
+      },
+      {
+       "t": "Large",
+       "cls": "",
+       "on": "hudPreset('large')"
+      },
+      {
+       "t": "Huge",
+       "cls": "",
+       "on": "hudPreset('huge')"
+      },
+      {
+       "t": "Couch",
+       "cls": "",
+       "on": "hudPreset('tv')"
+      }
+     ]
+    },
+    {
+     "k": "row",
+     "t": "Windows",
+     "hint": "Inventory, skills, guilds, this menu",
+     "id": "optUi",
+     "c": "range",
+     "min": 0.7,
+     "max": 2,
+     "step": 0.05,
+     "v": 1
+    },
+    {
+     "k": "row",
+     "t": "HUD",
+     "hint": "Health and mana orbs, hotbar, buttons, player and target frames",
+     "id": "optHudS",
+     "c": "range",
+     "min": 0.7,
+     "max": 2,
+     "step": 0.05,
+     "v": 1
+    },
+    {
+     "k": "row",
+     "t": "Chat",
+     "hint": null,
+     "id": "optChatS",
+     "c": "range",
+     "min": 0.7,
+     "max": 2,
+     "step": 0.05,
+     "v": 1
+    },
+    {
+     "k": "row",
+     "t": "Minimap and quest box",
+     "hint": null,
+     "id": "optMmS",
+     "c": "range",
+     "min": 0.7,
+     "max": 2,
+     "step": 0.05,
+     "v": 1
+    },
+    {
+     "k": "row",
+     "t": "Text",
+     "hint": "Chat messages, quest text, names on frames",
+     "id": "optTxtS",
+     "c": "range",
+     "min": 0.8,
+     "max": 1.8,
+     "step": 0.05,
+     "v": 1
+    },
+    {
+     "k": "sec",
+     "t": "Look"
+    },
+    {
+     "k": "row",
+     "t": "Heading font",
+     "hint": "Titles, buttons, names and numbers",
+     "id": "optHeadFont",
+     "c": "select",
+     "opts": [
+      [
+       "fire",
+       "Breathe Fire"
+      ],
+      [
+       "classic",
+       "Cinzel (classic)"
+      ],
+      [
+       "magic",
+       "Magic Medieval"
+      ],
+      [
+       "dragon",
+       "Dragonslapper"
+      ],
+      [
+       "flick",
+       "Flick"
+      ],
+      [
+       "flickstamp",
+       "Flick Stamp"
+      ],
+      [
+       "flickslant",
+       "Flick Slanted"
+      ]
+     ],
+     "v": "fire"
+    },
+    {
+     "k": "row",
+     "t": "Text font",
+     "hint": "Chat, quests and descriptions",
+     "id": "optBodyFont",
+     "c": "select",
+     "opts": [
+      [
+       "alegreya",
+       "Alegreya"
+      ],
+      [
+       "magic",
+       "Magic Medieval"
+      ]
+     ],
+     "v": "alegreya"
+    },
+    {
+     "k": "row",
+     "t": "Frame theme",
+     "hint": null,
+     "id": "optTheme",
+     "c": "select",
+     "opts": [
+      [
+       "gold",
+       "Gold"
+      ],
+      [
+       "silver",
+       "Silver"
+      ],
+      [
+       "crimson",
+       "Crimson"
+      ],
+      [
+       "emerald",
+       "Emerald"
+      ],
+      [
+       "void",
+       "Void"
+      ],
+      [
+       "frost",
+       "Frost"
+      ]
+     ],
+     "v": "gold"
+    },
+    {
+     "k": "row",
+     "t": "HUD opacity",
+     "hint": null,
+     "id": "optHudA",
+     "c": "range",
+     "min": 0.3,
+     "max": 1,
+     "step": 0.05,
+     "v": 1
+    },
+    {
+     "k": "row",
+     "t": "Window opacity",
+     "hint": null,
+     "id": "optWinA",
+     "c": "range",
+     "min": 0.5,
+     "max": 1,
+     "step": 0.05,
+     "v": 1
+    },
+    {
+     "k": "sec",
+     "t": "Layout"
+    },
+    {
+     "k": "btns",
+     "b": [
+      {
+       "t": "Edit layout: drag pieces around",
+       "cls": "gold",
+       "on": "hudEdit(true)"
+      },
+      {
+       "t": "Reset positions",
+       "cls": "",
+       "on": "hudResetLayout()"
+      }
+     ]
+    },
+    {
+     "k": "sec",
+     "t": "Show"
+    },
+    {
+     "k": "row",
+     "t": "Player frame",
+     "hint": null,
+     "id": "optShowPlayer",
+     "c": "check",
+     "v": true
+    },
+    {
+     "k": "row",
+     "t": "Target frame",
+     "hint": null,
+     "id": "optShowTarget",
+     "c": "check",
+     "v": true
+    },
+    {
+     "k": "row",
+     "t": "Minimap",
+     "hint": null,
+     "id": "optMinimap",
+     "c": "check",
+     "v": true
+    },
+    {
+     "k": "row",
+     "t": "Region name",
+     "hint": null,
+     "id": "optShowZone",
+     "c": "check",
+     "v": true
+    },
+    {
+     "k": "row",
+     "t": "Quest box",
+     "hint": null,
+     "id": "optShowQuest",
+     "c": "check",
+     "v": true
+    },
+    {
+     "k": "row",
+     "t": "Chat",
+     "hint": null,
+     "id": "optShowChat",
+     "c": "check",
+     "v": true
+    },
+    {
+     "k": "row",
+     "t": "Show swearing in chat",
+     "hint": "Slurs, sexual talk, harassment and politics stay blocked",
+     "id": "optSwear",
+     "c": "check",
+     "v": false
+    },
+    {
+     "k": "row",
+     "t": "Party frame",
+     "hint": null,
+     "id": "optShowParty",
+     "c": "check",
+     "v": true
+    },
+    {
+     "k": "row",
+     "t": "Buff and debuff bar",
+     "hint": null,
+     "id": "optShowBuffs",
+     "c": "check",
+     "v": true
+    },
+    {
+     "k": "row",
+     "t": "Ability pop-ups",
+     "hint": null,
+     "id": "optShowPops",
+     "c": "check",
+     "v": true
+    },
+    {
+     "k": "row",
+     "t": "Low health warning",
+     "hint": "The screen edges pulse red below 30% health",
+     "id": "optLowHp",
+     "c": "check",
+     "v": true
+    },
+    {
+     "k": "row",
+     "t": "Compare gear with what you wear",
+     "hint": "Shows the stat change on every item in your backpack",
+     "id": "optCompare",
+     "c": "check",
+     "v": true
+    },
+    {
+     "k": "row",
+     "t": "Controls hint",
+     "hint": null,
+     "id": "optTip",
+     "c": "check",
+     "v": false
+    },
+    {
+     "k": "row",
+     "t": "FPS counter",
+     "hint": null,
+     "id": "optFps",
+     "c": "check",
+     "v": false
+    },
+    {
+     "k": "row",
+     "t": "Townsfolk names",
+     "hint": null,
+     "id": "optNames",
+     "c": "check",
+     "v": true
+    },
+    {
+     "k": "btns",
+     "b": [
+      {
+       "t": "Restore interface defaults",
+       "cls": "warn",
+       "on": "hudResetAll()"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "sound",
+   "name": "Sound",
+   "items": [
+    {
+     "k": "sec",
+     "t": "Sound"
+    },
+    {
+     "k": "row",
+     "t": "Sound on",
+     "hint": null,
+     "id": "sndOn",
+     "c": "check",
+     "v": true
+    },
+    {
+     "k": "row",
+     "t": "Master volume",
+     "hint": null,
+     "id": "sndMaster",
+     "c": "range",
+     "min": 0,
+     "max": 1,
+     "step": 0.05,
+     "v": 0.8
+    },
+    {
+     "k": "row",
+     "t": "Music",
+     "hint": "Zone, dungeon and boss music",
+     "id": "sndMusic",
+     "c": "range",
+     "min": 0,
+     "max": 1,
+     "step": 0.05,
+     "v": 0.6
+    },
+    {
+     "k": "row",
+     "t": "Your actions",
+     "hint": "Swings, spells and hits you make",
+     "id": "sndSelf",
+     "c": "range",
+     "min": 0,
+     "max": 1,
+     "step": 0.05,
+     "v": 1
+    },
+    {
+     "k": "row",
+     "t": "Enemies",
+     "hint": "Attacks and spells aimed at you",
+     "id": "sndEnemy",
+     "c": "range",
+     "min": 0,
+     "max": 1,
+     "step": 0.05,
+     "v": 1
+    },
+    {
+     "k": "row",
+     "t": "Other players",
+     "hint": "Party members and other players fighting nearby",
+     "id": "sndOthers",
+     "c": "range",
+     "min": 0,
+     "max": 1,
+     "step": 0.05,
+     "v": 1
+    },
+    {
+     "k": "row",
+     "t": "Interface",
+     "hint": "Level up and vials",
+     "id": "sndUi",
+     "c": "range",
+     "min": 0,
+     "max": 1,
+     "step": 0.05,
+     "v": 1
+    },
+    {
+     "k": "row",
+     "t": "Character voice",
+     "hint": "Grunts and cries when you attack, cast and get hurt",
+     "id": "sndVoice",
+     "c": "select",
+     "opts": [
+      [
+       "HumanM",
+       "Human, male"
+      ],
+      [
+       "HumanF",
+       "Human, female"
+      ],
+      [
+       "OrcM",
+       "Orc"
+      ],
+      [
+       "off",
+       "Off"
+      ]
+     ],
+     "v": "HumanM"
+    },
+    {
+     "k": "btns",
+     "b": [
+      {
+       "t": "Play a test sound",
+       "cls": "gold",
+       "on": null
+      }
+     ]
+    },
+    {
+     "k": "row",
+     "t": "Sound in the background",
+     "hint": "Keep playing music and effects while another window has focus",
+     "id": "optSndBg",
+     "c": "check",
+     "v": true
+    }
+   ]
+  }
+ ],
+ "SET": {
+  "preset": "high",
+  "use3d": true,
+  "hiDetail": true,
+  "crowd": "all",
+  "light": true,
+  "hiLight": true,
+  "bloom": true,
+  "vignette": true,
+  "shadows": true,
+  "clouds": true,
+  "weather": true,
+  "liquidFx": true,
+  "terrain3d": true,
+  "viewScale": "auto",
+  "renderRes": "auto",
+  "particles": "high",
+  "fpsCap": 0,
+  "adaptive": true,
+  "atmos": true,
+  "lowHpFx": true,
+  "bgThrottle": true,
+  "sndBg": true,
+  "compare": true,
+  "minimap": true,
+  "tip": false,
+  "fps": false,
+  "names": true,
+  "gpu": null,
+  "headFont": "fire",
+  "bodyFont": "alegreya",
+  "ui": "1",
+  "hudS": "1",
+  "chatS": "1",
+  "mmS": "1",
+  "txtS": "1",
+  "hudA": "1",
+  "winA": "1",
+  "theme": "gold",
+  "showChat": true,
+  "showQuest": true,
+  "showParty": true,
+  "showTarget": true,
+  "showBuffs": true,
+  "showPops": true,
+  "showPlayer": true,
+  "showZone": true
+ },
+ "PRESETS": {
+  "low": {
+   "hiDetail": false,
+   "crowd": "half",
+   "light": false,
+   "hiLight": false,
+   "bloom": false,
+   "vignette": false,
+   "shadows": false,
+   "clouds": false,
+   "weather": false,
+   "liquidFx": false,
+   "atmos": false,
+   "particles": "low"
+  },
+  "medium": {
+   "hiDetail": true,
+   "crowd": "half",
+   "light": true,
+   "hiLight": false,
+   "bloom": false,
+   "vignette": true,
+   "shadows": false,
+   "clouds": false,
+   "weather": true,
+   "liquidFx": true,
+   "atmos": false,
+   "particles": "medium"
+  },
+  "high": {
+   "hiDetail": true,
+   "crowd": "all",
+   "light": true,
+   "hiLight": true,
+   "bloom": true,
+   "vignette": true,
+   "shadows": true,
+   "clouds": true,
+   "weather": true,
+   "liquidFx": true,
+   "atmos": true,
+   "particles": "high"
+  },
+  "ultra": {
+   "hiDetail": true,
+   "crowd": "all",
+   "light": true,
+   "hiLight": true,
+   "bloom": true,
+   "vignette": true,
+   "shadows": true,
+   "clouds": true,
+   "weather": true,
+   "liquidFx": true,
+   "atmos": true,
+   "particles": "ultra"
+  }
+ },
+ "BIND": [
+  [
+   "opt3d",
+   "use3d"
+  ],
+  [
+   "optHi",
+   "hiDetail"
+  ],
+  [
+   "optCrowd",
+   "crowd"
+  ],
+  [
+   "optLight",
+   "light"
+  ],
+  [
+   "optGfx",
+   "hiLight"
+  ],
+  [
+   "optBloom",
+   "bloom"
+  ],
+  [
+   "optVig",
+   "vignette"
+  ],
+  [
+   "optShadows",
+   "shadows"
+  ],
+  [
+   "optClouds",
+   "clouds"
+  ],
+  [
+   "optWeather",
+   "weather"
+  ],
+  [
+   "optLiquid",
+   "liquidFx"
+  ],
+  [
+   "optTerrain",
+   "terrain3d"
+  ],
+  [
+   "optViewScale",
+   "viewScale"
+  ],
+  [
+   "optRenderRes",
+   "renderRes"
+  ],
+  [
+   "optParticles",
+   "particles"
+  ],
+  [
+   "optFpsCap",
+   "fpsCap"
+  ],
+  [
+   "optAdaptive",
+   "adaptive"
+  ],
+  [
+   "optAtmos",
+   "atmos"
+  ],
+  [
+   "optLowHp",
+   "lowHpFx"
+  ],
+  [
+   "optBgThrottle",
+   "bgThrottle"
+  ],
+  [
+   "optCompare",
+   "compare"
+  ],
+  [
+   "optMinimap",
+   "minimap"
+  ],
+  [
+   "optTip",
+   "tip"
+  ],
+  [
+   "optFps",
+   "fps"
+  ],
+  [
+   "optNames",
+   "names"
+  ],
+  [
+   "optGpu",
+   "gpu"
+  ],
+  [
+   "optHeadFont",
+   "headFont"
+  ],
+  [
+   "optBodyFont",
+   "bodyFont"
+  ],
+  [
+   "optUi",
+   "ui"
+  ],
+  [
+   "optHudS",
+   "hudS"
+  ],
+  [
+   "optChatS",
+   "chatS"
+  ],
+  [
+   "optMmS",
+   "mmS"
+  ],
+  [
+   "optTxtS",
+   "txtS"
+  ],
+  [
+   "optHudA",
+   "hudA"
+  ],
+  [
+   "optWinA",
+   "winA"
+  ],
+  [
+   "optTheme",
+   "theme"
+  ],
+  [
+   "optShowChat",
+   "showChat"
+  ],
+  [
+   "optShowQuest",
+   "showQuest"
+  ],
+  [
+   "optShowParty",
+   "showParty"
+  ],
+  [
+   "optShowTarget",
+   "showTarget"
+  ],
+  [
+   "optShowBuffs",
+   "showBuffs"
+  ],
+  [
+   "optShowPops",
+   "showPops"
+  ],
+  [
+   "optShowPlayer",
+   "showPlayer"
+  ],
+  [
+   "optShowZone",
+   "showZone"
+  ],
+  [
+   "optSwear",
+   "swear"
+  ]
+ ],
+ "kb": [
+  {
+   "a": "up",
+   "n": "Move up",
+   "d": "w"
+  },
+  {
+   "a": "down",
+   "n": "Move down",
+   "d": "s"
+  },
+  {
+   "a": "left",
+   "n": "Move left",
+   "d": "a"
+  },
+  {
+   "a": "right",
+   "n": "Move right",
+   "d": "d"
+  },
+  {
+   "a": "attack",
+   "n": "Attack toward the cursor",
+   "d": " "
+  },
+  {
+   "a": "interact",
+   "n": "Talk, gather, use a waystone",
+   "d": "f"
+  },
+  {
+   "a": "auto",
+   "n": "Auto-combat",
+   "d": "e"
+  },
+  {
+   "a": "hp",
+   "n": "Health vial",
+   "d": "h"
+  },
+  {
+   "a": "mp",
+   "n": "Mana vial",
+   "d": "m"
+  },
+  {
+   "a": "quick",
+   "n": "Quick skill (first slot)",
+   "d": "q"
+  },
+  {
+   "a": "slot1",
+   "n": "Skill slot 1",
+   "d": "1"
+  },
+  {
+   "a": "slot2",
+   "n": "Skill slot 2",
+   "d": "2"
+  },
+  {
+   "a": "slot3",
+   "n": "Skill slot 3",
+   "d": "3"
+  },
+  {
+   "a": "slot4",
+   "n": "Skill slot 4",
+   "d": "4"
+  },
+  {
+   "a": "slot5",
+   "n": "Skill slot 5",
+   "d": "5"
+  },
+  {
+   "a": "slot6",
+   "n": "Skill slot 6",
+   "d": "6"
+  },
+  {
+   "a": "slot7",
+   "n": "Skill slot 7",
+   "d": "7"
+  },
+  {
+   "a": "slot8",
+   "n": "Skill slot 8",
+   "d": "8"
+  },
+  {
+   "a": "slot9",
+   "n": "Skill slot 9",
+   "d": "9"
+  },
+  {
+   "a": "slot10",
+   "n": "Skill slot 10",
+   "d": "0"
+  },
+  {
+   "a": "inv",
+   "n": "Inventory",
+   "d": "i"
+  },
+  {
+   "a": "att",
+   "n": "Attributes",
+   "d": "c"
+  },
+  {
+   "a": "skills",
+   "n": "Skill tree",
+   "d": "k"
+  },
+  {
+   "a": "quest",
+   "n": "Quest log",
+   "d": "l"
+  },
+  {
+   "a": "dun",
+   "n": "Dungeons",
+   "d": "j"
+  },
+  {
+   "a": "guild",
+   "n": "Guilds",
+   "d": "g"
+  },
+  {
+   "a": "coop",
+   "n": "Play Together",
+   "d": "o"
+  },
+  {
+   "a": "map",
+   "n": "World map",
+   "d": "n"
+  },
+  {
+   "a": "vault",
+   "n": "Vault",
+   "d": "b"
+  },
+  {
+   "a": "sub1",
+   "n": "Subclass ability 1",
+   "d": "z"
+  },
+  {
+   "a": "sub2",
+   "n": "Subclass ability 2",
+   "d": "x"
+  },
+  {
+   "a": "sub3",
+   "n": "Subclass ability 3",
+   "d": "r"
+  },
+  {
+   "a": "sub4",
+   "n": "Subclass ability 4",
+   "d": "t"
+  },
+  {
+   "a": "zoomin",
+   "n": "Zoom in",
+   "d": "="
+  },
+  {
+   "a": "zoomout",
+   "n": "Zoom out",
+   "d": "-"
+  },
+  {
+   "a": "hideui",
+   "n": "Hide the interface",
+   "d": "f8"
+  }
+ ],
+ "kbNote": "Click a key to change it, then press the new key. Backspace unbinds. Esc and the arrow keys always work. Click a monster to target it; click the quest tracker to auto-hunt."
+}

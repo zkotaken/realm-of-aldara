@@ -30,7 +30,8 @@ namespace Aldara
         {
             var go = new GameObject("WindowsUI"); go.transform.SetParent(transform, false); doc = go.AddComponent<UIDocument>(); doc.panelSettings = Resources.Load<PanelSettings>("UI/AldaraPanel"); doc.sortingOrder = 5;
             root = doc.rootVisualElement; root.pickingMode = PickingMode.Ignore; root.style.flexGrow = 1;
-            Register(new AldaraInvWin()); Register(new AldaraAttWin()); Register(new AldaraSkillWin()); Register(new AldaraSubWin());
+            Register(new AldaraInvWin()); Register(new AldaraAttWin()); Register(new AldaraSkillWin()); Register(new AldaraSubWin()); Register(new AldaraVaultWin()); Register(new AldaraMenuWin());
+            AldaraSettings.Apply();
         }
         public void Register(Win w) { wins[w.id] = w; }
         public bool Has(string id) { return wins.ContainsKey(id); }
@@ -57,6 +58,13 @@ namespace Aldara
             w.open = true; w.dirty = true; w.panel.style.display = DisplayStyle.Flex; w.panel.BringToFront(); w.OnOpen();
         }
         void Close(Win w) { if (!w.open) return; w.open = false; if (w.panel != null) w.panel.style.display = DisplayStyle.None; w.OnClose(); }
+        /// window size and opacity from the Interface settings
+        public void ApplySettings()
+        {
+            if (root == null) return; float s = AldaraSettings.F("ui", 1), a = AldaraSettings.F("winA", 1);
+            foreach (var w in wins.Values) if (w.panel != null) { w.panel.style.scale = new Scale(new Vector2(s, s)); w.panel.style.transformOrigin = new TransformOrigin(Length.Percent(w.X < 0 ? 50 : 0), 0); w.panel.style.opacity = a; }
+            Refresh();
+        }
         public void CloseAll() { foreach (var w in wins.Values) Close(w); }
         public bool AnyOpen() { foreach (var w in wins.Values) if (w.open) return true; return false; }
 
@@ -80,6 +88,7 @@ namespace Aldara
             close.RegisterCallback<ClickEvent>(e => Close(w));
             close.RegisterCallback<MouseEnterEvent>(e => close.style.unityBackgroundImageTintColor = new Color(1.3f, 1.3f, 1.3f, 1));
             close.RegisterCallback<MouseLeaveEvent>(e => close.style.unityBackgroundImageTintColor = Color.white);
+            p.style.opacity = AldaraSettings.F("winA", 1); float us = AldaraSettings.F("ui", 1); p.style.scale = new Scale(new Vector2(us, us)); p.style.transformOrigin = new TransformOrigin(Length.Percent(w.X < 0 ? 50 : 0), 0);
             w.body = E(p, "body"); w.body.style.flexGrow = 1; w.body.style.flexShrink = 1; w.body.style.minHeight = 0;
             p.style.display = DisplayStyle.None;
         }
@@ -87,13 +96,15 @@ namespace Aldara
 
         void Update()
         {
+            AldaraSettings.Tick();
             var kb = Keyboard.current;
-            if (kb != null && AldaraSave.Ready && !AldaraHud.Typing)
+            if (kb != null && AldaraSave.Ready && !AldaraHud.Typing && AldaraKeys.listening == null)
             {
-                if (kb.iKey.wasPressedThisFrame) Toggle("inv");
-                if (kb.cKey.wasPressedThisFrame) Toggle("att");
-                if (kb.kKey.wasPressedThisFrame) Toggle("skills");
-                if (kb.escapeKey.wasPressedThisFrame) CloseAll();
+                foreach (var w in new[] { "inv", "att", "skills", "vault" }) if (AldaraKeys.Pressed(w)) Toggle(w);
+                foreach (var w in new[] { "quest", "dun", "guild", "coop", "map" }) if (AldaraKeys.Pressed(w)) AldaraMenus.Open(w);
+                // Esc closes whatever is open; with nothing open it opens the Game Menu
+                if (kb.escapeKey.wasPressedThisFrame) { if (AnyOpen()) CloseAll(); else Toggle("set", true); }
+                if (kb.f11Key.wasPressedThisFrame && !Application.isEditor) AldaraMenuWin.ToggleFullscreen();
             }
             if (!AldaraSave.Ready) { CloseAll(); return; }
             foreach (var w in wins.Values)

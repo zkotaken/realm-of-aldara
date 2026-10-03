@@ -77,6 +77,8 @@ namespace Aldara
             P.x = F(j["x"], AldaraWorld.TOWN_SPAWN.x); P.y = F(j["y"], AldaraWorld.TOWN_SPAWN.y);
             if (AldaraWorld.BlockedAt(P.x, P.y)) { var f = AldaraPlayer.FreeSpotNear(P.x, P.y); P.x = f.x; P.y = f.y; }
         }
+        /// log out to character select: save first, as the browser does
+        public static void Logout() { Save(); slot = -1; raw = null; dirtyAt = -1; }
         public static void Save()
         {
             if (!Ready) return; var H = AldaraHero.I; var P = AldaraPlayer.I; if (!H || !P) return;

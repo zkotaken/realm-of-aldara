@@ -123,6 +123,7 @@ namespace Aldara
             catch (System.Exception e) { Debug.LogException(e); }
             vaultLoaded = true;
         }
+        public static void VaultSave() { VaultWrite(); }
         static void VaultWrite()
         {
             Directory.CreateDirectory(AldaraSave.UnityDir);

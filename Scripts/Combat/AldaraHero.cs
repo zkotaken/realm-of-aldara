@@ -219,10 +219,10 @@ namespace Aldara
                 if (best == null) { if (AldaraSkills.I) AldaraSkills.I.queued = null; FreeAttack(); }
             }
             var kb = Keyboard.current;
-            if (kb != null && kb.spaceKey.isPressed && atkCd <= 0 && !(target != null && !target.dead && InRange(target))) FreeAttack();
+            if (kb != null && AldaraKeys.Held("attack") && atkCd <= 0 && !(target != null && !target.dead && InRange(target))) FreeAttack();
             if (kb != null && kb.tabKey.wasPressedThisFrame) target = AldaraMonsters.I.FindNearest(P.x, P.y, 700);
-            if (kb != null && kb.hKey.wasPressedThisFrame && !AldaraHud.Typing) DrinkVial(true);
-            if (kb != null && kb.mKey.wasPressedThisFrame && !AldaraHud.Typing) DrinkVial(false);
+            if (AldaraKeys.Pressed("hp")) DrinkVial(true);
+            if (AldaraKeys.Pressed("mp")) DrinkVial(false);
             if (anim) anim.combat = (target != null && !target.dead) || Time.time - lastFight < 4f;
             UpdateShots(dt);
         }

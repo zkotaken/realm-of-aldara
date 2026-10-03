@@ -55,10 +55,10 @@ namespace Aldara
             float dx = 0, dy = 0;
             if (kb != null && (hero == null || hero.alive))
             {
-                if (kb.wKey.isPressed || kb.upArrowKey.isPressed) dy -= 1;
-                if (kb.sKey.isPressed || kb.downArrowKey.isPressed) dy += 1;
-                if (kb.aKey.isPressed || kb.leftArrowKey.isPressed) dx -= 1;
-                if (kb.dKey.isPressed || kb.rightArrowKey.isPressed) dx += 1;
+                if (AldaraKeys.Held("up") || kb.upArrowKey.isPressed) dy -= 1;
+                if (AldaraKeys.Held("down") || kb.downArrowKey.isPressed) dy += 1;
+                if (AldaraKeys.Held("left") || kb.leftArrowKey.isPressed) dx -= 1;
+                if (AldaraKeys.Held("right") || kb.rightArrowKey.isPressed) dx += 1;
             }
             if (dx != 0 || dy != 0)
             {

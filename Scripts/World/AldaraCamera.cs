@@ -30,7 +30,7 @@ namespace Aldara
             }
             Vector3 want = target ? target.position + new Vector3(0, 0, 18f / AldaraWorld.PX) : transform.position;
             if (!hasFocus || !Application.isPlaying) { focus = want; hasFocus = true; }
-            else focus = Vector3.Lerp(focus, want, 1 - Mathf.Exp(-follow * Time.deltaTime));
+            else focus = want;   // the browser keeps the camera locked on the hero
             Apply(cam, focus, zoom, viewHeightPx);
         }
         public static void Apply(Camera cam, Vector3 focus, float zoom, float viewHeightPx = 760f)

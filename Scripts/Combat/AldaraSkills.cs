@@ -52,8 +52,8 @@ namespace Aldara
             var keys = new List<string>(cds.Keys); foreach (var k in keys) if (cds[k] > 0) cds[k] -= dt;
             for (int i = delayed.Count - 1; i >= 0; i--) { delayed[i].t -= dt; if (delayed[i].t <= 0) { var d = delayed[i]; delayed.RemoveAt(i); d.fn(); } }
             var kb = Keyboard.current; if (kb == null || !H.alive || !AldaraSave.Ready || AldaraHud.Typing) return;
-            var slots = new[] { kb.digit1Key, kb.digit2Key, kb.digit3Key, kb.digit4Key, kb.digit5Key, kb.digit6Key, kb.digit7Key, kb.digit8Key, kb.digit9Key, kb.digit0Key };
-            for (int i = 0; i < slots.Length; i++) if (slots[i].wasPressedThisFrame) UseSlot(i);
+            for (int i = 0; i < 10; i++) if (AldaraKeys.Pressed("slot" + (i + 1))) UseSlot(i);
+            if (AldaraKeys.Pressed("quick")) UseSlot(0);
         }
         public void UseSlot(int i)
         {
