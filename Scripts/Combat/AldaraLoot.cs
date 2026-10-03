@@ -42,7 +42,7 @@ namespace Aldara
         }
         void SpawnCoins(AldaraMonsters.Mon t)
         {
-            float gold = Mathf.Max(1, Mathf.Round(t.gold)); int n = Mathf.Min(7, 2 + Mathf.FloorToInt(gold / 12) + (t.boss ? 3 : 0)); float per = Mathf.Max(1, Mathf.Floor(gold / n)), left = gold;
+            float gold = Mathf.Max(1, Mathf.Round(t.gold * (1 + AldaraTree.T("gold")))); int n = Mathf.Min(7, 2 + Mathf.FloorToInt(gold / 12) + (t.boss ? 3 : 0)); float per = Mathf.Max(1, Mathf.Floor(gold / n)), left = gold;
             for (int k = 0; k < n; k++)
             {
                 float v = k == n - 1 ? left : per; left -= v; float a = Random.value * Mathf.PI * 2, sp = 40 + Random.value * 90;

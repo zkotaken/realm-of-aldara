@@ -28,7 +28,6 @@ namespace Aldara
         void Update()
         {
             AldaraSave.Tick(); var kb = Keyboard.current; if (kb == null || !AldaraSave.Ready || AldaraHud.Typing) return;
-            if (kb.kKey.wasPressedThisFrame) Toggle(Win.Skills);
             if (kb.escapeKey.wasPressedThisFrame) open = Win.None;
         }
         void OnApplicationQuit() { AldaraSave.Save(); }

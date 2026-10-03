@@ -39,7 +39,7 @@ namespace Aldara
         public readonly List<Item> inventory = new List<Item>();
         public int vialHp, vialMp; float vialCdHp, vialCdMp;
         public string sub, title;
-        public int effStr, effAgi, effVit, effEne; public MythicSet setBonusSet; public int setBonusCount; public float setBonusPct;
+        public int effStr, effAgi, effVit, effEne; public int critFrame = -1; public MythicSet setBonusSet; public int setBonusCount; public float setBonusPct;
         public Item Eq(string slot) { Item i; return equip.TryGetValue(slot, out i) ? i : null; }
         public void Recompute()
         {
@@ -55,18 +55,19 @@ namespace Aldara
             float oldMax = maxHp, oldMana = maxMana;
             atk = baseAtk + Mathf.Floor(S_str / 4f) + atkFromEne + atkFromAgi + atkB;
             maxHp = baseHp + S_vit * 3 + hpB; speed = 220 + Mathf.Floor(S_agi / 8f) + spB;
+            atk = Mathf.Round(atk * (1 + AldaraTree.T("atk"))); maxHp = Mathf.Round(maxHp * (1 + AldaraTree.T("hp")));
             // mythical set bonus: 3 pieces +10%, 5 pieces +20%, 6 pieces +30% attack and HP
             var counts = new Dictionary<string, int>(); foreach (var sl in new[] { "helmet", "chest", "gauntlets", "leggings", "boots", "back" }) { var ms = AldaraItems.MythSetOf(Eq(sl)); if (ms != null) { int c; counts.TryGetValue(ms.id, out c); counts[ms.id] = c + 1; } }
             int best = 0; string bestId = null; foreach (var kv in counts) if (kv.Value > best) { best = kv.Value; bestId = kv.Key; }
             setBonusSet = null; setBonusCount = 0; setBonusPct = 0;
             if (best >= 3) { float pct = best >= 6 ? 0.3f : best >= 5 ? 0.2f : 0.1f; atk = Mathf.Round(atk * (1 + pct)); maxHp = Mathf.Round(maxHp * (1 + pct)); setBonusCount = best; setBonusPct = pct; setBonusSet = AldaraItems.MythSetById(bestId); }
             if (oldMax > 0) hp = Mathf.Min(maxHp, hp + (maxHp - oldMax));
-            maxMana = Mathf.Round(30 + S_ene * 3 + lvl * 2);
+            maxMana = Mathf.Round((30 + S_ene * 3 + lvl * 2) * (1 + AldaraTree.T("mana")));
             if (oldMana > 0) mana = Mathf.Min(maxMana, mana + (maxMana - oldMana));
             // Crown of Kings relic: attack, health and mana up by its value, speed by 1.5 times it
             float kb = AldaraGear.RelicV("kingsblessing");
             if (kb > 0) { float m0 = maxHp, n0 = maxMana; atk = Mathf.Round(atk * (1 + kb / 100)); maxHp = Mathf.Round(maxHp * (1 + kb / 100)); maxMana = Mathf.Round(maxMana * (1 + kb / 100)); speed += Mathf.Round(kb * 1.5f); if (oldMax > 0) hp = Mathf.Min(maxHp, hp + (maxHp - m0)); if (oldMana > 0) mana = Mathf.Min(maxMana, mana + (maxMana - n0)); }
-            if (P) { P.speed = speed; P.wings = Eq("wings") != null; }
+            if (P) { P.speed = speed * (1 + AldaraTree.T("spd")); P.wings = Eq("wings") != null; }
         }
         public bool AddLoot(Item it)
         {
@@ -113,16 +114,21 @@ namespace Aldara
         }
         public void GainXp(float n)
         {
-            xp += Mathf.Round(n);
+            xp += Mathf.Round(Mathf.Round(n) * (1 + AldaraTree.T("xp")));
             while (xp >= xpNeed)
             {
                 xp -= xpNeed; lvl++; xpNeed = AldaraRules.XpNeedFor(lvl);
-                baseHp += 18; baseAtk += 3; statPoints += 10;
+                baseHp += 18; baseAtk += 3; statPoints += 10; AldaraTree.sp++; AldaraTree.spTotal++;
                 Recompute(); hp = maxHp; mana = maxMana;
                 AldaraHud.Banner("LEVEL UP! Lv." + lvl); AldaraSave.Dirty();
             }
         }
-        public float RollDmg(float mult) { float b = atkBuff > 0 ? 1.3f : 1; return Mathf.Round(atk * mult * b * (0.8f + Random.value * 0.5f)); }
+        public float RollDmg(float mult)
+        {   // rollDmg: War Cry, the tree's damage bonus, and its critical strikes (x1.6)
+            float b = atkBuff > 0 ? 1.3f : 1; float d = atk * mult * b * (0.8f + Random.value * 0.5f) * (1 + AldaraTree.T("dmg"));
+            float cr = AldaraTree.T("crit"); if (cr > 0 && Random.value < cr) { d *= 1.6f; critFrame = Time.frameCount; }
+            return Mathf.Round(d);
+        }
         float AttackRange(AldaraMonsters.Mon t) { return cls == "archer" ? 280 : cls == "mage" ? 210 : t.r + 34; }
         float AtkCdNow() { return ATK_CD[cls] * (hasteBuff > 0 ? 0.6f : 1); }
         public void MarkFight() { lastFight = Time.time; }
@@ -131,6 +137,7 @@ namespace Aldara
         {
             if (!alive) return;
             if (srcLvl > 0) dmg = Mathf.Max(1, Mathf.Round(dmg * AldaraRules.LvIn(srcLvl - lvl)));
+            float blk = AldaraTree.T("block"); if (blk > 0) dmg = Mathf.Round(dmg * (1 - blk));
             if (shield > 0) { float ab = Mathf.Min(shield, dmg); shield -= ab; dmg -= ab; if (ab > 0) AldaraFx.Text(P.x + 14, P.y - 26, "(" + ab + ")", AldaraRules.Hex("#8ab4ff")); }
             hp -= dmg; hurt = 0.15f; lastFight = Time.time;
             if (dmg > 0) AldaraFx.Text(P.x, P.y - 26, "-" + dmg, AldaraRules.Hex("#ff6a6a"));
@@ -194,7 +201,7 @@ namespace Aldara
                 UpdateShots(dt); return;
             }
             if (atkCd > 0) atkCd -= dt;
-            mana = Mathf.Min(maxMana, mana + (2 + ene * 0.12f) * dt);
+            mana = Mathf.Min(maxMana, mana + (2 + effEne * 0.12f) * (1 + AldaraTree.T("mreg")) * dt);
             // click: the monster under the cursor (compared on screen, as the browser does with LZ); empty ground attacks there
             var mouse = Mouse.current;
             if (mouse != null && mouse.leftButton.wasPressedThisFrame && AldaraCamera.I && !AldaraHud.MouseOverUi())

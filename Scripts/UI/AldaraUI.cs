@@ -32,7 +32,7 @@ namespace Aldara
         // ---------- 9-slice skins (slice in CSS px; the art is 2x) ----------
         static readonly Dictionary<string, float> SLICE = new Dictionary<string, float> {
             { "panel", 14 }, { "win", 14 }, { "win_head", 6 }, { "eslot_bg", 8 }, { "eslot_line", 8 }, { "eslot_relic", 8 }, { "bp_bg", 10 }, { "bp_line", 8 },
-            { "sup_row", 10 }, { "btn", 8 }, { "btn_discard", 8 }, { "btn_blue", 8 }, { "btn_buy", 8 }, { "btn_gold", 8 }, { "btn_tab", 12 }, { "btn_tab_on", 12 },
+            { "sup_row", 10 }, { "btn", 8 }, { "btn_discard", 8 }, { "btn_blue", 8 }, { "btn_buy", 8 }, { "btn_equip", 8 }, { "btn_gold", 8 }, { "btn_tab", 12 }, { "btn_tab_on", 12 },
             { "select", 6 }, { "doll_btn", 7 }, { "worse_tag", 4 }, { "input", 6 }, { "tree_card", 10 }, { "dtab_on", 8 } };
         public static void Skin(VisualElement e, string tex, Color? tint = null)
         {

@@ -13,7 +13,7 @@ namespace Aldara
 
     // The class skills, ported from the browser (SKILL_DB, useSlot, castSelf, castSkill, updateSkills): keys 1-9 and 0,
     // cooldowns and mana, a target skill is queued until you are in range (or fires at the cursor with no target),
-    // self skills go off at once. Skills are bought with gold; the starter skill is free. (F9 unlocks all, for testing.)
+    // self skills go off at once. Skills are learned in the skill tree (AldaraTree). 
     public class AldaraSkills : MonoBehaviour
     {
         public static AldaraSkills I;
@@ -36,7 +36,7 @@ namespace Aldara
         public SkillDef Get(string id) { foreach (var s in classSkills) if (s.id == id) return s; return null; }
         public float Cd(string id) { float v; return cds.TryGetValue(id, out v) ? v : 0; }
         public bool Ready(SkillDef s) { return s != null && Cd(s.id) <= 0 && H.mana >= s.cost; }
-        void Spend(SkillDef s) { H.mana -= Mathf.Round(s.cost); cds[s.id] = s.cd; }
+        void Spend(SkillDef s) { H.mana -= Mathf.Round(s.cost * (1 - AldaraTree.T("mcost"))); cds[s.id] = s.cd * (1 - AldaraTree.T("cdr")); }
         public void Later_(float t, System.Action fn) { delayed.Add(new Later { t = t, fn = fn }); }
         List<AldaraMonsters.Mon> Nearby(float x, float y, float rad, AldaraMonsters.Mon except = null)
         {
@@ -54,7 +54,6 @@ namespace Aldara
             var kb = Keyboard.current; if (kb == null || !H.alive || !AldaraSave.Ready || AldaraHud.Typing) return;
             var slots = new[] { kb.digit1Key, kb.digit2Key, kb.digit3Key, kb.digit4Key, kb.digit5Key, kb.digit6Key, kb.digit7Key, kb.digit8Key, kb.digit9Key, kb.digit0Key };
             for (int i = 0; i < slots.Length; i++) if (slots[i].wasPressedThisFrame) UseSlot(i);
-            if (kb.f9Key.wasPressedThisFrame) { owned.Clear(); equipped.Clear(); foreach (var s in classSkills) { owned.Add(s.id); if (equipped.Count < 10) equipped.Add(s.id); } AldaraHud.Banner("All skills unlocked (test)"); }
         }
         public void UseSlot(int i)
         {
