@@ -8,7 +8,7 @@ namespace Aldara
     public static class AldaraDoll
     {
         public static float a = 0.4f; public static bool spin;
-        static GameObject rig, model; static Camera cam; static RenderTexture rt; static string builtCls;
+        static GameObject rig, model; static Camera cam; static RenderTexture rt; static string builtCls; static AldaraHeroGear gear;
         static VisualElement view; static float dragX = float.NaN, dragA;
         static readonly Vector3 HOME = new Vector3(-4000, 0, -4000);
 
@@ -24,13 +24,16 @@ namespace Aldara
                 cam.orthographic = true; cam.clearFlags = CameraClearFlags.SolidColor; cam.backgroundColor = new Color(0, 0, 0, 0); cam.nearClipPlane = 0.1f; cam.farClipPlane = 50;
                 rt = new RenderTexture(260, 600, 24, RenderTextureFormat.ARGB32) { name = "Doll", antiAliasing = 4 }; cam.targetTexture = rt;
             }
-            if (builtCls != H.cls || !model)
+            string want = AldaraHeroGear.BaseFor(H.cls, H.Eq("weapon"));
+            if (builtCls != want || !model)
             {
                 if (model) Object.Destroy(model);
-                var pf = Resources.Load<GameObject>("Heroes/Hero_" + H.cls); if (!pf) return;
-                model = Object.Instantiate(pf, rig.transform, false); model.name = "DollHero"; model.transform.localPosition = Vector3.zero; builtCls = H.cls;
+                var pf = AldaraHeroGear.Prefab(want); if (!pf) return;
+                model = Object.Instantiate(pf, rig.transform, false); model.name = "DollHero"; model.transform.localPosition = Vector3.zero; builtCls = want;
                 var an = model.GetComponent<AldaraCharacterAnimator>(); if (an) an.ApplyRest();
+                gear = model.GetComponent<AldaraHeroGear>();
             }
+            if (gear) gear.Apply(H.equip);
             Fit();
         }
         static void Fit()
@@ -58,10 +61,12 @@ namespace Aldara
         public static void Tick()
         {
             if (!rig || !model) return;
-            var H = AldaraHero.I; if (H && builtCls != H.cls) Build();
+            var H = AldaraHero.I; if (H && builtCls != AldaraHeroGear.BaseFor(H.cls, H.Eq("weapon"))) Build();
+            if (H && gear && gear.Apply(H.equip)) Fit();
             if (spin) a += Mathf.Min(0.1f, Time.unscaledDeltaTime) * 1.2f;
             float facing = Mathf.PI / 2 + a;   // the browser draws the doll at angle PI/2 + a
             model.transform.localRotation = Quaternion.Euler(0, 90 + facing * Mathf.Rad2Deg, 0);
+            if (gear) gear.ry = Mathf.Atan2(Mathf.Cos(facing), Mathf.Sin(facing));
         }
         class Ellipse : VisualElement
         {   // the soft shadow under the doll's feet (#0006)

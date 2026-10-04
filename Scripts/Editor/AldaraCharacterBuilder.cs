@@ -9,16 +9,21 @@ public static class AldaraCharacterBuilder
 {
     const string SRC = "Assets/_Aldara/Models/Chars";
     [MenuItem("Aldara/Build Heroes")]
-    public static void BuildAll() { foreach (var c in new[] { "knight", "mage", "archer" }) Build(c); AssetDatabase.SaveAssets(); }
+    public static void BuildAll() { foreach (var c in new[] { "knight", "knight_great", "mage", "archer" }) Build(c); AssetDatabase.SaveAssets(); }
 
-    public static GameObject Build(string cls)
+    /// a hero body from the gear export (the browser's GPU-detail model): hero_<base>.bytes (hierarchy and clips) and
+    /// gear_<base>.bytes (its meshes, keys n<i>)
+    public static GameObject Build(string id)
     {
-        var data = AssetDatabase.LoadAssetAtPath<TextAsset>("Assets/_Aldara/Resources/Chars/" + cls + ".bytes");
-        if (!data) { Debug.LogWarning("no hero data for " + cls); return null; }
+        string cls = id.StartsWith("knight") ? "knight" : id;
+        var data = AssetDatabase.LoadAssetAtPath<TextAsset>("Assets/_Aldara/Resources/Gear/hero_" + id + ".bytes");
+        var packTa = AssetDatabase.LoadAssetAtPath<TextAsset>("Assets/_Aldara/Resources/Gear/gear_" + id + ".bytes");
+        if (!data || !packTa) { Debug.LogWarning("no hero data for " + id); return null; }
+        var pack = new AldaraGearPack(packTa.bytes);
         int N; int[] par;
         using (var r = new BinaryReader(new MemoryStream(data.bytes))) { r.ReadChars(4); N = r.ReadInt32(); par = new int[N]; for (int i = 0; i < N; i++) par[i] = r.ReadInt32(); }
         var mat = AldaraMeshIO.VertexLit("Hero", 0);
-        var root = new GameObject("Hero_" + cls);
+        var root = new GameObject("Hero_" + id);
         var rig = new GameObject("Rig"); rig.transform.SetParent(root.transform, false); rig.transform.localRotation = Quaternion.Euler(0, 180, 0);
         var T = new Transform[N];
         Directory.CreateDirectory(SRC + "/Meshes");
@@ -26,11 +31,11 @@ public static class AldaraCharacterBuilder
         {
             var go = new GameObject("n" + i); T[i] = go.transform;
             go.transform.SetParent(par[i] < 0 ? rig.transform : T[par[i]], false);
-            var mb = AssetDatabase.LoadAssetAtPath<TextAsset>(SRC + "/" + cls + "_n" + i + ".amesh.bytes");
-            if (mb)
+            var src = pack.Get("n" + i);
+            if (src)
             {
-                string mp = SRC + "/Meshes/" + cls + "_n" + i + ".asset";
-                var mesh = AldaraMeshIO.Read(mb.bytes, cls + "_n" + i);
+                string mp = SRC + "/Meshes/" + id + "_n" + i + ".asset";
+                var mesh = Object.Instantiate(src); mesh.name = id + "_n" + i;
                 var ex = AssetDatabase.LoadAssetAtPath<Mesh>(mp); if (ex) { EditorUtility.CopySerialized(mesh, ex); mesh = ex; } else AssetDatabase.CreateAsset(mesh, mp);
                 go.AddComponent<MeshFilter>().sharedMesh = mesh;
                 var mr = go.AddComponent<MeshRenderer>(); mr.sharedMaterial = mat;
@@ -39,9 +44,10 @@ public static class AldaraCharacterBuilder
         var an = root.AddComponent<AldaraCharacterAnimator>(); an.data = data; an.cls = cls;
         an.strideK = cls == "mage" ? 0.082f : cls == "archer" ? 0.074f : 0.078f;
         an.Load(); an.ApplyRest();
+        var gr = root.AddComponent<AldaraHeroGear>(); gr.baseId = id; gr.cls = cls;
         Directory.CreateDirectory("Assets/_Aldara/Prefabs");
-        var pf = PrefabUtility.SaveAsPrefabAsset(root, "Assets/_Aldara/Prefabs/Hero_" + cls + ".prefab");
-        Directory.CreateDirectory("Assets/_Aldara/Resources/Heroes"); PrefabUtility.SaveAsPrefabAsset(root, "Assets/_Aldara/Resources/Heroes/Hero_" + cls + ".prefab");
+        var pf = PrefabUtility.SaveAsPrefabAsset(root, "Assets/_Aldara/Prefabs/Hero_" + id + ".prefab");
+        Directory.CreateDirectory("Assets/_Aldara/Resources/Heroes"); PrefabUtility.SaveAsPrefabAsset(root, "Assets/_Aldara/Resources/Heroes/Hero_" + id + ".prefab");
         Object.DestroyImmediate(root);
         return pf;
     }

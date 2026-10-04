@@ -68,6 +68,7 @@ namespace Aldara
             float kb = AldaraGear.RelicV("kingsblessing");
             if (kb > 0) { float m0 = maxHp, n0 = maxMana; atk = Mathf.Round(atk * (1 + kb / 100)); maxHp = Mathf.Round(maxHp * (1 + kb / 100)); maxMana = Mathf.Round(maxMana * (1 + kb / 100)); speed += Mathf.Round(kb * 1.5f); if (oldMax > 0) hp = Mathf.Min(maxHp, hp + (maxHp - m0)); if (oldMana > 0) mana = Mathf.Min(maxMana, mana + (maxMana - n0)); }
             if (P) { P.speed = speed * (1 + AldaraTree.T("spd")); P.wings = Eq("wings") != null; }
+            AldaraHeroGear.SyncPlayer();
         }
         public bool AddLoot(Item it)
         {

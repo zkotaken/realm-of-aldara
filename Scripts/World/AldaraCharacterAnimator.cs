@@ -15,11 +15,14 @@ namespace Aldara
         public bool combat;
         public float strideK = 0.078f;  // browser walkT per px (knight .078, mage .082, archer .074)
 
-        class Clip { public string name; public bool loop; public float dur; public int F; public float[] d; }
+        class Clip { public string name; public bool loop; public float dur; public int F; public float[] d; public int A; public float[] ax; }
         int N; Transform[] T; readonly Dictionary<string, Clip> clips = new Dictionary<string, Clip>();
         Clip baseClip, prevBase, oneShot; float baseT, prevBaseT, baseFade = 1, oneT, oneFadeIn, oneFadeOut;
         bool moving, back; float pxSpeed; float idleFor;
         float[] bufA, bufB;
+        /// the browser's pose values the cloth follows (hips and knees, lean, flow, speed), blended like the pose
+        public readonly float[] aux = new float[13]; readonly float[] auxB = new float[13];
+        public bool Moving { get { return moving; } }
 
         void Awake() { Load(); }
         public void Load()
@@ -27,12 +30,13 @@ namespace Aldara
             if (data == null) return; clips.Clear();
             using (var r = new BinaryReader(new MemoryStream(data.bytes)))
             {
-                r.ReadChars(4); N = r.ReadInt32(); for (int i = 0; i < N; i++) r.ReadInt32();
+                bool v2 = new string(r.ReadChars(4)) == "ACH2"; N = r.ReadInt32(); for (int i = 0; i < N; i++) r.ReadInt32();
                 int C = r.ReadInt32();
                 for (int c = 0; c < C; c++)
                 {
                     var k = new Clip { name = r.ReadString(), loop = r.ReadByte() != 0, dur = r.ReadSingle() }; k.F = r.ReadInt32();
                     k.d = new float[k.F * N * 8]; for (int i = 0; i < k.d.Length; i++) k.d[i] = r.ReadSingle();
+                    if (v2) { k.A = r.ReadInt32(); k.ax = new float[k.F * k.A]; for (int i = 0; i < k.ax.Length; i++) k.ax[i] = r.ReadSingle(); }
                     clips[k.name] = k;
                 }
             }
@@ -79,8 +83,8 @@ namespace Aldara
             idleFor = (!moving && !combat && oneShot == null) ? idleFor + dt : 0;
             if (idleFor > 9f) { idleFor = 0; Play(Random.value < 0.5f ? "fidget1" : "fidget2"); }
 
-            Sample(baseClip, baseT, bufA);
-            if (prevBase != null && baseFade < 1) { Sample(prevBase, prevBaseT, bufB); Mix(bufB, bufA, baseFade, bufA); }
+            Sample(baseClip, baseT, bufA); SampleAux(baseClip, baseT, aux);
+            if (prevBase != null && baseFade < 1) { Sample(prevBase, prevBaseT, bufB); Mix(bufB, bufA, baseFade, bufA); SampleAux(prevBase, prevBaseT, auxB); MixAux(auxB, aux, baseFade, aux); }
             if (oneShot != null)
             {
                 oneT += dt * oneSpeed;
@@ -95,7 +99,7 @@ namespace Aldara
                         if (oneShot.name == "clip_death") { u = 1; }
                         else { oneFadeOut += dt * 8; w *= Mathf.Max(0, 1 - oneFadeOut); if (w <= 0) oneShot = null; u = 1; }
                     }
-                    if (oneShot != null) { Sample(oneShot, Mathf.Min(u, 1) * oneShot.dur, bufB); Mix(bufA, bufB, w, bufA); }
+                    if (oneShot != null) { Sample(oneShot, Mathf.Min(u, 1) * oneShot.dur, bufB); Mix(bufA, bufB, w, bufA); SampleAux(oneShot, Mathf.Min(u, 1) * oneShot.dur, auxB); MixAux(aux, auxB, w, aux); }
                 }
             }
             Apply(bufA);
@@ -114,6 +118,14 @@ namespace Aldara
                 o[i + 7] = Mathf.Lerp(c.d[sa + i + 7], c.d[sb + i + 7], u);
             }
         }
+        void SampleAux(Clip c, float t, float[] o)
+        {
+            if (c.ax == null || c.A == 0) { for (int i = 0; i < o.Length; i++) o[i] = 0; return; }
+            float f; if (c.loop) { f = Mathf.Repeat(t / c.dur, 1f) * (c.F - 1); } else f = Mathf.Clamp01(t / c.dur) * (c.F - 1);
+            int a = Mathf.Min(c.F - 1, (int)f), b = Mathf.Min(c.F - 1, a + 1); float u = f - a;
+            for (int i = 0; i < o.Length && i < c.A; i++) o[i] = Mathf.Lerp(c.ax[a * c.A + i], c.ax[b * c.A + i], u);
+        }
+        static void MixAux(float[] a, float[] b, float w, float[] o) { for (int i = 0; i < o.Length; i++) o[i] = Mathf.Lerp(a[i], b[i], w); }
         static Quaternion Q(float[] d, int o) { return new Quaternion(d[o], d[o + 1], d[o + 2], d[o + 3]); }
         void Mix(float[] a, float[] b, float w, float[] o)
         {
