@@ -49,18 +49,29 @@ namespace Aldara
             AldaraSkills.I.Load(cls); AldaraTree.Init(null); AldaraQuests.Init(raw); H.Recompute(); H.hp = H.maxHp; H.mana = H.maxMana;
             Save();
         }
+        static readonly Dictionary<string, string> PET_RENAME = new Dictionary<string, string> {
+            { "Stray Kitten", "Starfur Kitten" }, { "Loyal Hound", "Runic Warhound" }, { "Forest Sprite", "Bloom Sprite" }, { "Stone Golemling", "Crystal Golemling" }, { "Runed Owl", "Arcane Owl" }, { "Baby Wyrmling", "Ember Wyrmling" },
+            { "Frost Pup", "Glacier Wolfling" }, { "Healing Wisp", "Lumen Wisp" }, { "Ember Fox", "Ninetail Flamefox" }, { "Shadow Cat", "Umbral Panther" }, { "Moss Turtle", "Grove Tortoise" }, { "Thunder Hawk", "Storm Griffon" },
+            { "Crystal Beetle", "Prism Scarab" }, { "Battle Boar", "Infernal Boar" }, { "Spirit Deer", "Moonlit Stag" }, { "Iron Golem", "Runeforged Sentinel" } };
         public static void Load(int s)
         {
-            var j = JObject.Parse(File.ReadAllText(PathOf(UnityDir, s))); raw = j; slot = s;
+            // saves from the short-lived Cloth Hood get their Cloth Cap back
+            var j = JObject.Parse(File.ReadAllText(PathOf(UnityDir, s)).Replace("\"Cloth Hood\"", "\"Cloth Cap\"")); raw = j; slot = s;
             var H = AldaraHero.I; var P = AldaraPlayer.I;
             string cls = (string)j["cls"] ?? "knight"; ApplyClass(cls);
             H.heroName = (string)j["name"] ?? "Adventurer";
-            H.lvl = (int)F(j["lvl"], 1); H.xp = F(j["xp"]); H.xpNeed = F(j["xpNeed"], AldaraRules.XpNeedFor(H.lvl)); H.gold = F(j["gold"]);
+            // the experience curve changed: keep the same share of the level
+            H.lvl = (int)F(j["lvl"], 1); { float on = Mathf.Max(1, F(j["xpNeed"], 100)), nn = AldaraRules.XpNeedFor(H.lvl); H.xpNeed = nn; H.xp = Mathf.Max(0, Mathf.Min(nn - 1, Mathf.Round(F(j["xp"]) / on * nn))); } H.gold = F(j["gold"]);
             H.baseAtk = F(j["baseAtk"], H.baseAtk); H.baseHp = F(j["baseHp"], H.baseHp);
             H.str = (int)F(j["str"], H.str); H.agi = (int)F(j["agi"], H.agi); H.vit = (int)F(j["vit"], H.vit); H.ene = (int)F(j["ene"], H.ene); H.statPoints = (int)F(j["statPoints"]);
             H.equip.Clear(); if (j["equip"] is JObject eq) foreach (var kv in eq) { var it = ItemOf(kv.Value); if (it != null) H.equip[kv.Key] = it; }
             H.inventory.Clear(); if (j["inventory"] is JArray inv) foreach (var t in inv) { var it = ItemOf(t); if (it != null) H.inventory.Add(it); }
             AldaraItems.itemSeq = (int)F(j["itemSeq"], 1000);
+            // pets renamed since the save was made
+            System.Action<Item> migPet = it => { string nn; if (it != null && it.type == "pet" && it.name != null && PET_RENAME.TryGetValue(it.name, out nn)) it.name = nn; };
+            migPet(H.Eq("pet")); foreach (var it in H.inventory) migPet(it);
+            // a weapon for another class can't stay equipped: it goes to the backpack
+            var wpn = H.Eq("weapon"); if (wpn != null && !AldaraItems.CanUse(wpn, cls)) { H.inventory.Add(wpn); H.equip.Remove("weapon"); }
             if (j["potions"] is JObject po) { H.vialHp = (int)F(po["hp"]); H.vialMp = (int)F(po["mp"]); }
             if (j["stats"] is JObject st) { H.kills = (int)F(st["kills"]); H.bossKills = (int)F(st["bosses"]); H.deaths = (int)F(st["deaths"]); }
             H.title = (string)j["title"]; H.sub = (string)j["sub"]; AldaraGear.VaultLoad(); if (j["titlesKnown"] == null) AldaraGear.CheckTitles(true); AldaraGuild.Sync(true);
@@ -74,7 +85,10 @@ namespace Aldara
             }
             AldaraTree.Init(j); AldaraQuests.Init(j);
             H.maxHp = 0; H.maxMana = 0; H.Recompute(); H.hp = H.maxHp; H.mana = H.maxMana;
+            if (H.title != null) { var tt = AldaraGear.TitleById(H.title); if (tt == null || !tt.ok()) H.title = null; }
             P.x = F(j["x"], AldaraWorld.TOWN_SPAWN.x); P.y = F(j["y"], AldaraWorld.TOWN_SPAWN.y);
+            // the world map was redrawn (wv 3): an older save, or one standing in the sea, starts in town
+            if ((int)F(j["wv"], 0) != 3 || AldaraMapWin.Sea(P.x, P.y)) { P.x = AldaraWorld.TOWN_SPAWN.x; P.y = AldaraWorld.TOWN_SPAWN.y; }
             if (AldaraWorld.BlockedAt(P.x, P.y)) { var f = AldaraPlayer.FreeSpotNear(P.x, P.y); P.x = f.x; P.y = f.y; }
         }
         /// log out to character select: save first, as the browser does
@@ -83,7 +97,7 @@ namespace Aldara
         {
             if (!Ready) return; var H = AldaraHero.I; var P = AldaraPlayer.I; if (!H || !P) return;
             var j = raw ?? new JObject();
-            j["name"] = H.heroName; j["cls"] = H.cls;
+            j["name"] = H.heroName; j["cls"] = H.cls; j["wv"] = 3; j["qv"] = 2;
             // in a dungeon the save keeps where you entered it (the browser's dungeon.ret)
             float sx = AldaraDungeon.Active ? AldaraDungeon.Ret.x : P.x, sy = AldaraDungeon.Active ? AldaraDungeon.Ret.y : P.y;
             if (j["x"] == null || Mathf.Abs((float)j["x"] - sx) > 0.01f || Mathf.Abs((float)j["y"] - sy) > 0.01f) { j["x"] = sx; j["y"] = sy; } j["lvl"] = H.lvl; j["xp"] = H.xp; j["xpNeed"] = H.xpNeed; j["gold"] = H.gold;
