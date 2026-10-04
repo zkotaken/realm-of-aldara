@@ -92,6 +92,7 @@ namespace Aldara
         static readonly Dictionary<string, string> SKCOL = new Dictionary<string, string> { { "fireball", "#ff8a3a" }, { "ice_shard", "#8fdfff" }, { "chain_lightning", "#cfe0ff" }, { "meteor", "#ff6a1a" }, { "frost_nova", "#8fdfff" }, { "arcane_missiles", "#c07aff" }, { "blizzard", "#bfefff" }, { "arcane_cataclysm", "#c07aff" }, { "rejuvenate", "#7fffb0" }, { "arcane_barrier", "#8ab4ff" }, { "blink", "#b07aff" } };
         void CastSelf(SkillDef sk, bool raw = false)
         {
+            if (!raw) AldaraSound.Skill(sk);
             if (!raw && (sk.sub != null || sk.custom != null)) { AldaraSubclass.CastSub(sk, null); return; }
             Spend(sk); AldaraFx.Text(P.x, P.y - 42, sk.name, Hx("#9fb4ff")); H.PlaySkill(sk.id);
             string sc; if (SKCOL.TryGetValue(sk.id, out sc)) H.castCol = Hx(sc);
@@ -137,6 +138,7 @@ namespace Aldara
         }
         void CastTarget(AldaraMonsters.Mon t, SkillDef sk, bool raw = false)
         {
+            if (!raw) AldaraSound.Skill(sk);
             if (!raw && (sk.sub != null || sk.custom != null)) { AldaraSubclass.CastSub(sk, t); return; }
             if (t.dummy && H.cls == "knight" && sk.id != "ground_slam") { var mm = H.MeleeArcTarget(70); if (mm != null) t = mm; }
             Spend(sk); AldaraRelics.OnCast();

@@ -92,7 +92,7 @@ namespace Aldara
             var core = Flat(disc, new Color(1, 0.83f, 0.35f, 0.7f), "core"); core.transform.SetParent(g.transform, false); core.transform.localScale = new Vector3(0.45f, 1, 0.45f); core.transform.localPosition = Vector3.up * 0.01f;
             return g;
         }
-        public static void Text(float x, float y, string s, Color c) { texts.Add(new FloatText { x = x, y = y, text = s, col = c }); if (texts.Count > 80) texts.RemoveAt(0); }
+        public static void Text(float x, float y, string s, Color c) { AldaraSound.Text(s); texts.Add(new FloatText { x = x, y = y, text = s, col = c }); if (texts.Count > 80) texts.RemoveAt(0); }
 
         void Update()
         {

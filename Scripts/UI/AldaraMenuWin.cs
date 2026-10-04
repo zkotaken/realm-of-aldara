@@ -76,7 +76,7 @@ namespace Aldara
                     case "row": SetRow(c, it); break;
                     case "btns":
                         var bp = Row(c, 6); bp.style.flexWrap = Wrap.Wrap; bp.style.marginTop = 6; bp.style.marginBottom = 8;
-                        foreach (var b in it.b) { string on = b.on; var x = B(bp, b.t, () => Preset(on), b.cls == "gold" ? "btn_gold" : b.cls == "warn" ? "btn_buy" : "btn", 11); x.Padding(5, 10); x.style.marginBottom = 4; }
+                        foreach (var b in it.b) { string on = b.on, bt = b.t; var x = B(bp, b.t, () => { if (bt == "Play a test sound") AldaraSound.Test(); else Preset(on); }, b.cls == "gold" ? "btn_gold" : b.cls == "warn" ? "btn_buy" : "btn", 11); x.Padding(5, 10); x.style.marginBottom = 4; }
                         ApplyGapLater(bp); break;
                     case "btn": if (it.id == "gpuApply") { var g = SetBtn(c, it.t, null); g.Disabled = true; } break;
                     case "note": if (!string.IsNullOrEmpty(it.t)) Note(c, it.t); break;

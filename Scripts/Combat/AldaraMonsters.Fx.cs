@@ -179,7 +179,7 @@ namespace Aldara
         void HurtPlayer(Mon m, MoveDef mv, float a, float mult = 1, bool roar = false)
         {
             var H = AldaraHero.I; if (!H.alive) return;
-            AldaraHero.LvSrc = m; try { H.Damage(Dmg(m, mv, mult), a, m.lvl); } finally { AldaraHero.LvSrc = null; }
+            AldaraHero.LvSrc = m; AldaraSound.HurtBegin(); try { H.Damage(Dmg(m, mv, mult), a, m.lvl); } finally { AldaraHero.LvSrc = null; AldaraSound.HurtEnd(m, mv); }
             if (mv.slow > 0) H.slowT = Mathf.Max(H.slowT, mv.slow);
             if (mv.kb > 0 && !roar) Knock(a, mv.kb);
             var E = Elc(mv.el); var P = AldaraPlayer.I; float dm = mv.dmg > 0 ? mv.dmg : 1;
@@ -214,6 +214,7 @@ namespace Aldara
         // ---- spawning ----
         void SpawnProj(Mon m, MoveDef mv, float ang, bool ground)
         {
+            AldaraSound.Shot(m, mv);
             var E = Elc(mv.el); float sp = mv.spd > 0 ? mv.spd : 400; string look = string.IsNullOrEmpty(mv.look) ? "orb" : mv.look;
             eproj.Add(new Proj { x = m.x + Mathf.Cos(ang) * m.r * 0.8f, y = m.y + Mathf.Sin(ang) * m.r * 0.8f, vx = Mathf.Cos(ang) * sp, vy = Mathf.Sin(ang) * sp, dmg = Dmg(m, mv), col = E[0], c2 = E[1],
                 life = (MvMax(m, mv) + 160) / sp, look = look, rad = look == "flamewave" ? 26 : look == "lance" || look == "spear" ? 9 : 7, h = look == "flamewave" ? 0 : Chest(m) * 1.1f, slow = mv.slow, kb = mv.kb,

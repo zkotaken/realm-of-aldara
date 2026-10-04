@@ -106,8 +106,8 @@ namespace Aldara
             if ((health ? vialCdHp : vialCdMp) > 0) return false;
             if (health && hp >= maxHp) { if (!auto) AldaraFx.Text(P.x, P.y - 26, "HP already full", AldaraRules.Hex("#aaaabb")); return false; }
             if (!health && mana >= maxMana) { if (!auto) AldaraFx.Text(P.x, P.y - 26, "MP already full", AldaraRules.Hex("#aaaabb")); return false; }
-            if (health) { vialHp--; vialCdHp = 2; float amt = Mathf.Round(maxHp * 0.4f), hb = hp; hp = Mathf.Min(maxHp, hp + amt); DStat.Heal(hp - hb); AldaraFx.Text(P.x, P.y - 26, "+" + amt + " HP", AldaraRules.Hex("#7fe07f")); }
-            else { vialMp--; vialCdMp = 2; float amt = Mathf.Round(maxMana * 0.5f); mana = Mathf.Min(maxMana, mana + amt); AldaraFx.Text(P.x, P.y - 26, "+" + amt + " MP", AldaraRules.Hex("#8aa8ff")); }
+            if (health) { AldaraSound.Vial(true); vialHp--; vialCdHp = 2; float amt = Mathf.Round(maxHp * 0.4f), hb = hp; hp = Mathf.Min(maxHp, hp + amt); DStat.Heal(hp - hb); AldaraFx.Text(P.x, P.y - 26, "+" + amt + " HP", AldaraRules.Hex("#7fe07f")); }
+            else { AldaraSound.Vial(false); vialMp--; vialCdMp = 2; float amt = Mathf.Round(maxMana * 0.5f); mana = Mathf.Min(maxMana, mana + amt); AldaraFx.Text(P.x, P.y - 26, "+" + amt + " MP", AldaraRules.Hex("#8aa8ff")); }
             AldaraSave.Dirty(); return true;
         }
         public void SpendPoint(string stat)
@@ -118,7 +118,7 @@ namespace Aldara
         }
         public void GainXp(float n)
         {
-            xp += Mathf.Round(Mathf.Round(n) * (1 + AldaraTree.T("xp")));
+            xp += Mathf.Round(Mathf.Round(n) * (1 + AldaraTree.T("xp"))); if (xp >= xpNeed) AldaraSound.LevelUp();
             while (xp >= xpNeed)
             {
                 xp -= xpNeed; lvl++; xpNeed = AldaraRules.XpNeedFor(lvl);
@@ -148,7 +148,7 @@ namespace Aldara
         {
             if (!alive) return; bool env = srcLvl < 0; AldaraPlayer.lastCombat = Time.time;
             dmg = AldaraSubclass.PreDamage(dmg, LvSrc, env); if (dmg < 0) return;
-            float hp0 = hp; DamageCore(dmg, ang, srcLvl);
+            float hp0 = hp, sh0 = shield; DamageCore(dmg, ang, srcLvl); AldaraSound.Damaged(sh0, hp0);
             AldaraSubclass.PostDamage(Mathf.Max(0, hp0 - hp), LvSrc, env);
         }
         void DamageCore(float dmg, float ang, int srcLvl)
@@ -346,6 +346,7 @@ namespace Aldara
         void PlayBasic() { AldaraHudBar.PopAbility(cls == "knight" ? "a" + (combo + 1) : "basic"); if (!anim) return; if (cls == "knight") anim.Play("a" + (combo + 1)); else anim.Play("basic" + (combo + 1)); }
         void BasicAttack(AldaraMonsters.Mon t)
         {
+            AldaraSound.Basic();
             if (cls == "knight") { StartCombo(); PlayBasic(); AldaraSkillFx.KnightSlash(t.x, t.y, combo, swing.dur); AldaraMonsters.I.HitMonster(t, RollDmg(1), AldaraRules.Hex("#ffd35a")); AldaraVfx.Burst(t.x, t.y, AldaraRules.Hex("#ffe8a0"), 6, 120); }
             else if (cls == "mage")
             {
@@ -370,7 +371,7 @@ namespace Aldara
                     if (m.dead || !AldaraDungeon.Reachable(m)) continue; float d = Mathf.Sqrt((m.x - P.x) * (m.x - P.x) + (m.y - P.y) * (m.y - P.y)); if (d > 50 + m.r) continue;
                     if (Mathf.Abs(AldaraRules.AngD(Mathf.Atan2(m.y - P.y, m.x - P.x), ang)) < 1.1f) hits.Add(m);
                 }
-                AldaraSkillFx.KnightSlash(P.x + Mathf.Cos(ang) * 34, P.y + Mathf.Sin(ang) * 34, combo, swing.dur);
+                AldaraSkillFx.KnightSlash(P.x + Mathf.Cos(ang) * 34, P.y + Mathf.Sin(ang) * 34, combo, swing.dur); AldaraSound.FreeSwing();
                 for (int i = 0; i < hits.Count && i < 3; i++) { AldaraMonsters.I.HitMonster(hits[i], RollDmg(1), AldaraRules.Hex("#ffd35a")); AldaraVfx.Burst(hits[i].x, hits[i].y, AldaraRules.Hex("#ffe8a0"), 6, 120); }
             }
             else { var at = AimPoint(true); BasicAttack(AldaraSkills.Dummy(at.x, at.y)); }

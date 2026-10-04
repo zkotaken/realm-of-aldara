@@ -38,7 +38,7 @@ namespace Aldara
             Mv("Astraeus, the Fallen Star", "sweep", "Comet", "barrage", "Comet", "nova", "Nova", "rain", "Starfall");
         }
         class Data { public GameObject pf; public Dictionary<string, AnimationClip> clips = new Dictionary<string, AnimationClip>(); public List<string> atk = new List<string>(); public Dictionary<string, float> hit = new Dictionary<string, float>(); public Material[][] mats; public Mesh[] meshes; }
-        static readonly Dictionary<string, Data> cache = new Dictionary<string, Data>();
+        static readonly Dictionary<string, Data> cache = new Dictionary<string, Data>(); static Newtonsoft.Json.Linq.JObject meta;
         static string File(string name) { return name.Replace(",", "").Replace(" ", "_"); }
         static Data Get(string name)
         {
@@ -49,6 +49,9 @@ namespace Aldara
             foreach (var k in new List<string>(d.clips.Keys)) if (k != "Idle" && k != "Walk" && k != "Hit" && k != "Death") d.atk.Add(k);
             d.atk.Sort(System.StringComparer.Ordinal);
             if (!d.clips.ContainsKey("Idle")) { cache[name] = null; return null; }
+            // the strike moments the browser stores with each clip
+            if (meta == null) { var ta = Resources.Load<TextAsset>("bossm_meta"); meta = ta ? Newtonsoft.Json.Linq.JObject.Parse(ta.text) : new Newtonsoft.Json.Linq.JObject(); }
+            var mj = meta[name] as Newtonsoft.Json.Linq.JObject; if (mj != null && mj["clips"] is Newtonsoft.Json.Linq.JObject cj) foreach (var kv in cj) { var hv = kv.Value["hit"]; if (hv != null && hv.Type != Newtonsoft.Json.Linq.JTokenType.Null) d.hit[kv.Key] = (float)hv; }
             return cache[name] = d;
         }
         public static bool Has(string name) { return Get(name) != null; }
