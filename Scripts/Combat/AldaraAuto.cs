@@ -18,6 +18,7 @@ namespace Aldara
 
         public static void Set(bool v)
         {
+            if (v && AldaraWilds.InMoor) { AldaraHud.Banner("Auto-combat does not work in the Bloodmoor"); return; }
             on = v;
             if (v && AldaraSave.Ready) AldaraHud.Banner("Auto-combat on: 25% less damage and slower attacks");
             if (!v) { questHunt = false; questWalk = null; }

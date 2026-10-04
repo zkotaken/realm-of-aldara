@@ -243,6 +243,9 @@ namespace Aldara
         VisualElement autoBtn; bool autoShown;
         /// F8: the interface hidden for a clean view (Esc brings it back)
         public static bool Hidden;
+        /// the zone name glows red on the Bloodmoor (#zone.pvp)
+        public static void ZonePvp(bool on) { if (!I || I.zone == null) return; I.zonePvp = on; }
+        bool zonePvp, zoneShown; Color zoneCol0; bool zoneCol0Set;
         void Update()
         {
             if (root == null) return; var H = AldaraHero.I; var P = AldaraPlayer.I;
@@ -257,6 +260,8 @@ namespace Aldara
             tfRoot.style.display = show && showTarget ? DisplayStyle.Flex : DisplayStyle.None;
             if (show) { tfName.text = (t0.boss ? "Boss: " : "") + t0.name; tfLvl.text = "Lv " + t0.lvl; tfClip.style.width = tfW * Mathf.Clamp01(t0.hp / t0.maxHp); tfHpT.text = Mathf.CeilToInt(Mathf.Max(0, t0.hp)) + " / " + t0.maxHp; tfLvl.style.color = LvColor(t0.lvl - H.lvl); }
             zone.text = AldaraWorld.ZoneName(P.x, P.y);
+            if (!zoneCol0Set) { zoneCol0 = zone.style.color.keyword == StyleKeyword.Undefined ? zone.style.color.value : zone.resolvedStyle.color; zoneCol0Set = true; }
+            if (zonePvp != zoneShown) { zoneShown = zonePvp; zone.style.color = zonePvp ? AldaraRules.Hex("#ff8a7a") : zoneCol0; zone.style.textShadow = zonePvp ? new TextShadow { color = new Color(1, 60 / 255f, 40 / 255f, 0.7f), offset = Vector2.zero, blurRadius = 8 } : new StyleTextShadow(StyleKeyword.Null); }
             float odt = Mathf.Min(0.05f, Time.unscaledDeltaTime); orbHp.Tick(H.maxHp > 0 ? H.hp / H.maxHp : 0, odt); orbMp.Tick(H.maxMana > 0 ? H.mana / H.maxMana : 0, odt);
             orbHpT.text = Mathf.CeilToInt(Mathf.Max(0, H.hp)).ToString(); orbMpT.text = Mathf.FloorToInt(H.mana).ToString();
             xpClip.style.width = xpW * Mathf.Clamp01(H.xp / H.xpNeed); xpT.text = H.xp.ToString("N0") + " / " + H.xpNeed.ToString("N0") + " XP";

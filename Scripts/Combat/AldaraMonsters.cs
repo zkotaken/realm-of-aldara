@@ -30,6 +30,8 @@ namespace Aldara
             public bool dummy;
             /// subclass state: Death Mark time, an Ambush already spent on it
             public float markT; public bool amb;
+            /// a Kingsroad ambusher ('bandit' or 'warg'): it never comes back on its own
+            public string ambush;
             public Renderer[] rends; public bool flashOn;
         }
 
@@ -319,7 +321,7 @@ namespace Aldara
         void KillMonster(Mon t)
         {
             var H = AldaraHero.I;
-            t.act = null; t.lift = 0; t.enrT = 0; t.dead = true; t.respawnT = t.dun ? 1e9f : t.boss ? 420 : 28 + Random.value * 18; if (t.dun) DStat.Kill();
+            t.act = null; t.lift = 0; t.enrT = 0; t.dead = true; t.respawnT = t.dun ? 1e9f : t.boss ? 420 : 28 + Random.value * 18; if (t.ambush != null) t.respawnT = 1e12f; else if (!t.dun && !t.boss && t.tier == 11) t.respawnT = 150 + Random.value * 90; if (t.dun) DStat.Kill();
             int g = t.lvl - H.lvl; float xm = g >= 0 ? Mathf.Min(1.6f, 1 + 0.04f * g) : g >= -2 ? 1 : Mathf.Max(0.05f, 1 + 0.12f * (g + 2));
             H.GainXp(Mathf.Max(1, Mathf.Round(t.xp * xm)));
             if (AldaraLoot.I) AldaraLoot.I.OnKill(t); else H.gold += t.gold;
