@@ -67,7 +67,7 @@ namespace Aldara
                 if (Role == "heal" && healCd <= 0 && H.hp < H.maxHp * 0.9f)
                 {
                     healCd = Myth ? 2.5f : 3.5f; float amt = Mathf.Round(H.maxHp * Mathf.Min(0.12f, 0.02f * Power(it) * 4));
-                    H.hp = Mathf.Min(H.maxHp, H.hp + amt); AldaraFx.Text(P.x + 10, P.y - 16 - 30, "+" + amt + " HP", AldaraRules.Hex("#7fe07f")); AldaraFx.Burst(P.x, P.y - 6, 30, AldaraRules.Hex("#9fffa0"));
+                    float hb = H.hp; H.hp = Mathf.Min(H.maxHp, H.hp + amt); DStat.Heal(H.hp - hb); AldaraFx.Text(P.x + 10, P.y - 16 - 30, "+" + amt + " HP", AldaraRules.Hex("#7fe07f")); AldaraFx.Burst(P.x, P.y - 6, 30, AldaraRules.Hex("#9fffa0"));
                 }
                 var tg = target;
                 if (tg != null)

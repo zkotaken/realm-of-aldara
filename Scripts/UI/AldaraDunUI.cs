@@ -93,30 +93,37 @@ namespace Aldara
         {
             var H = AldaraHero.I; int secs = Mathf.RoundToInt(DStat.secs); string v1 = DStat.verdict;
             var hd = Row(v, 10, Justify.SpaceBetween); hd.style.marginBottom = 10;
-            T(hd, (DStat.def != null ? DStat.def.name : "Dungeon").ToUpper(), 14, C("#e8c46a"), true, true);
-            T(hd, "TIME " + secs / 60 + ":" + (secs % 60).ToString("00"), 11, C("#cccccc"), true);
-            var vd = T(hd, v1 == "done" ? "CLEARED" : v1 == "fail" ? "FAILED" : "ABANDONED", 11, v1 == "done" ? C("#9fe09f") : v1 == "fail" ? C("#ff8a7a") : C("#c8c8d0"), true, true); Pad(vd, 2, 8); Border(vd, 1, C("#5a5a6a"), 8); vd.style.backgroundColor = C("#1a1c26");
+            T(hd, (DStat.def != null ? DStat.def.name : "Dungeon").ToUpper(), 16, C("#e8c46a"), true, true);
+            T(hd, "Time " + secs / 60 + ":" + (secs % 60).ToString("00"), 12, C("#c8b890"), true);
+            var vd = T(hd, v1 == "done" ? "CLEARED" : v1 == "fail" ? "FAILED" : "ABANDONED", 12, v1 == "done" ? C("#d8ffc8") : v1 == "fail" ? C("#ffd0c0") : C("#e8e6da"), true, true); Pad(vd, 2, 10); vd.style.letterSpacing = 1; vd.style.backgroundColor = v1 == "done" ? C("#2e5a26") : v1 == "fail" ? C("#6a1a10") : C("#3a4050");
             string[] heads = { "Member", "Damage", "Healing", "Kills", "Boss damage", "Damage taken", "Biggest hit" }; float[] wd = { 150, 80, 80, 50, 100, 100, 90 };
-            var hr = Row(v); BorderBottom(hr, 1, C("#2a3040")); Pad(hr, 4, 0);
-            for (int i = 0; i < heads.Length; i++) { var l = T(hr, heads[i].ToUpper(), 10, C("#c8b890"), true, false, false, 0.5f, false, false); l.style.width = wd[i]; l.style.unityTextAlign = i == 0 ? TextAnchor.MiddleLeft : TextAnchor.MiddleRight; }
+            var hr = Row(v); BorderBottom(hr, 1, C("#6a4a1a")); Pad(hr, 4, 0);
+            for (int i = 0; i < heads.Length; i++) { var l = T(hr, heads[i].ToUpper(), 10.5f, C("#c8a860"), true, true, false, 1, false, false); l.style.width = wd[i]; l.style.unityTextAlign = i == 0 ? TextAnchor.MiddleLeft : TextAnchor.MiddleRight; }
             var row = Row(v, 0, Justify.FlexStart, Align.Center); Pad(row, 6, 0); BorderBottom(row, 1, C("#2a3040"));
-            var who = Col(row); who.style.width = wd[0]; T(who, H.heroName, 12, Color.white, true, true); T(who, "Level " + H.lvl + " " + char.ToUpper(H.cls[0]) + H.cls.Substring(1) + (DStat.pet != null ? " with " + DStat.pet : ""), 9.5f, C("#9a948a"));
-            Cell(row, F(DStat.dmg), wd[1], true); Cell(row, "0", wd[2], true); Cell(row, DStat.kills.ToString(), wd[3], false); Cell(row, F(DStat.boss), wd[4], true); Cell(row, F(DStat.taken), wd[5], false); Cell(row, F(DStat.big), wd[6], false);
-            var tot = Row(v, 0, Justify.FlexStart, Align.Center); Pad(tot, 6, 0);
-            var tl = T(tot, "PARTY TOTAL", 11, Color.white, true, true); tl.style.width = wd[0];
-            Cell(tot, F(DStat.dmg), wd[1], false); Cell(tot, "0", wd[2], false); Cell(tot, DStat.kills.ToString(), wd[3], false); Cell(tot, F(DStat.boss), wd[4], false); Cell(tot, F(DStat.taken), wd[5], false);
+            var who = Col(row); who.style.width = wd[0]; T(who, H.heroName, 12.5f, C("#fff2c4"), true, true); T(who, "Level " + H.lvl + " " + char.ToUpper(H.cls[0]) + H.cls.Substring(1) + (DStat.pet != null ? " with " + DStat.pet : ""), 10.5f, C("#a89a70"));
+            Cell(row, F(DStat.dmg), wd[1], DStat.dmg, null); Cell(row, F(DStat.heal), wd[2], DStat.heal, "h"); Cell(row, DStat.kills.ToString(), wd[3]); Cell(row, F(DStat.boss), wd[4], DStat.boss, "b"); Cell(row, F(DStat.taken), wd[5]); Cell(row, F(DStat.big), wd[6]);
+            var tot = Row(v, 0, Justify.FlexStart, Align.Center); Pad(tot, 6, 0); tot.style.borderTopWidth = 1; tot.style.borderTopColor = C("#6a4a1a");
+            var tl = T(tot, "Party total", 12.5f, C("#fff2c4"), true, true); tl.style.width = wd[0];
+            Cell(tot, F(DStat.dmg), wd[1], -1, null, true); Cell(tot, F(DStat.heal), wd[2], -1, null, true); Cell(tot, DStat.kills.ToString(), wd[3], -1, null, true); Cell(tot, F(DStat.boss), wd[4], -1, null, true); Cell(tot, F(DStat.taken), wd[5], -1, null, true);
             var sm = Row(v, 8); sm.style.marginTop = 10;
             Sum(sm, "Party DPS", F(secs > 0 ? DStat.dmg / secs : 0)); Sum(sm, "Enemies slain", DStat.kills.ToString());
             if (v1 == "done") { Sum(sm, "XP earned", F(DStat.xp)); Sum(sm, "Gold earned", F(DStat.gold)); } else Sum(sm, "Rooms opened", DStat.roomsOpen + " / " + DStat.rooms);
             ApplyGapLater(sm);
-            if (DStat.loot.Count > 0) { var lt = T(v, "Loot: " + string.Join("  ", DStat.loot.Select(it => Span(it.name, Hex(it.Col)))), 12, C("#cccccc")); lt.style.marginTop = 10; }
+            if (DStat.loot.Count > 0) { var lt = T(v, "Loot: " + string.Join("   ", DStat.loot.Select(it => Span(it.name, Hex(it.Col)))), 12, C("#c8b890")); lt.style.marginTop = 10; }
             var bb = Row(v, 8); bb.style.marginTop = 12;
             if (A.Active && A.done) { var r = B(bb, "Return to town", () => { AldaraWindows.I.Toggle("dres", false); if (A.Active) A.Exit("done"); }, "btn_gold", 12); r.style.flexGrow = 1; r.style.height = 32; }
             var cb = B(bb, A.Active && A.done ? "Stay a moment" : "Close", () => AldaraWindows.I.Toggle("dres", false), "btn", 12); cb.style.flexGrow = 1; cb.style.height = 32;
             ApplyGapLater(bb);
         }
-        static void Cell(VisualElement r, string s, float w, bool bar) { var l = T(r, s, 12, C("#e8e2d0"), false, false, false, 0, false, false); l.style.width = w; l.style.unityTextAlign = TextAnchor.MiddleRight; }
-        static void Sum(VisualElement r, string a, string b) { var c = Col(r); Skin(c, "sup_row"); Pad(c, 6, 10); c.style.flexGrow = 1; c.style.flexBasis = 0; T(c, a.ToUpper(), 9.5f, C("#c8b890"), true); T(c, b, 13, Color.white, true, true); }
+        /// a number, with the browser's thin bar under it (.ds-bar: gold for damage, green for healing, red for boss damage) scaled to the best in the party
+        static void Cell(VisualElement r, string s, float w, float bar = -1, string kind = null, bool tot = false)
+        {
+            var c = Col(r); c.style.width = w; c.style.alignItems = Align.FlexEnd;
+            var l = T(c, s, 12.5f, tot ? C("#fff2c4") : C("#e8e6da"), false, tot, false, 0, false, false); l.style.unityTextAlign = TextAnchor.MiddleRight;
+            if (bar < 0) return; var b = new VisualElement { pickingMode = PickingMode.Ignore }; b.style.height = 4; b.style.marginTop = 4; b.style.width = Length.Percent(100); b.style.backgroundColor = C("#0a0b10"); c.Add(b);
+            var f = new VisualElement { pickingMode = PickingMode.Ignore }; f.style.height = Length.Percent(100); f.style.width = Length.Percent(Mathf.Round(100 * bar / Mathf.Max(1, bar))); f.style.backgroundColor = kind == "h" ? C("#6cc56d") : kind == "b" ? C("#c45a3a") : C("#d8b25a"); b.Add(f);
+        }
+        static void Sum(VisualElement r, string a, string b) { var c = Col(r); Skin(c, "sup_row"); Pad(c, 7, 10); c.style.flexGrow = 1; c.style.flexBasis = 0; var h = T(c, a.ToUpper(), 9.5f, C("#c8a860"), true); h.style.letterSpacing = 1; T(c, b, 15, C("#fff2c4"), false, true); }
         static void ApplyGapLater(VisualElement e) { e.schedule.Execute(() => ApplyGap(e)); }
     }
 

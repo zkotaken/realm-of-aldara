@@ -691,11 +691,13 @@ namespace Aldara
     // DSTAT: the run's numbers for the results window
     public static class DStat
     {
-        public static bool on; public static float t0, xp, gold, dmg, boss, taken, big; public static int kills, hits; public static AldaraDungeon.Def def; public static List<Item> loot = new List<Item>(); public static string pet;
+        public static bool on; public static float t0, xp, gold, dmg, boss, taken, big, heal; public static int kills, hits; public static AldaraDungeon.Def def; public static List<Item> loot = new List<Item>(); public static string pet;
         public static string verdict; public static float secs; public static int roomsOpen, rooms;
-        public static void Start(AldaraDungeon.Def d) { on = true; t0 = Time.time; dmg = boss = taken = big = 0; kills = hits = 0; xp = gold = 0; loot.Clear(); def = d; var p = AldaraHero.I.Eq("pet"); pet = p != null ? p.name : null; }
+        public static void Start(AldaraDungeon.Def d) { on = true; t0 = Time.time; dmg = boss = taken = big = heal = 0; kills = hits = 0; xp = gold = 0; loot.Clear(); def = d; var p = AldaraHero.I.Eq("pet"); pet = p != null ? p.name : null; }
         public static void Hit(AldaraMonsters.Mon m, float d) { if (!on || !AldaraDungeon.Active) return; d = Mathf.Max(0, Mathf.Min(d, m.hp)); dmg += d; hits++; if (d > big) big = d; if (m.boss) boss += d; }
         public static void Kill() { if (on && AldaraDungeon.Active) kills++; }
+        /// dsHeal: health given back during the run (life steal, vials, healing skills and relics, a healing pet)
+        public static void Heal(float a) { if (on && AldaraDungeon.Active && a > 0) heal += a; }
         public static void Taken(float d) { if (on && AldaraDungeon.Active && d > 0) taken += d; }
         public static void Show(string v)
         {

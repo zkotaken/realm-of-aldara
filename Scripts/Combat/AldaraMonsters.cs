@@ -314,7 +314,7 @@ namespace Aldara
             if (m.act != null && !m.boss && m.act.t < m.act.mv.wind && dmg >= m.maxHp * 0.12f) { m.act = null; m.lift = 0; m.atkCd = 0.6f; AldaraFx.Text(m.x, m.y - m.r - 44, "Interrupted", AldaraRules.Hex("#ffd35a")); }
             if (mine && H.critFrame == Time.frameCount) { H.critFrame = -1; AldaraFx.Text(m.x + 8, m.y - m.r - 22, "CRIT", AldaraRules.Hex("#ffe08a")); }
             AldaraFx.Text(m.x, m.y - m.r - 10, "-" + dmg, col);
-            float ls = AldaraTree.T("ls"); if (mine && ls > 0 && AldaraRelics.busy == 0) { float h = Mathf.Round(dmg * ls); if (h > 0) H.hp = Mathf.Min(H.maxHp, H.hp + h); }
+            float ls = AldaraTree.T("ls"); if (mine && ls > 0 && AldaraRelics.busy == 0) { float h = Mathf.Round(dmg * ls); if (h > 0) { float hb = H.hp; H.hp = Mathf.Min(H.maxHp, H.hp + h); DStat.Heal(H.hp - hb); } }
             if (mine) AldaraRelics.OnHit(m, dmg);
             if (m.hp <= 0) KillMonster(m);
         }

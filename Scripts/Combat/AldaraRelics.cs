@@ -32,7 +32,7 @@ namespace Aldara
         static bool Cd(string id, float secs) { float v; if (cd.TryGetValue(id, out v) && v > t) return false; cd[id] = t + secs; return true; }
         static void Heal(float amt, string label)
         {
-            if (!(amt > 0) || !H.alive) return; float b = H.hp; H.hp = Mathf.Min(H.maxHp, H.hp + amt); float got = H.hp - b;
+            if (!(amt > 0) || !H.alive) return; float b = H.hp; H.hp = Mathf.Min(H.maxHp, H.hp + amt); float got = H.hp - b; DStat.Heal(got);
             if (got > 0) AldaraFx.Text(P.x + 12, P.y - 46, "+" + Mathf.Round(got) + " HP", Hx(label ?? "#7fe07f"));
         }
         static List<AldaraMonsters.Mon> Nearby(float x, float y, float rad, AldaraMonsters.Mon except = null)

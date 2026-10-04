@@ -100,7 +100,7 @@ namespace Aldara
             {
                 case "heal":
                     {
-                        float amt = Mathf.Round(H.maxHp * sk.heal); H.hp = Mathf.Min(H.maxHp, H.hp + amt); AldaraFx.Text(P.x, P.y - 58, "+" + amt + " HP", Hx("#7fe07f"));
+                        float amt = Mathf.Round(H.maxHp * sk.heal), hb = H.hp; H.hp = Mathf.Min(H.maxHp, H.hp + amt); DStat.Heal(H.hp - hb); AldaraFx.Text(P.x, P.y - 58, "+" + amt + " HP", Hx("#7fe07f"));
                         Burst(P.x, P.y - 10, "#9fffa0", 22, 150); var f = AldaraVfx.Effect("heal", P.x, P.y, 0, 1.1f, Color.white); f.hasCol = true; f.col = Hx(H.cls == "mage" ? "#7fffb0" : "#7fe07f");
                         if (H.cls == "mage") H.Cast(0.5f); break;
                     }

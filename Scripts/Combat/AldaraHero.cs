@@ -106,7 +106,7 @@ namespace Aldara
             if ((health ? vialCdHp : vialCdMp) > 0) return false;
             if (health && hp >= maxHp) { if (!auto) AldaraFx.Text(P.x, P.y - 26, "HP already full", AldaraRules.Hex("#aaaabb")); return false; }
             if (!health && mana >= maxMana) { if (!auto) AldaraFx.Text(P.x, P.y - 26, "MP already full", AldaraRules.Hex("#aaaabb")); return false; }
-            if (health) { vialHp--; vialCdHp = 2; float amt = Mathf.Round(maxHp * 0.4f); hp = Mathf.Min(maxHp, hp + amt); AldaraFx.Text(P.x, P.y - 26, "+" + amt + " HP", AldaraRules.Hex("#7fe07f")); }
+            if (health) { vialHp--; vialCdHp = 2; float amt = Mathf.Round(maxHp * 0.4f), hb = hp; hp = Mathf.Min(maxHp, hp + amt); DStat.Heal(hp - hb); AldaraFx.Text(P.x, P.y - 26, "+" + amt + " HP", AldaraRules.Hex("#7fe07f")); }
             else { vialMp--; vialCdMp = 2; float amt = Mathf.Round(maxMana * 0.5f); mana = Mathf.Min(maxMana, mana + amt); AldaraFx.Text(P.x, P.y - 26, "+" + amt + " MP", AldaraRules.Hex("#8aa8ff")); }
             AldaraSave.Dirty(); return true;
         }
