@@ -23,7 +23,8 @@ namespace Aldara
         ScriptableRendererFeature ssao; Light sun; Quaternion sunRot0; Color sunCol0; float sunInt0; bool sunSaved;
         readonly List<Light> pool = new List<Light>(); float applyT;
         void Awake() { I = this; AldaraVfx.DrawAir += DrawAir; }
-        void OnDestroy() { AldaraVfx.DrawAir -= DrawAir; Shader.SetGlobalFloat("_AldaraHQ", 0); RestoreSun(); if (ssao) ssao.SetActive(false); }
+        // the ambient occlusion feature is left on in the renderer asset: a build strips its shaders when it is saved off
+        void OnDestroy() { AldaraVfx.DrawAir -= DrawAir; Shader.SetGlobalFloat("_AldaraHQ", 0); RestoreSun(); if (ssao) ssao.SetActive(true); }
 
         void Build()
         {
