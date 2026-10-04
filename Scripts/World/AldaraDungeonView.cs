@@ -11,9 +11,8 @@ namespace Aldara
     public class AldaraDungeonView : MonoBehaviour
     {
         public static AldaraDungeonView I;
-        GameObject inst; AldaraSketch gA, gAdd, aA, aAdd, cores, wxA, wxAdd; Material lightMat; Texture2D lightTex; Mesh lightMesh; Color32[] lpx; float[] lacc;
+        GameObject inst; AldaraSketch gA, gAdd, aA, aAdd;
         float shakeAmp, shakeT, shakeMax; readonly List<KeyValuePair<Vector3, Color>> propGlows = new List<KeyValuePair<Vector3, Color>>();
-        float[] ambNow = { 1, 1, 1 };
         void Awake() { I = this; }
         public void Shake(float amp, float dur) { if (amp >= shakeAmp || shakeT <= 0) { shakeAmp = amp; shakeT = dur; shakeMax = dur; } }
         public Vector2 ShakeOffset { get { if (shakeT <= 0) return Vector2.zero; float k = shakeT / shakeMax * shakeAmp; return new Vector2((Random.value - 0.5f) * 2 * k, (Random.value - 0.5f) * 2 * k); } }
@@ -24,9 +23,6 @@ namespace Aldara
             var pf = Resources.Load<GameObject>("DunPrefabs/Dun_" + M.id);
             if (pf) { inst = Instantiate(pf); inst.transform.position = new Vector3(AldaraWorld.DOX, 0, 0); }
             gA = new AldaraSketch("normal", false, 3001); gAdd = new AldaraSketch("add", false, 3002); aA = new AldaraSketch("normal", true, 3110); aAdd = new AldaraSketch("add", true, 3111);
-            cores = new AldaraSketch("add", true, 3301); wxA = new AldaraSketch("normal", true, 3302); wxAdd = new AldaraSketch("add", true, 3303); wx.Clear();
-            if (!lightMat) lightMat = AldaraSketch.Mat(UnityEngine.Rendering.BlendMode.DstColor, UnityEngine.Rendering.BlendMode.Zero, true, 3300);
-            ambNow = new[] { M.amb[0], M.amb[1], M.amb[2] };
             // the glows painted onto set pieces (glowDot in their sprites)
             propGlows.Clear();
             foreach (var p in M.props)
@@ -41,14 +37,14 @@ namespace Aldara
         {
             if (inst) Destroy(inst); inst = null;
             if (gA != null && Camera.main) { Camera.main.clearFlags = camFlags; Camera.main.backgroundColor = camBg; }
-            gA = gAdd = aA = aAdd = cores = wxA = wxAdd = null;
+            gA = gAdd = aA = aAdd = null;
         }
 
         void LateUpdate()
         {
             var D = A.DM; if (D == null || gA == null) return; var cam = Camera.main; if (!cam) return; var P = AldaraPlayer.I;
             if (shakeT > 0) shakeT -= Time.deltaTime;
-            float t = D.t; gA.Clear(); gAdd.Clear(); aA.Clear(); aAdd.Clear(); cores.Clear(); wxA.Clear(); wxAdd.Clear();
+            float t = D.t; gA.Clear(); gAdd.Clear(); aA.Clear(); aAdd.Clear();
             float vh = cam.orthographicSize * 2 * AldaraWorld.PX, vw = vh * cam.aspect, x0 = P.x - vw / 2, y0 = P.y - vh / 2;
             System.Func<float, float, bool> vis = (x, y) => x > x0 - 200 && x < x0 + vw + 200 && y > y0 - 200 && y < y0 + vh + 260;
             // the exit portal where you came in
@@ -89,8 +85,6 @@ namespace Aldara
             DrawTrapsGround(D, t, vis); DrawGates(D, t); DrawAir(D, t, vis); DrawDeep(D, t, vis, x0, y0, vw, vh);
             foreach (var g in propGlows) if (vis(g.Key.x, g.Key.y)) aAdd.Glow(g.Key.x, g.Key.y, g.Key.z, g.Value, g.Value.a);
             gA.Draw(cam); gAdd.Draw(cam); aA.Draw(cam); aAdd.Draw(cam);
-            LightMap(D, cam, x0, y0, vw, vh, t); cores.Draw(cam);
-            Weather(D.wx, vw, vh, Time.time); wxA.Draw(cam); wxAdd.Draw(cam);
         }
         static Vector2 Quad(Vector2 a, Vector2 c, Vector2 b, float u) { float m = 1 - u; return m * m * a + 2 * m * u * c + u * u * b; }
         static Color Hx(string h) { return AldaraRules.Hex(h); }
@@ -362,74 +356,11 @@ namespace Aldara
                     aA.Glow(g.x, g.y - 20, rx, g.r * 0.62f, new[] { 0f, 1f }, new[] { new Color(140 / 255f, 200 / 255f, 60 / 255f, a), new Color(90 / 255f, 140 / 255f, 40 / 255f, 0) });
                 }
         }
-        // ---------- weather (updateWeather / drawWeather): ash, snow, embers, motes drifting past in world space ----------
-        class Wp { public float x, y, s, ph; public string k; }
-        readonly List<Wp> wx = new List<Wp>(); float wxLast;
-        void Weather(string kind, float W, float H, float t)
+        /// the dungeon's own lights this frame (dunLights); the post pass adds the hero, pet and bosses
+        public List<AldaraPost.Lt> Gather(A.Map D, float t)
         {
-            if (string.IsNullOrEmpty(kind) || !AldaraSettings.On("weather")) return; var P = AldaraPlayer.I; float dt = Mathf.Min(0.05f, t - wxLast); wxLast = t;
-            int want = kind == "snow" ? 140 : kind == "fireflies" ? 60 : 90; float cx = P.x, cy = P.y, hw = W / 2 + 60, hh = H / 2 + 60;
-            System.Action<Wp, bool> spawn = (p, any) => { p.x = cx + (Random.value * 2 - 1) * hw; p.y = any ? cy + (Random.value * 2 - 1) * hh : (kind == "embers" || kind == "motes" ? cy + hh : cy - hh); p.k = kind; p.s = Random.value; p.ph = Random.value * 7; };
-            while (wx.Count < want) { var p = new Wp(); spawn(p, true); wx.Add(p); }
-            if (wx.Count > want) wx.RemoveRange(want, wx.Count - want);
-            foreach (var p in wx)
-            {
-                if (p.k != kind) spawn(p, true); float s = p.s;
-                switch (kind)
-                {
-                    case "snow": p.y += (28 + s * 46) * dt; p.x += (Mathf.Sin(t * 0.8f + p.ph) * 14 + 10) * dt; break;
-                    case "ash": p.y += (12 + s * 16) * dt; p.x += (Mathf.Sin(t * 0.6f + p.ph) * 18 + 14) * dt; break;
-                    case "embers": case "motes": p.y -= (22 + s * 40) * dt; p.x += Mathf.Sin(t * 1.3f + p.ph) * 16 * dt; break;
-                }
-                if (p.x < cx - hw || p.x > cx + hw || p.y < cy - hh || p.y > cy + hh) spawn(p, false);
-                switch (kind)
-                {
-                    case "snow": { float r = 0.8f + s * 2.2f; wxA.Ellipse(p.x, p.y, r, r, new Color(1, 1, 1, 0.55f + s * 0.4f), -1, 0, 8); break; }
-                    case "ash": wxA.Rect(p.x, p.y, 1.5f + s * 2, 1 + s * 1.4f, new Color(70 / 255f, 64 / 255f, 60 / 255f, 0.35f + s * 0.3f)); break;
-                    case "embers": { float k = 0.5f + 0.5f * Mathf.Sin(t * 6 + p.ph * 5); wxAdd.Rect(p.x, p.y, 1.4f + s * 1.6f, 2 + s * 2.4f, new Color(1, (120 + k * 100) / 255f, 40 / 255f, 0.55f + k * 0.4f)); break; }
-                    case "motes": { float k = 0.5f + 0.5f * Mathf.Sin(t * 3 + p.ph * 4), r = 1 + s * 1.8f; wxAdd.Ellipse(p.x, p.y, r, r, new Color(190 / 255f, 150 / 255f, 1, 0.35f + k * 0.55f), -1, 0, 8); break; }
-                }
-            }
-        }
-        // ---------- the light map ----------
-        const float LS = 0.25f;
-        void LightMap(A.Map D, Camera cam, float x0, float y0, float vw, float vh, float t)
-        {
-            int LW = Mathf.CeilToInt(vw * LS), LH = Mathf.CeilToInt(vh * LS); if (LW < 2 || LH < 2) return;
-            if (!lightTex || lightTex.width != LW || lightTex.height != LH) { if (lightTex) Destroy(lightTex); lightTex = new Texture2D(LW, LH, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear }; lpx = new Color32[LW * LH]; lacc = new float[LW * LH * 3]; }
-            // ambient: the theme's light with a soft colour grade, eased in
-            float gk = 0.22f * 0.7f, mx = Mathf.Max(D.grade[0], Mathf.Max(D.grade[1], D.grade[2])); if (mx <= 0) mx = 1;
-            var amb3 = new float[3]; for (int i = 0; i < 3; i++) { ambNow[i] += (D.amb[i] - ambNow[i]) * 0.04f; amb3[i] = Mathf.Min(1, ambNow[i] * (1 - gk + gk * D.grade[i] / mx) * (1 + gk * 0.25f)); }
-            for (int i = 0; i < LW * LH; i++) { lacc[i * 3] = amb3[0]; lacc[i * 3 + 1] = amb3[1]; lacc[i * 3 + 2] = amb3[2]; }
-            var lights = Gather(D, t, x0, y0, x0 + vw, y0 + vh);
-            const float boost = 1.4f;
-            foreach (var L in lights)
-            {
-                float X = (L.x - x0) * LS, Y = (L.y - y0) * LS, R = L.r * LS, a = Mathf.Min(1, L.i * boost); if (a < 0.02f || R < 0.5f) continue;
-                int i0 = Mathf.Max(0, Mathf.FloorToInt(X - R)), i1 = Mathf.Min(LW - 1, Mathf.CeilToInt(X + R)), j0 = Mathf.Max(0, Mathf.FloorToInt(Y - R)), j1 = Mathf.Min(LH - 1, Mathf.CeilToInt(Y + R));
-                float cr = L.c.r * a, cg = L.c.g * a, cb = L.c.b * a, inv = 1 / R;
-                for (int j = j0; j <= j1; j++) for (int i = i0; i <= i1; i++)
-                    {
-                        float dx = i + 0.5f - X, dy = j + 0.5f - Y, u = Mathf.Sqrt(dx * dx + dy * dy) * inv; if (u >= 1) continue;
-                        float p = u < 0.45f ? 1 - 0.6f * u / 0.45f : 0.4f * (1 - (u - 0.45f) / 0.55f); int k = ((LH - 1 - j) * LW + i) * 3;
-                        lacc[k] += cr * p; lacc[k + 1] += cg * p; lacc[k + 2] += cb * p;
-                    }
-                // hot cores glow a little past full brightness
-                if (L.i >= 0.45f) { float ca = Mathf.Min(0.3f, (L.i - 0.35f) * 0.35f * boost); if (ca > 0.004f) cores.Glow(L.x, L.y, L.r * 0.45f, L.c, ca); }
-            }
-            for (int i = 0; i < LW * LH; i++) lpx[i] = new Color32((byte)Mathf.Min(255, lacc[i * 3] * 255), (byte)Mathf.Min(255, lacc[i * 3 + 1] * 255), (byte)Mathf.Min(255, lacc[i * 3 + 2] * 255), 255);
-            lightTex.SetPixels32(lpx); lightTex.Apply(false);
-            if (!lightMesh) { lightMesh = new Mesh(); lightMesh.MarkDynamic(); }
-            var v = new[] { AldaraSketch.W(x0, y0 + vh, 0), AldaraSketch.W(x0 + vw, y0 + vh, 0), AldaraSketch.W(x0 + vw, y0, 0), AldaraSketch.W(x0, y0, 0) };
-            lightMesh.Clear(); lightMesh.vertices = v; lightMesh.uv = new[] { new Vector2(0, 0), new Vector2(1, 0), new Vector2(1, 1), new Vector2(0, 1) }; lightMesh.colors = new[] { Color.white, Color.white, Color.white, Color.white };
-            lightMesh.triangles = new[] { 0, 2, 1, 0, 3, 2 }; lightMesh.bounds = new Bounds(Vector3.zero, Vector3.one * 1e6f);
-            lightMat.mainTexture = lightTex; Graphics.DrawMesh(lightMesh, Matrix4x4.identity, lightMat, 0, cam);
-        }
-        struct Lt { public float x, y, r, i; public Color c; }
-        List<Lt> Gather(A.Map D, float t, float vx0, float vy0, float vx1, float vy1)
-        {
-            var L = new List<Lt>();
-            System.Action<float, float, Color, float, float> add = (x, y, c, r, i) => { if (x + r < vx0 || x - r > vx1 || y + r < vy0 || y - r > vy1) return; L.Add(new Lt { x = x, y = y, c = c, r = r, i = i }); };
+            var L = new List<AldaraPost.Lt>();
+            System.Action<float, float, Color, float, float> add = (x, y, c, r, i) => L.Add(new AldaraPost.Lt { x = x, y = y, c = c, r = r, i = i });
             foreach (var l in D.lights) { float f = l.fl ? 0.84f + 0.16f * Mathf.Sin(t * 9 + (l.ph != 0 ? l.ph : l.x)) * Mathf.Sin(t * 5.3f + l.y) : 1; add(l.x, l.y, l.col != null ? AldaraRules.Hex(l.col) : D.torchCol, l.r * f, l.i * f); }
             foreach (var tr in D.traps)
             {
@@ -438,9 +369,6 @@ namespace Aldara
                 else if (tr.type == "beam") for (int k = 0; k < tr.n; k++) { float a = tr.a + k * 2 * Mathf.PI / tr.n; add(tr.x + Mathf.Cos(a) * tr.len * 0.6f, tr.y + Mathf.Sin(a) * tr.len * 0.6f, Hx("#c07aff"), 260, 0.8f); }
                 else if (tr.type == "phase" && tr.solid) { var Pp = tr.pts; add((Pp[0].x + Pp[Pp.Length - 1].x) / 2, (Pp[0].y + Pp[Pp.Length - 1].y) / 2, Hx("#b07aff"), 260, 0.5f); }
             }
-            var P = AldaraPlayer.I; add(P.x, P.y - 30, Hx("#ffe6b8"), 200, 0.28f);
-            var pet = AldaraPet.I; var pit = AldaraHero.I.Eq("pet"); if (pet && pet.Shown && pit != null) add(pet.x, pet.y - 20, pit.Col, pit.name == "Celestial Phoenix" ? 300 : 150, pit.name == "Celestial Phoenix" ? 0.8f : 0.35f);
-            foreach (var m in AldaraMonsters.I.all) { if (m.dead || !m.boss) continue; add(m.x, m.y - 30, m.color != null ? AldaraRules.Hex(m.color) : Hx("#ffe07a"), 240, 0.45f); }
             return L;
         }
 

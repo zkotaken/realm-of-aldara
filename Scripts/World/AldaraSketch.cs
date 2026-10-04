@@ -22,6 +22,7 @@ namespace Aldara
             var B = UnityEngine.Rendering.BlendMode.SrcAlpha; var D = UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha;
             if (blend == "add") { D = UnityEngine.Rendering.BlendMode.One; }
             else if (blend == "mul") { B = UnityEngine.Rendering.BlendMode.DstColor; D = UnityEngine.Rendering.BlendMode.Zero; }
+            else if (blend == "screen") { B = UnityEngine.Rendering.BlendMode.OneMinusDstColor; D = UnityEngine.Rendering.BlendMode.One; }   // colours premultiplied by the caller
             mat = Mat(B, D, air, queue);
         }
         public void Clear() { v.Clear(); c.Clear(); uv.Clear(); ix.Clear(); }
