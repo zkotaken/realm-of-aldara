@@ -208,6 +208,7 @@ namespace Aldara
             {
                 var w = AldaraCamera.I.ScreenToWorldPx(mouse.position.ReadValue());
                 float gy = AldaraWorld.HeightPx(P.x, P.y);
+                if (AldaraQuestWorld.I && AldaraQuestWorld.I.Click(w.x, w.y)) { UpdateShots(dt); return; }
                 AldaraMonsters.Mon best = null; float bd = 40;
                 foreach (var m in AldaraMonsters.I.all)
                 {

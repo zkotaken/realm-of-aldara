@@ -12,11 +12,23 @@ public static class AldaraMonsterBuilder
         var book = MonsterBook.Load(); int n = 0;
         Directory.CreateDirectory("Assets/_Aldara/Resources/MonPrefabs"); Directory.CreateDirectory("Assets/_Aldara/Models/Mons/Meshes");
         var mat = AldaraMeshIO.VertexLit("Monsters", 0);
-        foreach (var d in book.monsters) if (Build(d, mat)) n++;
+        foreach (var d in book.monsters) if (Build(d.id, mat)) n++;
         AssetDatabase.SaveAssets(); Debug.Log("Aldara monsters built: " + n);
     }
-    static bool Build(MonDef d, Material mat)
+    /// the people of Lorenmar and Valcrest, the quest givers and the bounty board
+    [MenuItem("Aldara/Build Folk")]
+    public static void BuildFolk()
     {
+        Directory.CreateDirectory("Assets/_Aldara/Resources/MonPrefabs"); Directory.CreateDirectory("Assets/_Aldara/Models/Mons/Meshes");
+        var mat = AldaraMeshIO.VertexLit("Monsters", 0); int n = 0;
+        var list = Newtonsoft.Json.Linq.JObject.Parse(AssetDatabase.LoadAssetAtPath<TextAsset>("Assets/_Aldara/Resources/folk.json").text);
+        foreach (var kv in list) if (Build((string)kv.Value["id"], mat)) n++;
+        AldaraMeshIO.MeshPrefab("Assets/_Aldara/Models/Mons/qboard.amesh.bytes", "Assets/_Aldara/Resources/MonPrefabs/QBoard.prefab", mat, false);
+        AssetDatabase.SaveAssets(); Debug.Log("Aldara folk built: " + n);
+    }
+    static bool Build(string id, Material mat)
+    {
+        var d = new { id = id };
         var data = AssetDatabase.LoadAssetAtPath<TextAsset>("Assets/_Aldara/Resources/Mons/" + d.id + ".bytes"); if (!data) return false;
         int N; int[] par;
         using (var r = new BinaryReader(new MemoryStream(data.bytes))) { r.ReadChars(4); N = r.ReadInt32(); par = new int[N]; for (int i = 0; i < N; i++) par[i] = r.ReadInt32(); }

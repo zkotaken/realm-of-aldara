@@ -17,7 +17,7 @@ namespace Aldara
         public abstract class Win
         {
             public string id, title; public VisualElement panel, body; public bool open; public bool dirty = true;
-            public virtual bool Full => false; public virtual float X => -1; public virtual float Y => 60; public abstract float W { get; } public virtual float H => -1; public virtual float MaxH => 790;
+            public virtual bool Full => false; public virtual bool NoTitle => false; public virtual float X => -1; public virtual float Y => 60; public abstract float W { get; } public virtual float H => -1; public virtual float MaxH => 790;
             public abstract void Render(VisualElement body);
             public virtual void Tick() { }
             public virtual void OnOpen() { }
@@ -32,9 +32,11 @@ namespace Aldara
             var go = new GameObject("WindowsUI"); go.SetActive(false); doc = go.AddComponent<UIDocument>();
             doc.panelSettings = Resources.Load<PanelSettings>("UI/AldaraPanel"); doc.sortingOrder = 5; go.SetActive(true);
             root = doc.rootVisualElement; root.pickingMode = PickingMode.Ignore; root.style.position = Position.Absolute; root.style.left = root.style.top = root.style.right = root.style.bottom = 0;
-            Register(new AldaraInvWin()); Register(new AldaraAttWin()); Register(new AldaraSkillWin()); Register(new AldaraSubWin()); Register(new AldaraVaultWin()); Register(new AldaraMenuWin()); Register(new AldaraMapWin());
+            Register(new AldaraInvWin()); Register(new AldaraAttWin()); Register(new AldaraSkillWin()); Register(new AldaraSubWin()); Register(new AldaraVaultWin()); Register(new AldaraMenuWin()); Register(new AldaraMapWin()); Register(new AldaraQuestLog()); Register(new AldaraQuestDlg()); Register(new AldaraLoreWin());
             AldaraSettings.Apply();
             if (!GetComponent<AldaraTitle>()) gameObject.AddComponent<AldaraTitle>();
+            if (!GetComponent<AldaraFolk>()) gameObject.AddComponent<AldaraFolk>();
+            if (!GetComponent<AldaraQuestWorld>()) gameObject.AddComponent<AldaraQuestWorld>();
         }
         public void Register(Win w) { wins[w.id] = w; }
         public bool Has(string id) { return wins.ContainsKey(id); }
@@ -52,6 +54,7 @@ namespace Aldara
         static bool Exclusive(string a, string b)
         {
             if (a == "inv" && b == "att" || a == "att" && b == "inv") return true;
+            if (a == "quest" && b == "qdlg" || a == "qdlg" && b == "quest") return true;
             if (b == "skills" || b == "dun" || a == "skills" || a == "dun") return true;
             return false;
         }
@@ -84,6 +87,7 @@ namespace Aldara
             if (w.H > 0) p.style.height = w.H; else p.style.maxHeight = w.MaxH;
             Skin(p, "panel"); Pad(p, 28, 28, 28, 28); p.style.flexDirection = FlexDirection.Column;
             // title: sigil, name, sigil over the gold rule
+            if (!w.NoTitle) {
             var h3 = Row(p, 12, Justify.Center); h3.style.height = 30; h3.style.marginTop = -4; h3.style.marginBottom = 12; h3.style.paddingBottom = 8; h3.style.flexShrink = 0;
             var line = E(h3); line.pickingMode = PickingMode.Ignore; line.style.position = Position.Absolute; line.style.left = 0; line.style.right = 0; line.style.top = 0; line.style.bottom = 0;
             line.style.backgroundImage = Background.FromTexture2D(Tex("h3line")); line.style.unityBackgroundScaleMode = ScaleMode.StretchToFill;
@@ -91,6 +95,7 @@ namespace Aldara
             var tl = T(h3, w.title, 18, C("#efcf78"), true, true, false, 3, true, false); Shadow(tl, new Color(0, 0, 0, 0.9f), 2, 2);
             var s2 = E(h3); s2.style.width = s2.style.height = 20; s2.style.backgroundImage = Background.FromTexture2D(Tex("sig")); s2.style.opacity = 0.9f;
             ApplyGapLater(h3);
+            }
             var close = E(p, "close"); close.style.position = Position.Absolute; close.style.right = 16; close.style.top = 16; close.style.width = close.style.height = 26;
             close.style.backgroundImage = Background.FromTexture2D(Tex("close"));
             close.RegisterCallback<ClickEvent>(e => Close(w));

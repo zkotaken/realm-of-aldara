@@ -412,6 +412,7 @@ namespace Aldara
             int g = t.lvl - H.lvl; float xm = g >= 0 ? Mathf.Min(1.6f, 1 + 0.04f * g) : g >= -2 ? 1 : Mathf.Max(0.05f, 1 + 0.12f * (g + 2));
             H.GainXp(Mathf.Max(1, Mathf.Round(t.xp * xm)));
             if (AldaraLoot.I) AldaraLoot.I.OnKill(t); else H.gold += t.gold;
+            AldaraQuests.OnKill(t);
             if (t.boss) H.bossKills++;
             AldaraFx.Text(t.x, t.y - t.r - 26, "+" + t.xp + "xp", AldaraRules.Hex("#7ec8ff"));
             if (t.boss) AldaraHud.Banner(t.name + " defeated!");

@@ -25,6 +25,15 @@ namespace Aldara
         string portraitCls;
 
         void Awake() { I = this; }
+        public VisualElement Root { get { return root; } }
+        public VisualElement MinimapView { get { return mmView; } }
+        /// a piece added from outside (the quest tracker), placed in the browser's 1920 x 1080 frame and shown with a HUD group
+        public void AddPiece(string group, VisualElement e)
+        {
+            var r = new Rect(e.style.left.value.value, e.style.top.value.value, e.style.width.value.value, 10); e.RemoveFromHierarchy();
+            var g = Group(r, out var o); g.Add(e); e.style.left = r.x - o.x; e.style.top = r.y - o.y;
+            List<VisualElement> l; if (pieces.TryGetValue(group, out l)) l.Add(e);
+        }
         void Start() { Build(); }
 
         // ---------- helpers ----------
