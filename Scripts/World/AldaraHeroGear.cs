@@ -52,6 +52,8 @@ namespace Aldara
         class Wing { public Transform n, f; public int sd; public bool fairy; }
         readonly List<Wing> wings = new List<Wing>();
         AldaraCharacterAnimator anim;
+        // for the glows (drawWingAura, drawWingGlow, drawMythAura)
+        public Transform[] wingNodes; public string wingName, wingRarity, mythGlow; public int mythN;
         /// the browser's facing (ry) for the wings' turn
         public float ry;
 
@@ -168,6 +170,11 @@ namespace Aldara
                 // bare fists take the gauntlets' colour
                 var gt = Eq("gauntlets"); if (gt != null && W.ContainsKey("gauntlets") && V["hands"][gt.name] is JArray hl) foreach (var i in hl) SetMesh((int)i, b.pack.Get("hand_" + gt.name + ":" + (int)i));
             }
+            // a mythic aura when four or more pieces of one set are worn
+            mythGlow = null; mythN = 0; var cnt = new Dictionary<string, int>(); MythicSet bestSet = null;
+            foreach (var sl in ARM_SLOTS) { var ms = AldaraItems.MythSetOf(Eq(sl)); if (ms == null) continue; int c0; cnt.TryGetValue(ms.id, out c0); cnt[ms.id] = c0 + 1; if (cnt[ms.id] >= 4 && (bestSet == null || cnt[ms.id] > cnt[bestSet.id])) bestSet = ms; }
+            if (bestSet != null) { mythGlow = bestSet.glow; mythN = cnt[bestSet.id]; }
+            wingNodes = null; wingName = null;
             // wings
             var wg = Eq("wings");
             if (wg != null && V["wings"][wg.name] is JObject wj)
@@ -180,6 +187,7 @@ namespace Aldara
                     var g = Child(par < 0 ? Rig(1) : made[par], "wing" + i, (int)nodes[i]["mesh"] != 0 ? b.pack.Get("wing_" + wg.name + ":" + i) : null, new Vector3((float)t[0], (float)t[1], (float)t[2]));
                     g.transform.localRotation = new Quaternion((float)t[3], (float)t[4], (float)t[5], (float)t[6]); g.transform.localScale = Vector3.one * (float)t[7] * (par < 0 ? S : 1); made[i] = g.transform;
                 }
+                wingNodes = made; wingName = wg.name; wingRarity = wg.rarity;
                 foreach (var r in (JArray)wj["roles"]) wings.Add(new Wing { n = made[(int)r["n"]], f = (int)r["f"] >= 0 ? made[(int)r["f"]] : null, sd = (int)r["sd"], fairy = (int)r["fairy"] != 0 });
             }
             return true;

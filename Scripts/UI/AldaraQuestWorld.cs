@@ -52,6 +52,11 @@ namespace Aldara
             var sp = cam.WorldToScreenPoint(AldaraWorld.ToUnity(x, y));
             return RuntimePanelUtils.ScreenToPanel(root.panel, new Vector2(sp.x, Screen.height - sp.y));
         }
+        Vector2 W2P3(Vector3 w)
+        {
+            var sp = cam.WorldToScreenPoint(w);
+            return RuntimePanelUtils.ScreenToPanel(root.panel, new Vector2(sp.x, Screen.height - sp.y));
+        }
         bool OnView(Vector2 p, float m = 0) { var r = root.layout; return p.x > -m && p.x < r.width + m && p.y > -m && p.y < r.height + m; }
 
         // ---------- interaction ----------
@@ -118,6 +123,7 @@ namespace Aldara
         {
             used = 0; paint.Clear(); var P = AldaraPlayer.I; float t = Ttime;
             var a = W2P(P.x, P.y); var b = W2P(P.x + 100, P.y); k = Mathf.Max(0.2f, Mathf.Abs(b.x - a.x) / 100f);
+            AldaraHeroFx.Draw(paint, W2P3, k);
             bool names = AldaraSettings.On("names");
             // townsfolk name tags
             foreach (var n in AldaraFolk.I.Visible())
@@ -289,7 +295,7 @@ namespace Aldara
         }
 
         // ---------- the painter for marks, boxes and arrows ----------
-        class Painter : VisualElement
+        public class Painter : VisualElement
         {
             abstract class Cmd { }
             class GlowC : Cmd { public Vector2 p; public float r; public Color c; }
@@ -297,6 +303,8 @@ namespace Aldara
             class BoxC : Cmd { public Rect r; public float rad; public Color fill, line; }
             class DiaC : Cmd { public Vector2 p; public float w, h, lw; public Color fill, line; }
             class ArrC : Cmd { public Vector2 p; public float a; public Color fill, line; }
+            class SigC : Cmd { public Vector2 p; public float r, ky, rot; public Color c; }
+            class BarC : Cmd { public Rect r; public Color c; }
             readonly List<Cmd> cmds = new List<Cmd>();
             public Painter() { pickingMode = PickingMode.Ignore; style.position = Position.Absolute; style.left = style.top = style.right = style.bottom = 0; generateVisualContent += Gen; }
             public void Clear() { cmds.Clear(); }
@@ -305,6 +313,9 @@ namespace Aldara
             public void Box(Rect r, float rad, Color fill, Color line) { cmds.Add(new BoxC { r = r, rad = rad, fill = fill, line = line }); }
             public void Diamond(Vector2 p, float w, float h, Color fill, Color line, float lw) { cmds.Add(new DiaC { p = p, w = w, h = h, fill = fill, line = line, lw = lw }); }
             public void Arrow(Vector2 p, float a, Color fill, Color line) { cmds.Add(new ArrC { p = p, a = a, fill = fill, line = line }); }
+            /// the mythic ground sigil: a flattened rotating ring with eight spokes
+            public void Sigil(Vector2 p, float r, float ky, float rot, Color c) { cmds.Add(new SigC { p = p, r = r, ky = ky, rot = rot, c = c }); }
+            public void Bar(Rect r, Color c) { cmds.Add(new BarC { r = r, c = c }); }
             void Gen(MeshGenerationContext ctx)
             {
                 var g = ctx.painter2D;
@@ -322,6 +333,13 @@ namespace Aldara
                         g.BeginPath(); g.MoveTo(dc.p + new Vector2(0, -dc.h)); g.LineTo(dc.p + new Vector2(dc.w, 0)); g.LineTo(dc.p + new Vector2(0, dc.h)); g.LineTo(dc.p + new Vector2(-dc.w, 0)); g.ClosePath();
                         g.fillColor = dc.fill; g.Fill(); g.strokeColor = dc.line; g.lineWidth = dc.lw; g.Stroke();
                     }
+                    else if (c is SigC sc)
+                    {
+                        System.Func<float, float, Vector2> P = (a, rr) => sc.p + new Vector2(Mathf.Cos(a + sc.rot) * rr, Mathf.Sin(a + sc.rot) * rr * sc.ky);
+                        g.strokeColor = sc.c; g.lineWidth = 2; g.BeginPath(); for (int i = 0; i <= 40; i++) { var q = P(i / 40f * Mathf.PI * 2, sc.r); if (i == 0) g.MoveTo(q); else g.LineTo(q); } g.Stroke();
+                        g.lineWidth = 1; for (int i = 0; i < 8; i++) { float a = i / 8f * Mathf.PI * 2; g.BeginPath(); g.MoveTo(P(a, sc.r * 0.5f / 0.75f)); g.LineTo(P(a, sc.r)); g.Stroke(); }
+                    }
+                    else if (c is BarC bc2) { g.fillColor = bc2.c; g.BeginPath(); g.MoveTo(new Vector2(bc2.r.xMin, bc2.r.yMin)); g.LineTo(new Vector2(bc2.r.xMax, bc2.r.yMin)); g.LineTo(new Vector2(bc2.r.xMax, bc2.r.yMax)); g.LineTo(new Vector2(bc2.r.xMin, bc2.r.yMax)); g.ClosePath(); g.Fill(); }
                     else if (c is ArrC rc)
                     {
                         float ca = Mathf.Cos(rc.a), sa = Mathf.Sin(rc.a); System.Func<float, float, Vector2> R = (x, y) => rc.p + new Vector2(x * ca - y * sa, x * sa + y * ca);
