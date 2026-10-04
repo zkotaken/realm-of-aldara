@@ -19,6 +19,8 @@ namespace Aldara
         static Material prime; static readonly Dictionary<Material, Material> fades = new Dictionary<Material, Material>();
 
         void Awake() { I = this; }
+        /// whether the model standing at this foot is drawn see-through right now (its fx fade with it)
+        public static bool IsHidden(float x, float y) { if (!I) return false; foreach (var o in I.hidden) if (Mathf.Abs(o.x - x) < 8 && Mathf.Abs(o.y - y) < 8) return true; return false; }
         public static Material Prime { get { if (!prime) { prime = new Material(Shader.Find("Aldara/DepthPrime")) { renderQueue = 2990 }; } return prime; } }
         public static Material FadeOf(Material m)
         {
