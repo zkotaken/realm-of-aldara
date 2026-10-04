@@ -36,8 +36,13 @@ namespace Aldara
         {
             float dmg = Mathf.Max(1, Mathf.Round(H.atk * Power(it) * mult * (0.8f + Random.value * 0.4f))); var col = AldaraRules.Hex("#ffb0e0");
             float aoe = info != null && info["aoe"] != null ? (float)info["aoe"] : 0;
-            if (aoe > 0) { AldaraFx.Ring(m.x, m.y, aoe, it.Col, 0.35f); foreach (var o in AldaraMonsters.I.all.ToArray()) if (!o.dead && Dist(o.x, o.y, m.x, m.y) < aoe) AldaraMonsters.I.HitMonster(o, dmg, col); }
-            else AldaraMonsters.I.HitMonster(m, dmg, col);
+            AldaraMonsters.HitSrc = "pet";
+            try
+            {
+                if (aoe > 0) { AldaraFx.Ring(m.x, m.y, aoe, it.Col, 0.35f); foreach (var o in AldaraMonsters.I.all.ToArray()) if (!o.dead && Dist(o.x, o.y, m.x, m.y) < aoe) AldaraMonsters.I.HitMonster(o, dmg, col); }
+                else AldaraMonsters.I.HitMonster(m, dmg, col);
+            }
+            finally { AldaraMonsters.HitSrc = "player"; }
             if (info != null && info["slow"] != null && !m.dead) m.slowT = 1.5f;
         }
         static float Dist(float ax, float ay, float bx, float by) { return Mathf.Sqrt((ax - bx) * (ax - bx) + (ay - by) * (ay - by)); }

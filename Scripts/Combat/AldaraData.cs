@@ -23,13 +23,13 @@ namespace Aldara
 
     [System.Serializable] public class MoveDef
     {
-        public string id, pose, shape, move, look, el, hz; public float[] hits;
+        public string id, pose, shape, move, look, el, hz, fx; public float[] hits;
         public float wind, act, rec, reach, arc, rad, fwd, wid, len, dmg, dist, spd, min, max, cd, w, slow, kb, buff, n, spread, T, H, delay, tick, turn, lift, @lock, gap, sf, shake, pool, tele, cast, chan, mag, back; public int i;
         public bool Has(float v) { return v >= 0; }
     }
     [System.Serializable] public class MonDef
     {
-        public string name, id, color, kind; public int boss, tier, lv0, lv1, winged, fly, flyer, floater, kite;
+        public string name, id, color, kind; public int boss, tier, lv0, lv1, winged, fly, flyer, floater, kite, dun;
         public float r, hpBase, atk, xp, gold, spd, unitW, top; public MoveDef[] moves;
     }
     [System.Serializable] public class CampDef { public float x, y, r; public int z; public string type; }
@@ -54,7 +54,8 @@ namespace Aldara
             return XPK[XPK.GetLength(0) - 1, 1] * (1 + (L - 120) * 0.02f);
         }
         public static int XpNeedFor(int L) { return Mathf.Max(80, Mathf.RoundToInt((6 + L * 2.2f) * XpPerKillAt(L))); }
-        public static float LvOut(int g) { return g > 0 ? 1f / (1 + 0.075f * g + 0.0035f * g * g) : Mathf.Min(1.25f, 1 - 0.015f * g); }
+        /// your damage by the level gap: far above a monster it multiplies, up to 4x at 100 levels (the browser's level scaling)
+        public static float LvOut(int g) { return g > 0 ? 1f / (1 + 0.075f * g + 0.0035f * g * g) : Mathf.Min(4f, 1 - 0.03f * g); }
         public static float LvIn(int g) { return g > 0 ? 1 + 0.1f * g + 0.005f * g * g : Mathf.Max(0.6f, 1 + 0.025f * g); }
         public static float LvMiss(int g) { return g > 5 ? Mathf.Min(0.6f, (g - 5) * 0.035f) : 0; }
         public static float AngD(float a, float b) { return Mathf.Atan2(Mathf.Sin(a - b), Mathf.Cos(a - b)); }

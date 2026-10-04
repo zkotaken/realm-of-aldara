@@ -29,7 +29,7 @@ namespace Aldara
                 if (m != null) { float w = m.scroll.ReadValue().y; if (Mathf.Abs(w) > 0.01f) zoom = Mathf.Clamp(zoom * (w > 0 ? 1.1f : 1 / 1.1f), 0.8f, 1.6f); }
             }
             Vector3 want = target ? target.position + new Vector3(0, 0, 18f / AldaraWorld.PX) : transform.position;
-            if (Application.isPlaying && AldaraDungeonView.I) { var sh = AldaraDungeonView.I.ShakeOffset; want += new Vector3(sh.x, 0, -sh.y) / AldaraWorld.PX; }
+            if (Application.isPlaying && AldaraVfx.I) { var sh = AldaraVfx.ShakeOffset; want += new Vector3(sh.x, 0, -sh.y) / AldaraWorld.PX; }
             if (!hasFocus || !Application.isPlaying) { focus = want; hasFocus = true; }
             else focus = want;   // the browser keeps the camera locked on the hero
             Apply(cam, focus, zoom, viewHeightPx);

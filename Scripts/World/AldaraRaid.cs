@@ -136,7 +136,7 @@ namespace Aldara
             var m = new AldaraMonsters.Mon
             {
                 def = MonsterBook.Load().Get(D.name), name = D.name, color = D.color, r = D.r, hp = st.hp, maxHp = st.hp, atk = st.atk, xp = Mathf.Round(sc.xp * mul), gold = Mathf.Round(sc.gold * mul), tier = D.boss ? 6 : 5,
-                dun = true, room = s, x = x, y = y, homeX = x, homeY = y, spd = D.spd > 0 ? D.spd : 0.55f, lvl = L, bolt = D.bolt, boss = D.boss, mech = D.mech, mt = 5, mt2 = 9, atkCd = 1, rk = k, rTag = tag, rImm = imm, aggroT = ag ? 40 : 0
+                dun = true, room = s, x = x, y = y, homeX = x, homeY = y, spd = D.spd > 0 ? D.spd : 0.55f, lvl = L, bolt = D.bolt, boss = D.boss, mech = D.mech, mt = 5, mt2 = 9, atkCd = 1, rk = k, rTag = tag, rImm = imm, aggroT = ag ? 40 : 0, lvs = true
             };
             if (m.def == null) return null;
             A.Place(m); AldaraMonsters.I.all.Add(m); if (fx) AldaraFx.Burst(m.x, m.y, D.boss ? 30 : 12, AldaraRules.Hex(D.color));
@@ -366,7 +366,7 @@ namespace Aldara
             var P = AldaraPlayer.I; var H = AldaraHero.I; AldaraFx.Burst(P.x, P.y, 30, AldaraRules.Hex("#1a0a2a")); if (AldaraDungeonView.I) AldaraDungeonView.I.Shake(6, 0.6f);
             if (!H.alive) return; bool safe = wells.Any(q => Vector2.Distance(new Vector2(P.x, P.y), q) < r);
             if (safe) { AldaraFx.Text(P.x, P.y - 16 - 30, "Sheltered", AldaraRules.Hex("#fff0b0")); return; }
-            H.Damage(Mathf.Round(H.maxHp * 0.95f), 0, 0); AldaraFx.Text(P.x, P.y - 16 - 30, "Consumed by the Eclipse", AldaraRules.Hex("#c07aff"));
+            H.Damage(Mathf.Round(H.maxHp * 0.95f), 0, -1); AldaraFx.Text(P.x, P.y - 16 - 30, "Consumed by the Eclipse", AldaraRules.Hex("#c07aff"));
         }
         /// embers fall where knights die
         public static void OnKill(AldaraMonsters.Mon m) { m.respawnT = 1e9f; if (E != null && E.type == "sov" && m.rTag == "knight") E.sp.Add(new Vector2(Mathf.Round(m.x), Mathf.Round(m.y))); }

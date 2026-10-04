@@ -10,6 +10,8 @@ namespace Aldara
     {
         readonly List<Vector3> v = new List<Vector3>(); readonly List<Color> c = new List<Color>(); readonly List<Vector2> uv = new List<Vector2>(); readonly List<int> ix = new List<int>();
         readonly Mesh mesh; readonly Material mat; public float h0;
+        /// world only: every point sits on the terrain (h is added to the ground height there), for marks on the ground
+        public bool conform;
         public static Shader Sh { get { return Shader.Find("Aldara/DunFx"); } }
         public static Material Mat(UnityEngine.Rendering.BlendMode src, UnityEngine.Rendering.BlendMode dst, bool always, int queue, Texture tex = null)
         {
@@ -27,7 +29,28 @@ namespace Aldara
         }
         public void Clear() { v.Clear(); c.Clear(); uv.Clear(); ix.Clear(); }
         public static Vector3 W(float x, float y, float h) { return new Vector3(x / AldaraWorld.PX + AldaraWorld.OX, h / AldaraWorld.PX, (AldaraWorld.YTOP - y) / AldaraWorld.PX); }
-        int Add(float x, float y, float h, Color col) { v.Add(W(x, y, h)); c.Add(col); uv.Add(Vector2.zero); return v.Count - 1; }
+        int Add(float x, float y, float h, Color col) { if (conform && !AldaraWorld.Dun) h += AldaraWorld.HeightPx(x, y); v.Add(W(x, y, h)); c.Add(col); uv.Add(Vector2.zero); return v.Count - 1; }
+        public int Count { get { return v.Count; } }
+        /// a filled shape with a colour at each point (canvas gradients)
+        public void PolyC(IList<Vector2> p, IList<Color> col, float h = -1)
+        {
+            if (h < 0) h = h0; if (p.Count < 3) return; int b = v.Count; for (int i = 0; i < p.Count; i++) Add(p[i].x, p[i].y, h, col[i]);
+            for (int k = 1; k < p.Count - 1; k++) { ix.Add(b); ix.Add(b + k); ix.Add(b + k + 1); }
+        }
+        /// a line whose colour runs from c0 at a to c1 at b
+        public void LineC(float ax, float ay, float bx, float by, float w, Color c0, Color c1, float h = -1)
+        {
+            if (h < 0) h = h0; float dx = bx - ax, dy = by - ay, L = Mathf.Sqrt(dx * dx + dy * dy); if (L < 1e-4f) return; float nx = -dy / L * w / 2, ny = dx / L * w / 2;
+            int i = v.Count; Add(ax + nx, ay + ny, h, c0); Add(bx + nx, by + ny, h, c1); Add(bx - nx, by - ny, h, c1); Add(ax - nx, ay - ny, h, c0);
+            ix.Add(i); ix.Add(i + 1); ix.Add(i + 2); ix.Add(i); ix.Add(i + 2); ix.Add(i + 3);
+        }
+        /// a strip between two edges (ribbons), one colour per pair
+        public void Strip(IList<Vector2> a, IList<Vector2> b, IList<Color> col, float h = -1)
+        {
+            if (h < 0) h = h0; int n = Mathf.Min(a.Count, b.Count); if (n < 2) return; int s = v.Count;
+            for (int i = 0; i < n; i++) { Add(a[i].x, a[i].y, h, col[i]); Add(b[i].x, b[i].y, h, col[i]); }
+            for (int i = 0; i < n - 1; i++) { int q = s + i * 2; ix.Add(q); ix.Add(q + 2); ix.Add(q + 1); ix.Add(q + 1); ix.Add(q + 2); ix.Add(q + 3); }
+        }
         public void Draw(Camera cam)
         {
             if (v.Count == 0) return; mesh.Clear(); mesh.SetVertices(v); mesh.SetColors(c); mesh.SetUVs(0, uv); mesh.SetTriangles(ix, 0, false);

@@ -21,6 +21,13 @@ namespace Aldara
         public AldaraCharacterAnimator anim;
 
         public bool Moving { get; private set; }
+        /// walk / run (Ctrl on its own switches, kept between sessions), resting out of combat, lava and swimming
+        public static bool Run;
+        public const float WALK = 0.62f, RUNM = 1.22f;
+        public static float lastCombat = -99; public static bool Rested;
+        public float sink; bool inLava, swimMsg, ctrlDown, ctrlUsed; float burnT;
+        public static void ToggleRun() { Run = !Run; PlayerPrefs.SetInt("aldara/run", Run ? 1 : 0); AldaraHud.Banner(Run ? "Running" : "Walking"); }
+        public bool OnFoot { get { return !wings; } }
         public bool MovingBack { get; private set; }
         float shownFacing;
         Vector2 lastSlide; float lastSlideT = -1;
@@ -30,7 +37,7 @@ namespace Aldara
 
         void Awake()
         {
-            I = this; AldaraWorld.Load();
+            I = this; AldaraWorld.Load(); Run = PlayerPrefs.GetInt("aldara/run", 0) == 1;
             if (CAP_DIRS == null) { CAP_DIRS = new Vector2[CAP_N]; for (int i = 0; i < CAP_N; i++) CAP_DIRS[i] = new Vector2(Mathf.Cos(i / (float)CAP_N * Mathf.PI * 2), Mathf.Sin(i / (float)CAP_N * Mathf.PI * 2)); }
             if (AldaraWorld.BlockedAt(x, y)) { var f = FreeSpotNear(x, y); x = f.x; y = f.y; }
             shownFacing = facing;
@@ -44,7 +51,8 @@ namespace Aldara
             float liqK = liq == 2 ? 0.45f : liq != 0 ? 0.62f : 1f;
             float slow = AldaraHero.I && AldaraHero.I.slowT > 0 ? 0.65f : 1f;
             if (AldaraDungeon.Active) road = 1;
-            return road * speed * (wings ? 1.15f : 0.72f) * liqK * slow;
+            float v = road * speed * AldaraRelics.SpeedMult() * (wings ? 1.15f : 0.72f) * liqK * slow * (Rested ? 1.15f : 1);
+            return OnFoot ? v * (Run ? RUNM : WALK) : v;
         }
 
         void Update()
@@ -53,6 +61,7 @@ namespace Aldara
             if (!AldaraSave.Ready) { transform.position = AldaraWorld.ToUnity(x, y + 18); return; }
             float lx = x, ly = y;
             var kb = Keyboard.current; var hero = AldaraHero.I;
+            Ctrl(kb); Rest(dt, hero);
             float dx = 0, dy = 0;
             if (kb != null && (hero == null || hero.alive))
             {
@@ -83,7 +92,7 @@ namespace Aldara
                 CapsuleSlide(lx, ly);
                 if (AldaraWorld.BlockedAt(x, y)) { var f = FreeSpotNear(x, y); x = f.x; y = f.y; }
             }
-            liq = wings ? 0 : AldaraWorld.LiquidAt(x, y);
+            Liquid(dt, hero);
 
             float mv = Mathf.Sqrt((x - lx) * (x - lx) + (y - ly) * (y - ly));
             Moving = mv > 0.05f;
@@ -91,13 +100,45 @@ namespace Aldara
 
             // place in Unity: feet on the ground, a little lower in water (wading)
             var p = AldaraWorld.ToUnity(x, y + 18);   // the browser draws the hero's feet 18 px below its point
-            if (liq != 0) p.y = Mathf.Max(p.y, AldaraWorld.WATER_Y) - (liq == 3 ? 0.55f : 0.4f);
+            if (sink > 0.6f) p.y = Mathf.Max(p.y, AldaraWorld.WATER_Y) - sink / AldaraWorld.PX;
             transform.position = p;
             shownFacing = Mathf.LerpAngle(shownFacing * Mathf.Rad2Deg, facing * Mathf.Rad2Deg, 1 - Mathf.Exp(-turnRate * dt)) * Mathf.Deg2Rad;
             // browser facing 0 = east (+x), PI/2 = south (Unity -z). Unity yaw: 0 = +z, 90 = +x
             if (model) model.localRotation = Quaternion.Euler(0, 90 + shownFacing * Mathf.Rad2Deg, 0);
             // with wings you fly: no running gait (the browser's _movingNow is false while hovering)
             if (anim) anim.SetMoving(Moving && !wings, MovingBack, mv / Mathf.Max(dt, 1e-4f));
+        }
+
+        void Ctrl(Keyboard kb)
+        {
+            if (kb == null) return; bool c = kb.leftCtrlKey.isPressed || kb.rightCtrlKey.isPressed; var m = Mouse.current;
+            if (c && !ctrlDown) { ctrlDown = true; ctrlUsed = false; }
+            else if (c && ctrlDown) { if (kb.anyKey.wasPressedThisFrame && !kb.leftCtrlKey.wasPressedThisFrame && !kb.rightCtrlKey.wasPressedThisFrame) ctrlUsed = true; if (m != null && (m.leftButton.wasPressedThisFrame || m.rightButton.wasPressedThisFrame)) ctrlUsed = true; }
+            else if (!c && ctrlDown) { ctrlDown = false; if (!ctrlUsed && !AldaraHud.Typing) ToggleRun(); }
+        }
+        /// qolTick: out of combat for six seconds (not in a dungeon), you recover 3% a second and travel 15% faster
+        void Rest(float dt, AldaraHero H)
+        {
+            Rested = H && H.alive && !AldaraDungeon.Active && Time.time - lastCombat > 6 && !(H.target != null && !H.target.dead);
+            if (!Rested) return;
+            if (H.hp < H.maxHp) H.hp = Mathf.Min(H.maxHp, H.hp + H.maxHp * 0.03f * dt);
+            if (H.mana < H.maxMana) H.mana = Mathf.Min(H.maxMana, H.mana + H.maxMana * 0.03f * dt);
+        }
+        /// liquidPlayer: wading and sinking, the lava's burn, the swimming note
+        void Liquid(float dt, AldaraHero H)
+        {
+            if (AldaraDungeon.Active || (H && !H.alive)) { liq = 0; sink = Mathf.Max(0, sink - dt * 60); return; }
+            int L = wings ? 0 : AldaraWorld.LiquidAt(x, y); liq = L;
+            float target = L == 2 ? 42 : (L != 0 ? 22 : 0); sink += (target - sink) * Mathf.Min(1, dt * (L == 2 ? 0.9f : 5));
+            if (L == 2)
+            {
+                if (!inLava) { inLava = true; burnT = 0.2f; AldaraHud.Banner("The lava burns! Get out, or equip wings to fly over it"); }
+                burnT -= dt; if (burnT <= 0) { burnT = 0.5f; if (H) H.Damage(Mathf.Max(1, Mathf.Round(H.maxHp * 0.06f)), 0, -1); }
+                if (Random.value < dt * 25) AldaraVfx.Particle(x + (Random.value - 0.5f) * 26, y + 8, (Random.value - 0.5f) * 30, -60 - Random.value * 60, 0.7f, AldaraRules.Hex(Random.value < 0.5f ? "#ffb14a" : "#ff5a1a"), 3);
+            }
+            else inLava = false;
+            if (L != 0 && L != 2 && !swimMsg) { swimMsg = true; AldaraFx.Text(x, y - 56, "Swimming", AldaraRules.Hex("#9fdfff")); }
+            if (L == 0) swimMsg = false;
         }
 
         // ---- collision: port of the browser's capsule slide ----

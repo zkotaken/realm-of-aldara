@@ -14,8 +14,8 @@ namespace Aldara
         GameObject inst; AldaraSketch gA, gAdd, aA, aAdd;
         float shakeAmp, shakeT, shakeMax; readonly List<KeyValuePair<Vector3, Color>> propGlows = new List<KeyValuePair<Vector3, Color>>();
         void Awake() { I = this; }
-        public void Shake(float amp, float dur) { if (amp >= shakeAmp || shakeT <= 0) { shakeAmp = amp; shakeT = dur; shakeMax = dur; } }
-        public Vector2 ShakeOffset { get { if (shakeT <= 0) return Vector2.zero; float k = shakeT / shakeMax * shakeAmp; return new Vector2((Random.value - 0.5f) * 2 * k, (Random.value - 0.5f) * 2 * k); } }
+        public void Shake(float amp, float dur) { AldaraVfx.Shake(amp, dur); }
+        public Vector2 ShakeOffset { get { return AldaraVfx.ShakeOffset; } }
 
         public void Enter(A.Map M)
         {

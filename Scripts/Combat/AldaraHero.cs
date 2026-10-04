@@ -17,6 +17,9 @@ namespace Aldara
         public int str, agi, vit, ene; public float baseAtk, baseHp;
         public float atk, hp, maxHp, mana, maxMana, speed = 220;
         public float atkCd, slowT, hurt, atkBuff, hasteBuff, shield, shieldT; public bool alive = true, aiming;
+        public string shieldName; public Color castCol = AldaraRules.Hex("#8ab4ff"); public float cast, castMax, release, releaseMax; bool freeQueued;
+        public class Swing { public float t, dur; public bool big, spin, hit; public int combo = -1; }
+        public Swing swing;
         public AldaraMonsters.Mon target;
         int combo; float lastSwing, deadAt = -1, lastFight = -99;
         AldaraPlayer P; AldaraCharacterAnimator anim;
@@ -132,17 +135,26 @@ namespace Aldara
             return d;
         }
         float AttackRange(AldaraMonsters.Mon t) { return cls == "archer" ? 280 : cls == "mage" ? 210 : t.r + 34; }
-        float AtkCdNow() { return ATK_CD[cls] * (hasteBuff > 0 ? 0.6f : 1); }
+        float AtkCdNow() { return ATK_CD[cls] * (hasteBuff > 0 ? 0.6f : 1) / AldaraRelics.SpeedMult(); }
+        public void Cast(float t) { cast = castMax = t; }
+        public void Release(float t) { release = releaseMax = t; }
+        public void StartSwing(float dur, bool big, int combo = -1, bool spin = false) { swing = new Swing { dur = dur, big = big, combo = combo, spin = spin }; }
         public void MarkFight() { lastFight = Time.time; }
 
         public void Damage(float dmg, float ang, int srcLvl)
         {
             if (!alive) return;
+            // the level gap: the attacker's level, else the highest-level monster fighting you (lvThreat); environment damage (srcLvl < 0) is not scaled
+            if (srcLvl == 0) { AldaraMonsters.Mon best = null; foreach (var m in AldaraMonsters.I.all) { if (m.dead || !(m.aggroT > 0 || m.act != null)) continue; float d = Mathf.Sqrt((m.x - P.x) * (m.x - P.x) + (m.y - P.y) * (m.y - P.y)); if (d < 900 && m.lvl > (best != null ? best.lvl : -1)) best = m; } if (best != null) srcLvl = best.lvl; }
             if (srcLvl > 0) dmg = Mathf.Max(1, Mathf.Round(dmg * AldaraRules.LvIn(srcLvl - lvl)));
             float blk = AldaraTree.T("block"); if (blk > 0) dmg = Mathf.Round(dmg * (1 - blk));
+            AldaraPlayer.lastCombat = Time.time;
+            dmg = AldaraRelics.OnDamage(dmg, ang);
             if (shield > 0) { float ab = Mathf.Min(shield, dmg); shield -= ab; dmg -= ab; if (ab > 0) AldaraFx.Text(P.x + 14, P.y - 26, "(" + ab + ")", AldaraRules.Hex("#8ab4ff")); }
-            hp -= dmg; DStat.Taken(dmg); hurt = 0.15f; lastFight = Time.time;
+            hp -= dmg; DStat.Taken(dmg); hurt = dmg > 0 ? 0.15f : 0; lastFight = Time.time;
+            AldaraVfx.Burst(P.x - Mathf.Cos(ang) * 8, P.y - Mathf.Sin(ang) * 8, AldaraRules.Hex("#ff6a6a"), 5, 110);
             if (dmg > 0) AldaraFx.Text(P.x, P.y - 26, "-" + dmg, AldaraRules.Hex("#ff6a6a"));
+            if (AldaraRelics.AfterDamage()) return;
             if (hp <= 0) Died();
         }
         /// back on your feet (raids: revived, risen at the checkpoint, or after a wipe)
@@ -210,6 +222,8 @@ namespace Aldara
                 UpdateShots(dt); return;
             }
             if (atkCd > 0) atkCd -= dt;
+            TickSwing(dt);
+            if (cls == "mage" && cast > 0 && Random.value < dt * 40) { float tx = P.x + Mathf.Cos(P.facing) * 20, ty = P.y + Mathf.Sin(P.facing) * 20, aa = Random.value * Mathf.PI * 2; AldaraVfx.Mpush(new AldaraVfx.Mp { x = tx + Mathf.Cos(aa) * 20, y = ty + Mathf.Sin(aa) * 10, z = AldaraVfx.PH_Y + 10 + Mathf.Sin(aa) * 10, vx = -Mathf.Cos(aa) * 60, vy = -Mathf.Sin(aa) * 30, life = 0.3f, max = 0.3f, c = castCol, s = 2, glow = true }); }
             mana = Mathf.Min(maxMana, mana + (2 + effEne * 0.12f) * (1 + AldaraTree.T("mreg")) * dt);
             // click: the monster under the cursor (compared on screen, as the browser does with LZ); empty ground attacks there
             var mouse = Mouse.current;
@@ -229,7 +243,7 @@ namespace Aldara
                 if (best == null) { if (AldaraSkills.I) AldaraSkills.I.queued = null; FreeAttack(); }
             }
             var kb = Keyboard.current;
-            if (kb != null && AldaraKeys.Held("attack") && atkCd <= 0 && !(target != null && !target.dead && InRange(target))) FreeAttack();
+            if (kb != null && (AldaraKeys.Held("attack") || freeQueued) && atkCd <= 0 && !(target != null && !target.dead && aiming)) FreeAttack();
             if (kb != null && kb.tabKey.wasPressedThisFrame) target = AldaraMonsters.I.FindNearest(P.x, P.y, 700);
             if (AldaraKeys.Pressed("hp")) DrinkVial(true);
             if (AldaraKeys.Pressed("mp")) DrinkVial(false);
@@ -286,68 +300,157 @@ namespace Aldara
             }
             return false;
         }
-        void StartCombo() { lastFight = Time.time; float now = Time.time; combo = now - lastSwing < 1.3f ? (combo + 1) % 3 : 0; lastSwing = now; }
+        void StartCombo() { lastFight = Time.time; float now = Time.time; combo = now - lastSwing < 1.3f ? (combo + 1) % 3 : 0; lastSwing = now; StartSwing(new[] { 0.3f, 0.3f, 0.42f }[combo], false, combo); }
+        /// the swing's landing: big blows and the overhead chop shake the ground (updateFx)
+        void TickSwing(float dt)
+        {
+            if (swing == null) return; var sw = swing; sw.t += dt;
+            if (!sw.hit && !sw.spin && (sw.big || sw.combo == 2) && sw.t / sw.dur >= 0.56f)
+            {
+                sw.hit = true; float ix = P.x + Mathf.Cos(P.facing) * 34, iy = P.y + Mathf.Sin(P.facing) * 34; var tc = AldaraSkillFx.TrailC;
+                if (sw.big) AldaraVfx.Mfx(new AldaraVfx.Mf { k = "shock", x = ix, y = iy, r = 66, c = tc, c2 = tc, T = 0.4f });
+                AldaraVfx.Mfx(new AldaraVfx.Mf { k = "flash", x = ix, y = iy, h = 6, r = 34, c = tc, c2 = Color.white, T = 0.2f });
+                AldaraVfx.Shake(sw.big ? 5 : 3.5f, 0.22f); AldaraVfx.Burst(ix, iy, AldaraRules.Hex("#e8d8b0"), 12, 170); AldaraVfx.Burst(ix, iy, tc, 8, 120);
+            }
+            if (sw.t >= sw.dur) swing = null;
+            if (cast > 0) cast -= dt; if (release > 0) release -= dt;
+        }
         void PlayBasic() { if (!anim) return; if (cls == "knight") anim.Play("a" + (combo + 1)); else anim.Play("basic" + (combo + 1)); }
         void BasicAttack(AldaraMonsters.Mon t)
         {
-            StartCombo(); PlayBasic();
-            if (cls == "knight") { AldaraMonsters.I.HitMonster(t, RollDmg(1), AldaraRules.Hex("#ffd35a")); AldaraFx.Slash(t.x, t.y, P.facing, AldaraRules.Hex("#ffe07a"), t.r + 14, false); }
-            else Shoot(t, Vector2.zero, cls == "mage" ? AldaraRules.Hex("#8ab4ff") : AldaraRules.Hex("#ffd35a"), cls == "mage" ? 540 : 780, cls == "mage" ? 0.35f : 0.18f, m => AldaraMonsters.I.HitMonster(m, RollDmg(1), cls == "mage" ? AldaraRules.Hex("#9fc0ff") : AldaraRules.Hex("#ffd35a")));
-        }
-        void FreeAttack()
-        {
-            if (atkCd > 0) return; atkCd = AtkCdNow(); float ang = AimAngle(); P.facing = ang;
-            StartCombo(); PlayBasic();
-            if (cls == "knight")
+            if (cls == "knight") { StartCombo(); PlayBasic(); AldaraSkillFx.KnightSlash(t.x, t.y, combo, swing.dur); AldaraMonsters.I.HitMonster(t, RollDmg(1), AldaraRules.Hex("#ffd35a")); AldaraVfx.Burst(t.x, t.y, AldaraRules.Hex("#ffe8a0"), 6, 120); }
+            else if (cls == "mage")
             {
-                int n = 0; AldaraFx.Slash(P.x + Mathf.Cos(ang) * 34, P.y + Mathf.Sin(ang) * 34, ang, AldaraRules.Hex("#ffe07a"), 40, false);
-                foreach (var m in AldaraMonsters.I.all)
-                {
-                    if (m.dead || n >= 3) continue; float d = Mathf.Sqrt((m.x - P.x) * (m.x - P.x) + (m.y - P.y) * (m.y - P.y)); if (d > 50 + m.r) continue;
-                    if (Mathf.Abs(AldaraRules.AngD(Mathf.Atan2(m.y - P.y, m.x - P.x), ang)) < 1.1f) { AldaraMonsters.I.HitMonster(m, RollDmg(1), AldaraRules.Hex("#ffd35a")); n++; }
-                }
+                StartCombo(); PlayBasic(); Cast(0.25f); castCol = AldaraRules.Hex("#8ab4ff");
+                Fire("bolt", t, m => { AldaraMonsters.I.HitMonster(m, RollDmg(1), AldaraRules.Hex("#9fc0ff")); AldaraVfx.Burst(m.x, m.y, AldaraRules.Hex("#8ab4ff"), 8, 140); var f = AldaraVfx.Effect("explode", m.x, m.y, 30, 0.3f, Color.white); f.c1 = AldaraRules.Hex("#8ab4ff"); f.c2 = AldaraRules.Hex("#4a5aff"); f.core = Color.white; AldaraSkillFx.Pfx("bolt_hit", m, m.x, m.y, null, null, "#8ab4ff"); });
             }
             else
             {
-                var c = cls == "mage" ? AldaraRules.Hex("#8ab4ff") : AldaraRules.Hex("#ffd35a");
-                Shoot(null, AimPoint(true), c, cls == "mage" ? 540 : 780, cls == "mage" ? 0.35f : 0.18f, m => AldaraMonsters.I.HitMonster(m, RollDmg(1), c));
+                StartCombo(); PlayBasic(); Release(0.15f); AldaraSkillFx.Pfx("muzzle", null, 0, 0, null, null, "#fff0c0");
+                Fire("arrow", t, m => { AldaraMonsters.I.HitMonster(m, RollDmg(1), AldaraRules.Hex("#ffd35a")); AldaraVfx.Burst(m.x, m.y, AldaraRules.Hex("#e8d8b0"), 4, 90); });
             }
         }
-
-        // ---- hero projectiles: fly to the target (homing), or straight to a point hitting the first monster on the way ----
-        class Shot { public AldaraMonsters.Mon t; public float x, y, tx, ty, spd, life; public Color c; public GameObject go; public System.Action<AldaraMonsters.Mon> hit; }
-        readonly List<Shot> shots = new List<Shot>();
-        public void Shoot(AldaraMonsters.Mon t, Vector2 at, Color c, float spd, float size, System.Action<AldaraMonsters.Mon> onHit)
+        void FreeAttack()
         {
-            float tip = 24; var s = new Shot { t = t, x = P.x + Mathf.Cos(P.facing) * tip, y = P.y + Mathf.Sin(P.facing) * tip, tx = at.x, ty = at.y, spd = spd, c = c, hit = onHit, life = 3 };
-            if (t == null) s.life = Mathf.Sqrt((at.x - P.x) * (at.x - P.x) + (at.y - P.y) * (at.y - P.y)) / spd + 0.05f;
-            s.go = AldaraFx.Orb(c, size); shots.Add(s);
+            if (!alive) return; if (atkCd > 0) { freeQueued = true; return; }
+            freeQueued = false; atkCd = AtkCdNow(); float ang = AimAngle(); P.facing = ang;
+            if (cls == "knight")
+            {
+                StartCombo(); PlayBasic(); var hits = new List<AldaraMonsters.Mon>();
+                foreach (var m in AldaraMonsters.I.all)
+                {
+                    if (m.dead || !AldaraDungeon.Reachable(m)) continue; float d = Mathf.Sqrt((m.x - P.x) * (m.x - P.x) + (m.y - P.y) * (m.y - P.y)); if (d > 50 + m.r) continue;
+                    if (Mathf.Abs(AldaraRules.AngD(Mathf.Atan2(m.y - P.y, m.x - P.x), ang)) < 1.1f) hits.Add(m);
+                }
+                AldaraSkillFx.KnightSlash(P.x + Mathf.Cos(ang) * 34, P.y + Mathf.Sin(ang) * 34, combo, swing.dur);
+                for (int i = 0; i < hits.Count && i < 3; i++) { AldaraMonsters.I.HitMonster(hits[i], RollDmg(1), AldaraRules.Hex("#ffd35a")); AldaraVfx.Burst(hits[i].x, hits[i].y, AldaraRules.Hex("#ffe8a0"), 6, 120); }
+            }
+            else { var at = AimPoint(true); BasicAttack(AldaraSkills.Dummy(at.x, at.y)); }
+        }
+
+        // ---- hero projectiles (fire / updateFx / PROJ3): home in on the target while it lives; aimed at the ground they hit the first monster they pass ----
+        public class HProj { public string kind; public float x, y, tx, ty, spd, ang, d0 = -1, wob; public AldaraMonsters.Mon t; public System.Action<AldaraMonsters.Mon> fn; public string glow, color; public List<Vector2> trail = new List<Vector2>(); }
+        public readonly List<HProj> projectiles = new List<HProj>();
+        public void Fire(string kind, AldaraMonsters.Mon t, System.Action<AldaraMonsters.Mon> fn, string glow = null, string color = null, float spd = 0)
+        {
+            float tx = P.x + Mathf.Cos(P.facing) * 24, ty = P.y + Mathf.Sin(P.facing) * 24;
+            if (spd <= 0) spd = kind == "arrow" ? 780 : kind == "fireball" ? 430 : 540;
+            projectiles.Add(new HProj { kind = kind, x = tx, y = ty, t = t, tx = t.x, ty = t.y, spd = spd, fn = fn, ang = P.facing, glow = glow, color = color });
         }
         void UpdateShots(float dt)
         {
-            var M = AldaraMonsters.I;
-            for (int i = shots.Count - 1; i >= 0; i--)
+            if (!hooked) { hooked = true; AldaraVfx.DrawAir += DrawProj; }
+            for (int i = projectiles.Count - 1; i >= 0; i--)
             {
-                var s = shots[i]; s.life -= dt;
-                float tx = s.t != null ? s.t.x : s.tx, ty = s.t != null ? s.t.y : s.ty;
-                float dx = tx - s.x, dy = ty - s.y, d = Mathf.Sqrt(dx * dx + dy * dy), st = s.spd * dt;
-                bool done = false;
-                if (s.t != null && s.t.dead) done = true;
-                else if (d <= st + (s.t != null ? s.t.r * 0.5f : 0)) { if (s.t != null && s.hit != null) s.hit(s.t); else if (s.t == null) HitAt(s, tx, ty); done = true; }
-                else
+                var pr = projectiles[i];
+                if (!pr.t.dead) { pr.tx = pr.t.x; pr.ty = pr.t.y; }
+                if (pr.t.dummy)
                 {
-                    s.x += dx / d * st; s.y += dy / d * st;
-                    if (s.t == null) foreach (var m in M.all) { if (m.dead) continue; if ((m.x - s.x) * (m.x - s.x) + (m.y - s.y) * (m.y - s.y) < m.r * m.r) { if (s.hit != null) s.hit(m); done = true; break; } }
-                    if (AldaraDungeon.Active ? AldaraDungeon.WallD(s.x, s.y) < 0 : AldaraWorld.BlockedAt(s.x, s.y)) done = true;
+                    AldaraMonsters.Mon hit = null;
+                    foreach (var m in AldaraMonsters.I.all) { if (m.dead || !AldaraDungeon.Reachable(m) || Mathf.Abs(m.x - pr.x) > 80 || Mathf.Abs(m.y - pr.y) > 80) continue; if (Mathf.Sqrt((m.x - pr.x) * (m.x - pr.x) + (m.y - pr.y) * (m.y - pr.y)) < m.r + 6) { hit = m; break; } }
+                    if (hit != null) { projectiles.RemoveAt(i); pr.fn(hit); continue; }
                 }
-                if (s.life <= 0) done = true;
-                if (s.go) s.go.transform.position = AldaraWorld.ToUnity(s.x, s.y) + Vector3.up * 0.85f;
-                if (done) { if (s.go) Destroy(s.go); shots.RemoveAt(i); }
+                float dx = pr.tx - pr.x, dy = pr.ty - pr.y, d = Mathf.Sqrt(dx * dx + dy * dy); pr.ang = Mathf.Atan2(dy, dx);
+                float step = pr.spd * dt;
+                if (d <= step + (pr.t.dead ? 4 : pr.t.r * 0.6f)) { projectiles.RemoveAt(i); if (!pr.t.dead) pr.fn(pr.t); continue; }
+                pr.x += dx / d * step; pr.y += dy / d * step;
+                if (pr.kind == "fireball" && Random.value < 0.8f) AldaraVfx.Particle(pr.x, pr.y, (Random.value - 0.5f) * 40, (Random.value - 0.5f) * 40, 0.3f, AldaraRules.Hex(Random.value < 0.5f ? "#ff8a3a" : "#ffd35a"), 3);
+                if (pr.kind == "bolt" && Random.value < 0.5f) AldaraVfx.Particle(pr.x, pr.y, 0, 0, 0.2f, AldaraRules.Hex("#8ab4ff"), 2);
             }
         }
-        void HitAt(Shot s, float x, float y)
+        bool hooked; void OnDestroy() { if (hooked) AldaraVfx.DrawAir -= DrawProj; }
+        static List<Vector2> TrailOf(HProj pr, float x, float y, int n) { pr.trail.Add(new Vector2(x, y)); if (pr.trail.Count > n) pr.trail.RemoveAt(0); return pr.trail; }
+        static Vector2 Rt(float x, float y, float a, float lx, float ly) { float c = Mathf.Cos(a), s = Mathf.Sin(a); return new Vector2(x + c * lx - s * ly, y + s * lx + c * ly); }
+        void DrawProj(AldaraVfx V)
         {
-            foreach (var m in AldaraMonsters.I.all) { if (m.dead) continue; if ((m.x - x) * (m.x - x) + (m.y - y) * (m.y - y) < (m.r + 10) * (m.r + 10)) { if (s.hit != null) s.hit(m); return; } }
+            var aN = V.AirN; var aA = V.AirA; float LIFT = AldaraVfx.LIFT;
+            foreach (var pr in projectiles)
+            {
+                float bz = AldaraVfx.LZ(pr.x, pr.y);
+                switch (pr.kind)
+                {
+                    case "arrow":
+                        {
+                            float x = pr.x, y = pr.y - LIFT * 0.8f, a = pr.ang; var T = TrailOf(pr, x, y, 7); Color? col = pr.glow != null ? AldaraRules.Hex(pr.glow) : (Color?)null;
+                            aN.Ellipse(pr.x, pr.y, 7, 2, new Color(0, 0, 0, 0.25f), bz, 0, 12);
+                            if (T.Count > 1) aA.LineC(T[0].x, T[0].y, x, y, col.HasValue ? 5 : 2, AldaraVfx.A(col ?? Color.white, 0), AldaraVfx.A(col ?? Color.white, col.HasValue ? 0.8f : 0.35f), bz);
+                            if (col.HasValue) AldaraVfx.Glow(aA, x, y, 16, col.Value, 0.7f, bz);
+                            var p0 = Rt(x, y, a, -22, 0); var p1 = Rt(x, y, a, 4, 0); aN.Line(p0.x, p0.y, p1.x, p1.y, 2, AldaraRules.Hex("#8a6a40"), bz);
+                            aN.Poly(new[] { Rt(x, y, a, 11, 0), Rt(x, y, a, 2, -4), Rt(x, y, a, 4, 0), Rt(x, y, a, 2, 4) }, col ?? AldaraRules.Hex("#d8dce8"), bz);
+                            aN.Poly(new[] { Rt(x, y, a, -22, 0), Rt(x, y, a, -27, -5), Rt(x, y, a, -17, 0), Rt(x, y, a, -27, 5) }, col.HasValue ? Color.white : AldaraRules.Hex("#c04a4a"), bz);
+                            break;
+                        }
+                    case "fireball":
+                        {
+                            float x = pr.x, y = pr.y - LIFT, t = Time.time * 1000 / 90; var T = TrailOf(pr, x, y, 12);
+                            for (int i = 0; i < T.Count; i++) { float s = (i + 1f) / T.Count; AldaraVfx.Glow(aA, T[i].x, T[i].y, 6 + 16 * s, AldaraRules.Hex(i % 2 == 1 ? "#ff5a1a" : "#ff9a3a"), 0.5f * s, bz); }
+                            AldaraVfx.Glow(aA, x, y, 34, AldaraRules.Hex("#ff6a1a"), 0.55f, bz); AldaraVfx.Glow(aA, x, y, 16, AldaraRules.Hex("#ffd35a"), 0.9f, bz);
+                            for (int i = 0; i < 5; i++) { float a = t + i * 1.26f; AldaraVfx.Circle(aA, x + Mathf.Cos(a) * 9, y + Mathf.Sin(a) * 9, 3.2f, new Color(1, 170 / 255f, 60 / 255f, 0.7f), bz); }
+                            AldaraVfx.Circle(aA, x, y, 5.5f, AldaraRules.Hex("#fff8e0"), bz);
+                            if (Random.value < 0.9f) AldaraVfx.Particle(x + (Random.value - 0.5f) * 8, pr.y + (Random.value - 0.5f) * 8, (Random.value - 0.5f) * 50, -20 - Random.value * 40, 0.35f, AldaraRules.Hex(Random.value < 0.5f ? "#ff8a3a" : "#ffd35a"), 3);
+                            break;
+                        }
+                    case "ice":
+                        {
+                            float x = pr.x, y = pr.y - LIFT, a = pr.ang; var T = TrailOf(pr, x, y, 10);
+                            for (int i = 0; i < T.Count; i++) { float s = (i + 1f) / T.Count; AldaraVfx.Glow(aA, T[i].x, T[i].y, 4 + 10 * s, AldaraRules.Hex("#8fdfff"), 0.45f * s, bz); }
+                            AldaraVfx.Glow(aA, x, y, 26, AldaraRules.Hex("#8fdfff"), 0.6f, bz);
+                            aN.Poly(new[] { Rt(x, y, a, 16, 0), Rt(x, y, a, 0, -5), Rt(x, y, a, -12, 0), Rt(x, y, a, 0, 5) }, AldaraRules.Hex("#e8f8ff"), bz);
+                            aN.Tri(Rt(x, y, a, 16, 0), Rt(x, y, a, 0, 5), Rt(x, y, a, -12, 0), AldaraRules.Hex("#8fdfff"), bz);
+                            foreach (var sd in new[] { -1, 1 }) aN.Tri(Rt(x, y, a, 2, 0), Rt(x, y, a, -6, sd * 9), Rt(x, y, a, -2, 0), AldaraRules.Hex("#bfefff"), bz);
+                            if (Random.value < 0.6f) AldaraVfx.Particle(x, pr.y, (Random.value - 0.5f) * 30, (Random.value - 0.5f) * 30, 0.3f, AldaraRules.Hex("#dff6ff"), 2);
+                            break;
+                        }
+                    default:
+                        {   // bolt: the mage's spark; with a colour it arcs (arcane missiles)
+                            var col = AldaraRules.Hex(pr.color ?? "#8ab4ff"); bool arc = pr.color != null;
+                            if (pr.d0 < 0) { pr.d0 = Mathf.Max(1, Mathf.Sqrt((pr.tx - pr.x) * (pr.tx - pr.x) + (pr.ty - pr.y) * (pr.ty - pr.y))); pr.wob = (Random.value < 0.5f ? -1 : 1) * (40 + Random.value * 50); }
+                            float d = Mathf.Sqrt((pr.tx - pr.x) * (pr.tx - pr.x) + (pr.ty - pr.y) * (pr.ty - pr.y)), prog = Mathf.Clamp01(1 - d / pr.d0), off = arc ? Mathf.Sin(prog * Mathf.PI) * pr.wob : 0;
+                            float x = pr.x - Mathf.Sin(pr.ang) * off, y = pr.y - LIFT + Mathf.Cos(pr.ang) * off, t = Time.time * 1000 / 120; var T = TrailOf(pr, x, y, arc ? 14 : 9);
+                            for (int i = 1; i < T.Count; i++) { float s = i / (float)T.Count; aA.Line(T[i - 1].x, T[i - 1].y, T[i].x, T[i].y, 2 + 7 * s, AldaraVfx.A(col, 0.6f * s), bz); }
+                            AldaraVfx.Glow(aA, x, y, 26, col, 0.6f, bz); AldaraVfx.Glow(aA, x, y, 10, Color.white, 0.9f, bz);
+                            if (arc) { var pts = new List<Vector2>(); for (int i = 0; i < 8; i++) { float rr = i % 2 == 1 ? 3 : 9, a = i / 8f * Mathf.PI * 2; pts.Add(Rt(x, y, t, Mathf.Cos(a) * rr, Mathf.Sin(a) * rr)); } aA.Poly(pts, Color.white, bz); }
+                            else { AldaraVfx.Circle(aA, x, y, 4, Color.white, bz); aA.Arc(x, y, 8, 8, t, t + 2, 1.2f, AldaraVfx.A(AldaraRules.Hex("#cfe0ff"), 0.8f), bz); aA.Arc(x, y, 8, 8, t + 3.14f, t + 5.1f, 1.2f, AldaraVfx.A(AldaraRules.Hex("#cfe0ff"), 0.8f), bz); }
+                            break;
+                        }
+                }
+            }
+            // the barrier bubble while a shield holds (drawBarrier)
+            if (alive && shield > 0) Barrier(aA, P.x, P.y, cls == "mage" ? AldaraRules.Hex("#8ab4ff") : AldaraRules.Hex("#ffd35a"));
+        }
+        static void Barrier(AldaraSketch s, float x, float y, Color col)
+        {
+            float t = Time.time, R = 30, Hh = 44, cy = y - 10, bz = AldaraVfx.LZ(x, y);
+            s.Glow(x, cy, R, Hh, new[] { 0, 0.3f, 0.8f, 1 }, new[] { AldaraVfx.A(col, 0), AldaraVfx.A(col, 0), AldaraVfx.A(col, 0.12f), AldaraVfx.A(col, 0.4f) }, bz, 28);
+            AldaraVfx.Ring(s, x, cy, R, Hh, 1.8f, AldaraVfx.A(col, 0.75f + 0.25f * Mathf.Sin(t * 4)), bz);
+            for (int i = 0; i < 14; i++)
+            {
+                float a = i / 14f * Mathf.PI * 2 + t * 0.6f, sx = Mathf.Cos(a); if (Mathf.Sin(a) < -0.2f) continue;
+                float px = x + sx * R * 0.82f, py = cy + ((i * 0.618f) % 1 - 0.5f) * Hh * 1.4f, sz = 5 * (0.5f + 0.5f * Mathf.Sin(a)); var hex = new List<Vector2>();
+                for (int j = 0; j <= 6; j++) { float b = j / 6f * Mathf.PI * 2; hex.Add(new Vector2(px + Mathf.Cos(b) * sz * 0.8f, py + Mathf.Sin(b) * sz)); }
+                s.Polyline(hex, 1, AldaraVfx.A(Color.white, 0.35f * Mathf.Sin(a) + 0.15f), false, bz);
+            }
+            for (int k = 0; k < 2; k++) AldaraVfx.Ring(s, x, cy + (k == 1 ? 10 : -10), R * 1.05f, R * 0.3f, 1.3f, AldaraVfx.A(k == 1 ? Color.white : col, 0.55f), bz, Mathf.Sin(t * (k == 1 ? 1.3f : -1.1f)) * 0.35f);
         }
     }
 }

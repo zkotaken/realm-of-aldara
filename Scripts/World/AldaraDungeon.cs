@@ -458,7 +458,7 @@ namespace Aldara
             AldaraFx.Burst(P.x, P.y, 26, col); if (AldaraDungeonView.I) AldaraDungeonView.I.Shake(4, 0.35f);
             AldaraFx.Text(P.x, P.y - 16 - 40, kind == "lava" ? "Into the lava!" : kind == "water" ? "Through the ice!" : "Lost to the void!", col);
             P.x = D.safe.x; P.y = D.safe.y; D.vx = D.vy = 0; H.target = null;
-            H.Damage(Mathf.Round(H.maxHp * (kind == "lava" ? 0.18f : 0.12f)), 0, 0);
+            H.Damage(Mathf.Round(H.maxHp * (kind == "lava" ? 0.18f : 0.12f)), 0, -1);
             if (kind == "water") H.slowT = Mathf.Max(H.slowT, 2.5f);
             AldaraFx.Burst(P.x, P.y, 14, col);
         }
@@ -468,7 +468,7 @@ namespace Aldara
         static float Ph(Trap t) { return ((((DM.t + t.off) % t.per) + t.per) % t.per) / t.per; }
         static bool InRot(Trap t, float x, float y, float pad) { float c = Mathf.Cos(-t.ang), s = Mathf.Sin(-t.ang), dx = x - t.x, dy = y - t.y, lx = dx * c - dy * s, ly = dx * s + dy * c; return Mathf.Abs(lx) < t.w / 2 + pad && Mathf.Abs(ly) < t.h / 2 + pad; }
         static float SegDist(float x, float y, float ax, float ay, float bx, float by) { float dx = bx - ax, dy = by - ay, l2 = dx * dx + dy * dy; if (l2 == 0) l2 = 1; float u = Mathf.Clamp01(((x - ax) * dx + (y - ay) * dy) / l2); return Mathf.Sqrt((x - ax - dx * u) * (x - ax - dx * u) + (y - ay - dy * u) * (y - ay - dy * u)); }
-        static void Hurt(float dmg) { AldaraHero.I.Damage(dmg, 0, DUN_LEVEL + idx * 5 + Mathf.Max(0, DM.psec)); }
+        static void Hurt(float dmg) { AldaraHero.I.Damage(dmg, 0, 0); }
         static void UpdateTraps(float dt)
         {
             var D = DM; var P = AldaraPlayer.I; float px = P.x, py = P.y; bool alive = AldaraHero.I.alive;
@@ -561,7 +561,7 @@ namespace Aldara
         static void DunX(float dt)
         {
             var D = DM; var P = AldaraPlayer.I; var H = AldaraHero.I; string id = def.id; D.xt += dt; if (D.hurtT > 0) D.hurtT -= dt;
-            System.Action<float> hurt = frac => { if (D.hurtT > 0) return; D.hurtT = 0.5f; H.Damage(Mathf.Max(1, Mathf.Round(H.maxHp * frac)), 0, 0); };
+            System.Action<float> hurt = frac => { if (D.hurtT > 0) return; D.hurtT = 0.5f; H.Damage(Mathf.Max(1, Mathf.Round(H.maxHp * frac)), 0, -1); };
             System.Func<string, string, bool> inDecal = (kind, col) => D.decals.Any(d => d.kind == kind && (col == null || d.col == col) && Vector2.Distance(new Vector2(P.x, P.y), new Vector2(d.x, d.y)) < d.r);
             if (id == "sunken")
             {
@@ -581,7 +581,7 @@ namespace Aldara
             else if (id == "blood") { if (inDecal("circle", "#ffe07a")) H.hp = Mathf.Min(H.maxHp, H.hp + H.maxHp * 0.04f * dt); else if (!done) { H.hp -= H.maxHp * 0.008f * dt; if (H.hp <= 1) H.hp = 1; } }
             else if (id == "astral")
             {
-                D.star -= dt; if (D.star <= 0 && !done) { D.star = 5; float dmg = Mathf.Round(H.maxHp * 0.14f); for (int k = 0; k < 3; k++) { float a = Random.value * 7, d = k == 0 ? 0 : 80 + Random.value * 120; AldaraMonsters.I.AddHazard(P.x + Mathf.Cos(a) * d, P.y + Mathf.Sin(a) * d, 80, 1.3f, dmg, Hx("#bfe8ff"), 0, false, 0, 0); } }
+                D.star -= dt; if (D.star <= 0 && !done) { D.star = 5; float dmg = Mathf.Round(H.maxHp * 0.14f); for (int k = 0; k < 3; k++) { float a = Random.value * 7, d = k == 0 ? 0 : 80 + Random.value * 120; AldaraMonsters.I.AddHazard(P.x + Mathf.Cos(a) * d, P.y + Mathf.Sin(a) * d, 80, 1.3f, dmg, Hx("#bfe8ff"), 0, false, 0, 0, "meteor"); } }
             }
             else if (id == "sewer")
             {   // miasma: clouds of sewer gas drift through the tunnels
@@ -590,7 +590,7 @@ namespace Aldara
                 for (int i = D.gas.Count - 1; i >= 0; i--)
                 {
                     var g = D.gas[i]; g.life += dt; g.x += g.vx * dt; g.y += g.vy * dt; if (g.life > g.max) { D.gas.RemoveAt(i); continue; }
-                    if (g.life > 1.2f && Vector2.Distance(new Vector2(P.x, P.y), new Vector2(g.x, g.y)) < g.r * 0.8f && D.gasHurt <= 0 && !done) { D.gasHurt = 0.6f; H.Damage(Mathf.Max(1, Mathf.Round(H.maxHp * 0.025f)), 0, 0); H.slowT = Mathf.Max(H.slowT, 0.7f); }
+                    if (g.life > 1.2f && Vector2.Distance(new Vector2(P.x, P.y), new Vector2(g.x, g.y)) < g.r * 0.8f && D.gasHurt <= 0 && !done) { D.gasHurt = 0.6f; H.Damage(Mathf.Max(1, Mathf.Round(H.maxHp * 0.025f)), 0, -1); H.slowT = Mathf.Max(H.slowT, 0.7f); }
                 }
             }
         }
@@ -627,7 +627,7 @@ namespace Aldara
                 case "blood":
                     if (m.mt <= 0)
                     {
-                        m.mt = 8; if (dTo < 320) { H.Damage(Mathf.Round(H.maxHp * 0.1f), 0, 0); float h = Mathf.Round(m.maxHp * 0.03f); m.hp = Mathf.Min(m.maxHp, m.hp + h); AldaraFx.Text(m.x, m.y - m.r - 20, "+" + h, Hx("#ff4a5a")); AldaraHud.Banner(m.name + " drinks your blood!"); }
+                        m.mt = 8; if (dTo < 320) { H.Damage(Mathf.Round(H.maxHp * 0.1f), 0, -1); float h = Mathf.Round(m.maxHp * 0.03f); m.hp = Mathf.Min(m.maxHp, m.hp + h); AldaraFx.Text(m.x, m.y - m.r - 20, "+" + h, Hx("#ff4a5a")); AldaraHud.Banner(m.name + " drinks your blood!"); }
                     }
                     if (m.mt2 <= 0)
                     {
@@ -637,7 +637,7 @@ namespace Aldara
                     if (!m.summoned && m.hp < m.maxHp * 0.5f) { m.summoned = true; Summon(def.mobs[1], 4, m); AldaraHud.Banner(m.name + " calls her children!"); }
                     break;
                 case "star":
-                    if (m.mt <= 0) { m.mt = m.enraged ? 3 : 4; for (int k = 0; k < 5; k++) { float a = Random.value * 7, d = k == 0 ? 0 : 70 + Random.value * 150; MS.AddHazard(P.x + Mathf.Cos(a) * d, P.y + Mathf.Sin(a) * d, 80, 1.2f, Mathf.Round(m.atk * 1.4f), Hx("#bfe8ff"), 0, false, 0, 0); } }
+                    if (m.mt <= 0) { m.mt = m.enraged ? 3 : 4; for (int k = 0; k < 5; k++) { float a = Random.value * 7, d = k == 0 ? 0 : 70 + Random.value * 150; MS.AddHazard(P.x + Mathf.Cos(a) * d, P.y + Mathf.Sin(a) * d, 80, 1.2f, Mathf.Round(m.atk * 1.4f), Hx("#bfe8ff"), 0, false, 0, 0, "meteor"); } }
                     if (m.mt2 <= 0) { m.mt2 = 7; for (int k = 0; k < 16; k++) MS.EnemyShoot(m, k * Mathf.PI / 8, Mathf.Round(m.atk * 0.65f), Hx("#dfe8ff"), 260); }
                     if (!m.summoned && m.hp < m.maxHp * 0.4f) { m.summoned = true; Summon(def.mobs[0], 2, m); Summon(def.mobs[1], 2, m); m.enraged = true; m.atk = Mathf.Round(m.atk * 1.3f); AldaraHud.Banner(m.name + " blazes with the light of dying stars!"); }
                     break;
