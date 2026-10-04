@@ -29,7 +29,7 @@ namespace Aldara
         void EnsureHud()
         {
             if (tracker != null || AldaraHudUI.I == null || AldaraHudUI.I.Root == null) return;
-            tracker = new AldaraQuestUI.Tracker(AldaraHudUI.I.Root); AldaraHudUI.I.AddPiece("minimap", tracker.root);
+            tracker = new AldaraQuestUI.Tracker(AldaraHudUI.I.Root); AldaraHudUI.I.AddPiece("quest", tracker.root); AldaraHudUI.I.ApplySettings();
             var mv = AldaraHudUI.I.MinimapView; if (mv != null) { mini = new MiniMarks(); mv.Add(mini); }
         }
 

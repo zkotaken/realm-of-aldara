@@ -138,7 +138,7 @@ namespace Aldara
             if (box == null)
             {
                 box = new VisualElement { pickingMode = PickingMode.Position }; hud.Root.Add(box); box.style.position = Position.Absolute; box.style.left = Length.Percent(50); box.style.translate = new Translate(Length.Percent(-50), 0); box.style.top = 84; box.style.width = 220;
-                Skin(box, "panel"); Pad(box, 12, 14); box.style.alignItems = Align.Center;
+                Skin(box, "panel"); Pad(box, 12, 14); box.style.alignItems = Align.Center; hud.RegisterPiece("dun", box);
                 nameL = T(box, "", 15, C("#efcf78"), true, true, false, 1, true, false); Shadow(nameL, Color.black, 2, 1); nameL.style.unityTextAlign = TextAnchor.MiddleCenter;
                 status = T(box, "", 11, C("#d8d0bc")); status.style.unityTextAlign = TextAnchor.MiddleCenter; status.style.marginTop = 2;
                 leave = B(box, "Leave Dungeon", () => { if (A.Throne) AldaraThrone.Leave(); else if (A.Fort) AldaraFort.Leave(); else if (A.Active) A.Exit(A.done ? "done" : "left"); }, "btn_buy", 10); leave.style.marginTop = 6; leave.Padding(3, 14);

@@ -36,10 +36,14 @@ namespace Aldara
             sendBtn = new VisualElement { name = "chatSend" }; ui.PlaceAt(sendBtn, new Rect(269, 894, 54, 29)); sendBtn.RegisterCallback<ClickEvent>(e => Send());
             sendBtn.RegisterCallback<MouseEnterEvent>(e => sendBtn.style.backgroundColor = new Color(1, 1, 1, 0.08f)); sendBtn.RegisterCallback<MouseLeaveEvent>(e => sendBtn.style.backgroundColor = Color.clear);
             toggle = new VisualElement { name = "chatToggle" }; ui.PlaceAt(toggle, new Rect(304, 678, 20, 20)); toggle.tooltip = "Hide chat"; toggle.RegisterCallback<ClickEvent>(e => Toggle());
-            hidden = PlayerPrefs.GetString("aldara_chat", "1") == "0"; Apply();
+            hidden = PlayerPrefs.GetString("aldara_chat", "1") == "0"; Apply(); TextScale(txt);
+            foreach (var e in new[] { (VisualElement)log, input, sendBtn, toggle }) ui.RegisterPiece("chatbox", e);
             Render(true, null, "Announcements for boss kills, mythical drops and dungeon clears appear here. Press Enter to chat. Keep it friendly: slurs, sexual talk, harassment and politics are blocked.", "note");
             foreach (var p in pending) Render(true, null, p.Key, p.Value); pending.Clear();
         }
+        static float txt = 1;
+        /// the text size setting (--txt) on the chat box
+        public static void TextScale(float s) { txt = s; if (I && I.built) foreach (var e in new VisualElement[] { I.log, I.input }) { e.style.scale = new Scale(new Vector2(s, s)); e.style.transformOrigin = new TransformOrigin(0, Length.Percent(100)); } }
         void Toggle() { hidden = !hidden; PlayerPrefs.SetString("aldara_chat", hidden ? "0" : "1"); Apply(); }
         void Apply() { log.style.display = input.style.display = sendBtn.style.display = hidden ? DisplayStyle.None : DisplayStyle.Flex; toggle.tooltip = hidden ? "Show chat" : "Hide chat"; if (AldaraHudUI.I) AldaraHudUI.I.ChatHidden(hidden); }
         void Focus() { if (hidden) Toggle(); input.Focus(); }

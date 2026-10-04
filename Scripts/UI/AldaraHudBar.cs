@@ -188,9 +188,34 @@ namespace Aldara
             int lv = 999; foreach (var t in MonsterBook.Load().monsters) if (t.tier == z + 1 && t.lv0 > 0 && t.lv0 < lv) lv = t.lv0; if (lv == 999) lv = 1;
             if (z != 10 && lv - H.lvl >= 10) { warnT.text = AldaraWorld.ZoneName(P.x, P.y) + " is for level " + lv + " and above. You are level " + H.lvl + "."; warnTime = 4.2f; }
         }
+        // ---------- settings: the strip and pops shown or not, the FPS counter (#fpsBox), the control tips (#tip) ----------
+        Label fpsBox, tip; int fpsFrames; float fpsT, fpsWorst, fpsWorstNow;
+        public static void ApplySettings()
+        {
+            if (!I || !I.built) return;
+            I.strip.style.display = AldaraSettings.On("showBuffs") ? DisplayStyle.Flex : DisplayStyle.None; I.pops.style.display = AldaraSettings.On("showPops") ? DisplayStyle.Flex : DisplayStyle.None;
+            if (I.fpsBox != null) I.fpsBox.style.display = AldaraSettings.On("fps", false) ? DisplayStyle.Flex : DisplayStyle.None;
+            if (I.tip != null) I.tip.style.visibility = AldaraSettings.On("tip", false) ? Visibility.Visible : Visibility.Hidden;
+        }
+        void BuildExtras()
+        {
+            var root = AldaraHudUI.I.Root;
+            fpsBox = new Label { pickingMode = PickingMode.Ignore }; fpsBox.style.position = Position.Absolute; fpsBox.style.left = 14; fpsBox.style.bottom = 12; fpsBox.style.fontSize = 11; fpsBox.style.color = Hx("#9fe09f");
+            fpsBox.style.unityFontDefinition = FontDefinition.FromFont(Font.CreateDynamicFontFromOSFont(new[] { "Consolas", "Courier New", "monospace" }, 11)); fpsBox.style.textShadow = new TextShadow { color = Color.black, offset = new Vector2(0, 1), blurRadius = 2 }; root.Add(fpsBox);
+            tip = new Label("WASD move · Click a monster to attack\nSpace or click the ground to attack toward the cursor\nE auto-combat · H/M vials · I inventory · C attributes · K skills\n1-9 and 0 use skills · J dungeons · Esc settings\nClick the quest to auto-hunt") { pickingMode = PickingMode.Ignore };
+            tip.style.position = Position.Absolute; tip.style.right = 14; tip.style.top = 300; tip.style.fontSize = 10; tip.style.color = new Color(0.67f, 0.67f, 0.67f, 0.6f); tip.style.unityTextAlign = TextAnchor.UpperRight; tip.style.unityFontDefinition = FontDefinition.FromFont(AldaraUI.Font(false, false)); root.Add(tip);
+            ApplySettings(); var H = AldaraHudUI.I; H.RegisterPiece("fps", fpsBox); H.RegisterPiece("tip", tip); foreach (var e in new[] { strip, pops, subBar }) if (e != null) H.RegisterPiece("bottom", e);
+        }
+        void Fps()
+        {
+            if (fpsBox == null || fpsBox.style.display == DisplayStyle.None) return; float dt = Time.unscaledDeltaTime; fpsFrames++; fpsT += dt; fpsWorstNow = Mathf.Max(fpsWorstNow, dt * 1000);
+            if (fpsT >= 1) { var rp = UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline as UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset; int res = Mathf.RoundToInt((rp ? rp.renderScale : 1) * 100);
+                fpsBox.text = fpsFrames + " FPS, slowest frame " + Mathf.RoundToInt(fpsWorstNow) + " ms, resolution " + res + "%"; fpsFrames = 0; fpsT = 0; fpsWorstNow = 0; }
+        }
         void Update()
         {
-            if (!built) { Build(); if (!built) return; BuildToasts(); }
+            if (!built) { Build(); if (!built) return; BuildToasts(); BuildExtras(); }
+            Fps(); AldaraHudLayout.Tick();
             var H = AldaraHero.I; if (!AldaraSave.Ready || !H) return;
             if (toastT > 0) toastT -= Time.deltaTime; toast.style.opacity = Mathf.Clamp01(toastT / 0.18f);
             ZoneWatch(); if (warnTime > 0) warnTime -= Time.deltaTime; float wa = Mathf.Clamp01(Mathf.Min(warnTime / 0.4f, (4.2f - warnTime) / 0.4f)); warn.style.opacity = wa; warn.style.translate = new Translate(Length.Percent(-50), -20 * (1 - wa));

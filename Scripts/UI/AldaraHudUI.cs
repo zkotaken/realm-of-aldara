@@ -28,11 +28,14 @@ namespace Aldara
         public VisualElement Root { get { return root; } }
         public VisualElement MinimapView { get { return mmView; } }
         /// a piece added from outside (the quest tracker), placed in the browser's 1920 x 1080 frame and shown with a HUD group
+        /// an element some other part of the HUD placed itself, counted into one of the pieces (for showing, hiding and moving)
+        public void RegisterPiece(string group, VisualElement e) { List<VisualElement> l; if (!pieces.TryGetValue(group, out l)) pieces[group] = l = new List<VisualElement>(); if (!l.Contains(e)) l.Add(e); AldaraHudLayout.Apply(); }
+        public List<VisualElement> Piece(string k) { List<VisualElement> l; return pieces.TryGetValue(k, out l) ? l : null; }
         public void AddPiece(string group, VisualElement e)
         {
             var r = new Rect(e.style.left.value.value, e.style.top.value.value, e.style.width.value.value, 10); e.RemoveFromHierarchy();
             var g = Group(r, out var o); g.Add(e); e.style.left = r.x - o.x; e.style.top = r.y - o.y;
-            List<VisualElement> l; if (pieces.TryGetValue(group, out l)) l.Add(e);
+            List<VisualElement> l; if (!pieces.TryGetValue(group, out l)) pieces[group] = l = new List<VisualElement>(); l.Add(e);
         }
         void Start() { Build(); }
         /// place a piece from outside in the browser's 1920 x 1080 frame, hanging off the nearest corner or edge
@@ -80,7 +83,32 @@ namespace Aldara
             }
             root.style.opacity = AldaraSettings.F("hudA", 1);
             Show("player", AldaraSettings.On("showPlayer")); Show("minimap", AldaraSettings.On("minimap")); Show("zone", AldaraSettings.On("showZone")); Show("chat", AldaraSettings.On("showChat"));
-            showTarget = AldaraSettings.On("showTarget");
+            showTarget = AldaraSettings.On("showTarget"); Show("quest", AldaraSettings.On("showQuest"));
+            // text size (--txt: the chat, the quest box, the frames' names and the zone)
+            float tx = Mathf.Clamp(AldaraSettings.F("txtS", 1), 0.5f, 2);
+            foreach (var l in new VisualElement[] { ufName, tfName, zone }) if (l != null) { l.style.scale = new Scale(new Vector2(tx, tx)); l.style.transformOrigin = new TransformOrigin(Length.Percent(l == zone ? 50 : 0), Length.Percent(50)); }
+            List<VisualElement> q; if (pieces.TryGetValue("quest", out q)) foreach (var e in q) { e.style.scale = new Scale(new Vector2(tx, tx)); e.style.transformOrigin = new TransformOrigin(Length.Percent(100), 0); }
+            AldaraChat.TextScale(tx);
+            // the colour themes: the browser's filters over the frames, the hotbar, the chat and the windows
+            Theme(root);
+            AldaraHudBar.ApplySettings(); AldaraHudLayout.Apply();
+            // render resolution: Auto draws at the screen's own size; a number scales it
+            var rp = UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline as UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset;
+            if (rp) { var rr = AldaraSettings.Get("renderRes"); string r = rr != null ? (string)rr : "auto"; float sc = r == "auto" ? 1 : r == "low" ? 0.5f : Mathf.Clamp(AldaraSettings.F("renderRes", 1), 0.25f, 2); rp.renderScale = sc; }
+        }
+        public static void Theme(VisualElement e)
+        {
+            if (e == null) return; var th = AldaraSettings.Get("theme"); string t = th != null ? (string)th : "gold"; var L = new List<FilterFunction>();
+            System.Action<FilterFunctionType, float> F = (k, v) => { var f = new FilterFunction(k); f.AddParameter(new FilterParameter(v)); L.Add(f); };
+            switch (t)
+            {
+                case "silver": F(FilterFunctionType.Grayscale, 0.88f); F(FilterFunctionType.Contrast, 1.05f); break;
+                case "crimson": F(FilterFunctionType.HueRotate, -38); break;
+                case "emerald": F(FilterFunctionType.HueRotate, 85); F(FilterFunctionType.Grayscale, 0.1f); break;
+                case "void": F(FilterFunctionType.HueRotate, 225); break;
+                case "frost": F(FilterFunctionType.HueRotate, 170); F(FilterFunctionType.Grayscale, 0.3f); break;
+            }
+            if (L.Count == 0) e.style.filter = StyleKeyword.Null; else e.style.filter = L;
         }
         bool showTarget = true;
         void Show(string k, bool on) { List<VisualElement> l; if (pieces.TryGetValue(k, out l)) foreach (var e in l) e.style.visibility = on ? Visibility.Visible : Visibility.Hidden; }
@@ -151,7 +179,7 @@ namespace Aldara
             ufHpT.style.unityTextAlign = ufMpT.style.unityTextAlign = TextAnchor.MiddleCenter; stats.style.whiteSpace = WhiteSpace.Normal; stats.style.unityTextAlign = TextAnchor.UpperLeft;
             collect = null;
             // ---- target frame (top centre) ----
-            var tfr = ShotR("targetframe"); tfRoot = new VisualElement { pickingMode = PickingMode.Ignore }; Place(tfRoot, tfr);
+            Begin("target"); var tfr = ShotR("targetframe"); tfRoot = new VisualElement { pickingMode = PickingMode.Ignore }; Place(tfRoot, tfr); collect = null;
             Img("targetframe", tfr, tfRoot, tfr);
             var fr = RectR("tf_fillr"); tfClip = new VisualElement { pickingMode = PickingMode.Ignore }; tfClip.style.overflow = Overflow.Hidden; Place(tfClip, fr, tfRoot, tfr);
             var tfi = new VisualElement { pickingMode = PickingMode.Ignore }; tfi.style.backgroundImage = Background.FromTexture2D(Tex("tf_fill")); tfi.style.position = Position.Absolute; tfi.style.width = fr.width; tfi.style.height = fr.height; tfClip.Add(tfi); tfW = fr.width;
@@ -169,7 +197,7 @@ namespace Aldara
             // ---- chat (bottom left) ----
             Begin("chat"); { var cr = ShotR("chat"); chatClip = new VisualElement { pickingMode = PickingMode.Ignore }; chatClip.style.overflow = Overflow.Hidden; Place(chatClip, cr); Img("chat", cr, chatClip, cr); } collect = null;
             // ---- bottom bar: base, orb liquid, gloss, claws, slots, vials ----
-            Img("ab", ShotR("ab"));
+            Begin("bottom"); Img("ab", ShotR("ab"));
             hpOrbR = RectR("orb_hp"); mpOrbR = RectR("orb_mp");
             orbHp = new LivingOrb(true); orbMp = new LivingOrb(false); Place(orbHp.Element(), LivingOrb.Grow(hpOrbR)); Place(orbMp.Element(), LivingOrb.Grow(mpOrbR));
             if (HasShot("orb_gloss")) Img("orb_gloss", ShotR("orb_gloss")); if (HasShot("orb_gloss_mp")) Img("orb_gloss_mp", ShotR("orb_gloss_mp"));
@@ -199,6 +227,7 @@ namespace Aldara
             Img("xp_bg", ShotR("xp_bg"));
             xpClip = Clip("xp_fill", HasShot("xp_fill") ? ShotR("xp_fill") : InnerXp(), out xpW);
             xpT = Txt("xp_txt");
+            collect = null;
             // ---- micro menu (bottom right): the browser's buttons open the windows ----
             Img("micromenu", ShotR("micromenu"));
             foreach (var kv in new Dictionary<string, string> { { "attBtn", "att" }, { "invBtn", "inv" }, { "skillsBtn", "skills" }, { "questBtn", "quest" }, { "mapBtn", "map" }, { "dunBtn", "dun" }, { "vaultBtn", "vault" }, { "guildBtn", "guild" }, { "coopBtn", "coop" }, { "setBtn", "settings" } })

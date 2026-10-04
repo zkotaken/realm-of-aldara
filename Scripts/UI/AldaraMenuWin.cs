@@ -109,7 +109,8 @@ namespace Aldara
                 foreach (var k in new[] { "showChat", "showQuest", "showParty", "showTarget", "showBuffs", "showPops", "showPlayer", "showZone" }) AldaraSettings.SET[k] = true;
                 AldaraSettings.Set("ui", "1"); AldaraHud.Banner("Interface restored");
             }
-            else if (js.Contains("hudEdit") || js.Contains("hudResetLayout")) AldaraHud.Banner("Moving the interface pieces comes with a later update");
+            else if (js.Contains("hudResetLayout")) AldaraHudLayout.Reset();
+            else if (js.Contains("hudEdit")) { if (AldaraWindows.I) AldaraWindows.I.CloseAll(); AldaraHudLayout.Edit(true); return; }
             dirty = true;
         }
         void SetRow(VisualElement c, AldaraSettings.Item it)

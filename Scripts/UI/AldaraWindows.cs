@@ -87,7 +87,7 @@ namespace Aldara
         /// window size and opacity from the Interface settings
         public void ApplySettings()
         {
-            if (root == null) return; float s = AldaraSettings.F("ui", 1), a = AldaraSettings.F("winA", 1);
+            if (root == null) return; float s = AldaraSettings.F("ui", 1), a = AldaraSettings.F("winA", 1); AldaraHudUI.Theme(root);
             foreach (var w in wins.Values) if (w.panel != null) { w.panel.style.scale = new Scale(new Vector2(s, s)); w.panel.style.transformOrigin = new TransformOrigin(Length.Percent(w.X < 0 ? 50 : 0), 0); w.panel.style.opacity = a; }
             Refresh();
         }

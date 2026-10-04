@@ -33,7 +33,8 @@ namespace Aldara
         public readonly List<Part> particles = new List<Part>();
         public readonly List<Mf> mfx = new List<Mf>();
         public readonly List<Mp> mp = new List<Mp>();
-        const int MAX_PARTICLES = 220;
+        /// the particle budget (MAX_PARTICLES): low 80, medium 160, high 240, ultra 420
+        static int MAX_PARTICLES { get { var p = AldaraSettings.Get("particles"); string s = p != null ? (string)p : "high"; return s == "low" ? 80 : s == "medium" ? 160 : s == "ultra" ? 420 : 240; } }
 
         void Awake() { I = this; }
         static AldaraVfx V { get { if (!I) { var go = new GameObject("AldaraVfx"); I = go.AddComponent<AldaraVfx>(); } return I; } }
