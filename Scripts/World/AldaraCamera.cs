@@ -17,7 +17,16 @@ namespace Aldara
         public float follow = 12f;
         public float viewHeightPx = 760f;           // world px shown top to bottom at zoom 1
         Vector3 focus; bool hasFocus;
-        Camera cam;
+        Camera cam; bool loaded; float lastStep;
+        static readonly float[] QZ_STEPS = { 0.8f, 0.9f, 1, 1.1f, 1.2f, 1.35f, 1.5f, 1.6f };
+        /// camZoom: the next step in or out, kept between sessions, with a short note
+        public void Zoom(int dir)
+        {
+            int i = System.Array.FindIndex(QZ_STEPS, z => Mathf.Abs(z - zoom) < 0.001f); if (i < 0) i = 2;
+            int ni = Mathf.Clamp(i + dir, 0, QZ_STEPS.Length - 1); if (ni == i) { AldaraHudBar.Toast("Zoom " + Mathf.RoundToInt(zoom * 100) + "% (limit)"); return; }
+            zoom = QZ_STEPS[ni]; PlayerPrefs.SetFloat("aldara/zoom", zoom); AldaraHudBar.Toast("Zoom " + Mathf.RoundToInt(zoom * 100) + "%");
+        }
+        public void ZoomReset() { zoom = 1; PlayerPrefs.SetFloat("aldara/zoom", 1); AldaraHudBar.Toast("Zoom 100%"); }
 
         void OnEnable() { I = this; cam = GetComponent<Camera>(); }
         void LateUpdate()
@@ -25,8 +34,14 @@ namespace Aldara
             if (!cam) cam = GetComponent<Camera>();
             if (Application.isPlaying)
             {
-                var m = Mouse.current;
-                if (m != null) { float w = m.scroll.ReadValue().y; if (Mathf.Abs(w) > 0.01f) zoom = Mathf.Clamp(zoom * (w > 0 ? 1.1f : 1 / 1.1f), 0.8f, 1.6f); }
+                if (!loaded) { loaded = true; zoom = PlayerPrefs.GetFloat("aldara/zoom", 1); }
+                var m = Mouse.current; bool overUi = AldaraHud.MouseOverUi() || (AldaraWindows.I && AldaraWindows.I.IsOpen("map"));
+                if (m != null && !overUi && AldaraSave.Ready)
+                {   // one step per notch (QZ_STEPS); a middle click goes back to 100%
+                    float w = m.scroll.ReadValue().y; if (Mathf.Abs(w) > 0.01f && Time.unscaledTime - lastStep > 0.09f) { lastStep = Time.unscaledTime; Zoom(w > 0 ? 1 : -1); }
+                    if (m.middleButton.wasPressedThisFrame) ZoomReset();
+                }
+                if (AldaraSave.Ready && !AldaraHud.Typing) { if (AldaraKeys.Pressed("zoomin")) Zoom(1); if (AldaraKeys.Pressed("zoomout")) Zoom(-1); }
             }
             Vector3 want = target ? target.position + new Vector3(0, 0, 18f / AldaraWorld.PX) : transform.position;
             if (Application.isPlaying && AldaraVfx.I) { var sh = AldaraVfx.ShakeOffset; want += new Vector3(sh.x, 0, -sh.y) / AldaraWorld.PX; }

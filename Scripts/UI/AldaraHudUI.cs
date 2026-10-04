@@ -238,10 +238,12 @@ namespace Aldara
         float bannerT; string bannerText;
         public static void ShowBanner(string s) { if (I) { I.bannerText = s; I.bannerT = 1.4f; } }
         VisualElement autoBtn; bool autoShown;
+        /// F8: the interface hidden for a clean view (Esc brings it back)
+        public static bool Hidden;
         void Update()
         {
             if (root == null) return; var H = AldaraHero.I; var P = AldaraPlayer.I;
-            root.style.display = AldaraSave.Ready && H && P && !(AldaraWindows.I && AldaraWindows.I.IsOpen("map")) ? DisplayStyle.Flex : DisplayStyle.None;
+            root.style.display = AldaraSave.Ready && H && P && !Hidden && !(AldaraWindows.I && AldaraWindows.I.IsOpen("map")) ? DisplayStyle.Flex : DisplayStyle.None;
             if (!AldaraSave.Ready || !H) return;
             if (portraitCls != H.cls) { portraitCls = H.cls; var t = Tex("portrait_" + H.cls); if (t) portraitEl.style.backgroundImage = Background.FromTexture2D(t); }
             var Sc = AldaraSubclass.Cur; ufName.text = (H.heroName + " the " + (Sc != null ? Sc.name : char.ToUpper(H.cls[0]) + H.cls.Substring(1))).ToUpper(); ufLvl.text = H.lvl.ToString();
@@ -270,7 +272,8 @@ namespace Aldara
             if (bannerT > 0) { bannerT -= Time.deltaTime; banner.text = bannerText; banner.style.opacity = Mathf.Clamp01(bannerT * 2); } else banner.style.opacity = 0;
             UpdateMinimap();
         }
-        static Color LvColor(int g) { return g >= 5 ? new Color(1, 0.3f, 0.3f) : g >= 3 ? new Color(1, 0.6f, 0.2f) : g >= -2 ? new Color(1, 0.9f, 0.4f) : g >= -8 ? new Color(0.4f, 0.9f, 0.4f) : new Color(0.6f, 0.6f, 0.6f); }
+        /// levelColor: grey far below you, white even, yellow a bit above, orange tough, red very dangerous
+        public static Color LvColor(int d) { return AldaraRules.Hex(d <= -6 ? "#8a8a8a" : d <= 2 ? "#e8e8e8" : d <= 4 ? "#ffe05a" : d <= 7 ? "#ff9a3a" : "#ff4a4a"); }
 
         // ---------- minimap: a small top-down camera over the ground ----------
         Camera mmCam; RenderTexture mmRT;

@@ -63,7 +63,7 @@ namespace Aldara
             AldaraItems.itemSeq = (int)F(j["itemSeq"], 1000);
             if (j["potions"] is JObject po) { H.vialHp = (int)F(po["hp"]); H.vialMp = (int)F(po["mp"]); }
             if (j["stats"] is JObject st) { H.kills = (int)F(st["kills"]); H.bossKills = (int)F(st["bosses"]); H.deaths = (int)F(st["deaths"]); }
-            H.title = (string)j["title"]; H.sub = (string)j["sub"]; AldaraGear.VaultLoad();
+            H.title = (string)j["title"]; H.sub = (string)j["sub"]; AldaraGear.VaultLoad(); if (j["titlesKnown"] == null) AldaraGear.CheckTitles(true);
             var S = AldaraSkills.I; S.Load(cls);
             if (j["skills"] is JObject sk)
             {

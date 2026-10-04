@@ -385,7 +385,7 @@ namespace Aldara
             if (!def.hidden) ds["best"] = Mathf.Max(Best, i + 1);
             ((JObject)ds["clears"])[def.id] = Clears(def.id) + 1;
             AldaraQuests.OnDungeon(def.id);
-            H.GainXp(xp);
+            H.GainXp(xp); AldaraSkills.I.Later_(1.6f, () => AldaraGear.CheckTitles());
             AldaraHud.Banner(def.name + " cleared!" + (first && i + 1 < List.Count && !List[i + 1].hidden ? " " + List[i + 1].name + " unlocked" : ""));
             AldaraFx.Text(P.x, P.y - 16 - 40, "+" + xp + " XP  +" + gold + " Gold", AldaraRules.Hex("#e0b64b"));
             DStat.xp = xp; DStat.gold = gold; DStat.Show("done"); AldaraSave.Dirty();

@@ -358,7 +358,7 @@ namespace Aldara
                     break;
             }
         }
-        void ClearFx() { eproj.Clear(); hazards.Clear(); if (AldaraVfx.I) AldaraVfx.I.Clear(); }
+        void ClearFx() { eproj.Clear(); hazards.Clear(); foreach (var k in corpses) if (k.go) Destroy(k.go); corpses.Clear(); if (AldaraVfx.I) AldaraVfx.I.Clear(); }
 
         // ---------- drawing ----------
         static float LZ(float x, float y) { return AldaraVfx.LZ(x, y); }
@@ -448,6 +448,13 @@ namespace Aldara
                     float k = Mathf.Min(1, e.t / e.T); AldaraVfx.Circle(gN, e.tx, e.ty, e.aoe, Al(e.col, 0.1f + 0.15f * k), G);
                     AldaraVfx.Ring(gN, e.tx, e.ty, e.aoe, e.aoe, 2, Al(e.col, 0.5f + 0.4f * k), G); AldaraVfx.Circle(gN, e.tx, e.ty, e.aoe * k, Al(e.col, 0.25f), G);
                 }
+            // a gold ring marks bosses; slowed monsters stand in a frost ring
+            foreach (var m in all)
+            {
+                if (m.dead || !m.view || !m.view.activeSelf) continue;
+                if (m.boss) AldaraVfx.Ring(gN, m.x, m.y + m.r * 0.95f, m.r * 1.2f, m.r * 0.35f, 2.5f, Hx("#e0b64b", 0.8f), G);
+                if (m.slowT > 0) AldaraVfx.Ring(gN, m.x, m.y + m.r * 0.95f, m.r * 0.9f, m.r * 0.3f, 2, Hx("#8fdfff"), G);
+            }
             // enraged monsters burn with a red aura
             foreach (var m in all) if (!m.dead && m.enrT > 0 && m.view && m.view.activeSelf) AldaraVfx.Glow(gA, m.x, m.y + m.r * 0.8f, m.r * 1.8f, Hx("#ff3a1a"), 0.3f + 0.1f * Mathf.Sin(now * 9), G);
         }
@@ -499,6 +506,13 @@ namespace Aldara
                 }
             }
             foreach (var e in eproj) DrawProj(aN, aA, e);
+            // stunned monsters: three stars circling over the head
+            float st = Time.time * 1000 / 200;
+            foreach (var m in all)
+            {
+                if (m.dead || !(m.stunT > 0) || !m.view || !m.view.activeSelf || m.stunT > 100) continue; float top = m.y + 15 * m.r / 16 - m.lift - Chest(m) / 0.55f + 4, bz = LZ(m.x, m.y);
+                for (int j = 0; j < 3; j++) { float a = st + j * 2.1f; AldaraVfx.Circle(aN, m.x + Mathf.Cos(a) * m.r * 0.7f, top + 2 + Mathf.Sin(a) * 3, 2.5f, Hx("#ffe07a"), bz); }
+            }
         }
         static void DrawProj(AldaraSketch aN, AldaraSketch aA, Proj e)
         {
@@ -566,6 +580,53 @@ namespace Aldara
                         bool fire = e.look == "fire"; trail(6, 0.45f); AldaraVfx.Glow(aA, x, y, fire ? 20 : 16, col, 0.75f, bz); AldaraVfx.Circle(aA, x, y, fire ? 5 : 4, c2, bz);
                         AldaraVfx.Circle(aA, x, y, fire ? 7 : 5.5f, Al(col, 0.9f), bz); AldaraVfx.Circle(aA, x, y, 2.8f, c2, bz); break;
                     }
+            }
+        }
+
+        // ---- death: the body topples (or dissolves upward for spirits), hits the ground and fades into motes (spawnCorpse / drawCorpse) ----
+        class Corpse { public GameObject go; public Material[] fades; public Vector3 pos; public float x, y, dir, t, T, T1, fade, len, h; public bool fl, big, landed, faded; public Color c; }
+        readonly List<Corpse> corpses = new List<Corpse>();
+        void SpawnCorpse(Mon t)
+        {
+            var go = t.view; if (!go || !go.activeSelf) { Hide(t); AldaraVfx.Burst(t.x, t.y, Hx(t.def.color ?? "#ffffff"), 14, 160); return; }
+            t.view = null; var anim = t.anim; t.anim = null; t.model = null; if (anim) { anim.ClearAction(); anim.Hurt(); }
+            bool fl = t.def.floater != 0 || t.def.flyer != 0, big = t.boss; float dir = t.x >= AldaraPlayer.I.x ? 1 : -1;
+            float hh = Chest(t) / 0.55f;
+            var k = new Corpse { go = go, pos = go.transform.position, x = t.x, y = t.y + 15 * t.r / 16, dir = dir, T = fl ? 1.1f : (big ? 3.2f : 2.3f), T1 = big ? 0.7f : 0.45f, fade = fl ? 0.15f : (big ? 1.9f : 1.25f), fl = fl, big = big, len = hh * 0.7f, h = hh, c = Hx(t.def.color ?? "#ffffff") };
+            corpses.Add(k); if (corpses.Count > 14) { var o = corpses[0]; if (o.go) Destroy(o.go); corpses.RemoveAt(0); }
+            AldaraVfx.Burst(t.x, t.y, k.c, big ? 30 : 12, big ? 260 : 170);
+        }
+        void UpdateCorpses(float dt)
+        {
+            var cam = Camera.main;
+            for (int i = corpses.Count - 1; i >= 0; i--)
+            {
+                var k = corpses[i]; k.t += dt; if (!k.go) { corpses.RemoveAt(i); continue; }
+                if (k.t >= k.T) { Destroy(k.go); corpses.RemoveAt(i); continue; }
+                if (!k.fl && k.t > k.T1 && !k.landed) { k.landed = true; for (int q = 0; q < 4; q++) Mfx(new AldaraVfx.Mf { k = "dust", x = k.x + k.dir * k.len * (0.2f + q * 0.2f), y = k.y, r = k.len * 0.35f, T = 0.7f }); if (k.big) Shake(6, 0.4f); }
+                else if (k.t > k.fade && Random.value < dt * (k.big ? 40 : 18)) { float u = Random.value; AldaraVfx.Mpush(new AldaraVfx.Mp { x = k.x + (k.fl ? (Random.value - 0.5f) * k.len : k.dir * k.len * u), y = k.y - (k.fl ? Random.value * k.len : 4), z = Random.value * 8, vx = (Random.value - 0.5f) * 14, vz = 30 + Random.value * 50, life = 0.9f, max = 0.9f, c = k.c, s = 2 + Random.value * 2, glow = true }); }
+                float a = 1; if (k.t > k.fade) a = Mathf.Max(0, 1 - (k.t - k.fade) / (k.T - k.fade));
+                if (a < 1 && !k.faded)
+                {   // from here it is drawn see-through: a depth pass, then the colours at the alpha
+                    k.faded = true; var rs = k.go.GetComponentsInChildren<Renderer>(); var list = new List<Material>();
+                    foreach (var r in rs) { var m0 = r.sharedMaterial; var f = new Material(AldaraOccluders.FadeOf(m0)); list.Add(f); r.sharedMaterials = new[] { AldaraOccluders.Prime, f }; }
+                    k.fades = list.ToArray(); var an = k.go.GetComponentInChildren<AldaraMonsterAnimator>(); if (an) an.enabled = false;
+                }
+                if (k.fades != null) foreach (var f in k.fades) f.SetFloat("_Alpha", a);
+                var tr = k.go.transform;
+                if (k.fl)
+                {
+                    float u = Mathf.Min(1, k.t / k.T), s = 1 - u * 0.5f; tr.position = k.pos + Vector3.up * (u * 36 / AldaraWorld.PX);
+                    tr.localScale = Vector3.Scale(AldaraView.Squash, new Vector3(s * (1 + u * 0.2f), s, s * (1 + u * 0.2f)));
+                }
+                else
+                {
+                    float p = Mathf.Min(1, k.t / k.T1), th = p * p; if (k.t > k.T1) th = 1 - 0.07f * Mathf.Sin((k.t - k.T1) * 20) * Mathf.Exp(-(k.t - k.T1) * 7);
+                    float sink = k.t > k.fade ? (k.t - k.fade) * 6 : 0;
+                    var axis = cam ? cam.transform.forward : new Vector3(0, -0.7071f, 0.7071f);
+                    tr.rotation = Quaternion.AngleAxis(k.dir * 1.38f * th * Mathf.Rad2Deg, axis);
+                    tr.position = k.pos + Vector3.down * (sink / AldaraWorld.PX);
+                }
             }
         }
     }

@@ -34,6 +34,18 @@ namespace Aldara
             new Title { id = "eclipsebreaker", name = "Breaker of the Eclipse", col = "#ffb04a", req = "Complete the Vault of the Eclipse raid", ok = () => AldaraRaid.Clears("eclipse") > 0, glow = true },
         };
         public static Title TitleById(string id) { foreach (var t in TITLES) if (t.id == id) return t; return null; }
+        /// checkTitles: announce titles the first time they unlock (silently on an older save)
+        public static void CheckTitles(bool silent = false)
+        {
+            var raw = AldaraSave.Raw; if (raw == null || H == null) return;
+            var known = raw["titlesKnown"] as JArray; if (known == null) { known = new JArray(); raw["titlesKnown"] = known; }
+            var fresh = new List<Title>(); foreach (var t in TITLES) { bool had = false; foreach (var k in known) if ((string)k == t.id) had = true; if (!had && t.ok()) fresh.Add(t); }
+            if (fresh.Count == 0) return; foreach (var t in fresh) known.Add(t.id); if (silent) return;
+            var names = new List<string>(); foreach (var t in fresh) names.Add(t.name);
+            AldaraHud.Banner(fresh.Count > 2 ? fresh.Count + " titles unlocked! Choose one in your Inventory" : "Title unlocked: " + string.Join(" and ", names));
+            var P = AldaraPlayer.I; for (int i = 0; i < fresh.Count; i++) AldaraFx.Text(P.x, P.y - 96 - i * 16, "Title: " + fresh[i].name, AldaraRules.Hex(fresh[i].col));
+            AldaraWindows.Refresh("inv"); AldaraSave.Dirty();
+        }
         public static int UnlockedTitles() { int n = 0; foreach (var t in TITLES) if (t.ok()) n++; return n; }
         public static void EquipTitle(string id) { var t = TitleById(id); if (id != null && (t == null || !t.ok())) return; H.title = id; AldaraSave.Dirty(); AldaraWindows.Refresh("inv"); }
 

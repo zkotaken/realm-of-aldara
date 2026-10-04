@@ -166,10 +166,36 @@ namespace Aldara
             }
         }
 
+        // ---------- toasts: the zoom note (#qolToast) and the region danger warning (#zoneWarn) ----------
+        Label toast, warnH, warnT; VisualElement warn; float toastT, warnTime; int lastZone = -99;
+        public static void Toast(string msg) { if (!I || I.toast == null) return; I.toast.text = msg; I.toastT = 1.1f; }
+        void BuildToasts()
+        {
+            var root = AldaraHudUI.I.Root;
+            toast = new Label { pickingMode = PickingMode.Ignore }; toast.style.position = Position.Absolute; toast.style.left = Length.Percent(50); toast.style.top = Length.Percent(18); toast.style.translate = new Translate(Length.Percent(-50), 0);
+            toast.style.unityFontDefinition = FontDefinition.FromFont(Cz()); toast.style.fontSize = 13; toast.style.color = Hx("#f3e2b0"); toast.style.backgroundColor = new Color(10 / 255f, 12 / 255f, 20 / 255f, 0.78f);
+            Border(toast, 1, new Color(224 / 255f, 182 / 255f, 75 / 255f, 0.45f), 14); toast.style.paddingLeft = toast.style.paddingRight = 14; toast.style.paddingTop = toast.style.paddingBottom = 5; toast.style.opacity = 0; root.Add(toast);
+            warn = new VisualElement { pickingMode = PickingMode.Ignore }; warn.style.position = Position.Absolute; warn.style.left = Length.Percent(50); warn.style.top = 14; warn.style.translate = new Translate(Length.Percent(-50), 0); warn.style.alignItems = Align.Center; warn.style.opacity = 0;
+            warnH = L(warn, "DANGER", 22, Hx("#ff3a2a")); warnH.style.letterSpacing = 5; warnT = L(warn, "", 15, Hx("#ff5a4a")); warnT.style.letterSpacing = 1;
+            foreach (var l in new[] { warnH, warnT }) l.style.textShadow = new TextShadow { color = new Color(1, 40 / 255f, 20 / 255f, 0.8f), offset = Vector2.zero, blurRadius = 12 };
+            root.Add(warn);
+        }
+        /// zoneWatch: stepping into a region ten or more levels above you
+        void ZoneWatch()
+        {
+            var P = AldaraPlayer.I; var H = AldaraHero.I; if (AldaraDungeon.Active) { lastZone = -99; return; }
+            int z = AldaraWorld.ZoneAt(P.x, P.y); if (z == lastZone) return; lastZone = z;
+            int lv = 999; foreach (var t in MonsterBook.Load().monsters) if (t.tier == z + 1 && t.lv0 > 0 && t.lv0 < lv) lv = t.lv0; if (lv == 999) lv = 1;
+            if (z != 10 && lv - H.lvl >= 10) { warnT.text = AldaraWorld.ZoneName(P.x, P.y) + " is for level " + lv + " and above. You are level " + H.lvl + "."; warnTime = 4.2f; }
+        }
         void Update()
         {
-            if (!built) { Build(); if (!built) return; }
+            if (!built) { Build(); if (!built) return; BuildToasts(); }
             var H = AldaraHero.I; if (!AldaraSave.Ready || !H) return;
+            if (toastT > 0) toastT -= Time.deltaTime; toast.style.opacity = Mathf.Clamp01(toastT / 0.18f);
+            ZoneWatch(); if (warnTime > 0) warnTime -= Time.deltaTime; float wa = Mathf.Clamp01(Mathf.Min(warnTime / 0.4f, (4.2f - warnTime) / 0.4f)); warn.style.opacity = wa; warn.style.translate = new Translate(Length.Percent(-50), -20 * (1 - wa));
+            if (warnTime > 0) { float pul = 0.5f + 0.5f * Mathf.Sin(Time.time * 4.5f); warnH.style.textShadow = new TextShadow { color = new Color(1, 42 / 255f, 26 / 255f, 0.6f + 0.4f * pul), offset = Vector2.zero, blurRadius = 12 + 10 * pul }; }
+            if (!AldaraHud.Typing) { if (AldaraKeys.Pressed("hideui")) AldaraHudUI.Hidden = !AldaraHudUI.Hidden; var kb = UnityEngine.InputSystem.Keyboard.current; if (AldaraHudUI.Hidden && kb != null && kb.escapeKey.wasPressedThisFrame) AldaraHudUI.Hidden = false; }
             for (int i = live.Count - 1; i >= 0; i--)
             {
                 var p = live[i]; p.t += Time.deltaTime; float u = p.t / p.T;

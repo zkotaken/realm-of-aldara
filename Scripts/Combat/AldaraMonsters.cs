@@ -30,6 +30,7 @@ namespace Aldara
             public bool dummy;
             /// subclass state: Death Mark time, an Ambush already spent on it
             public float markT; public bool amb;
+            public Renderer[] rends; public bool flashOn;
         }
 
         void Awake()
@@ -111,7 +112,7 @@ namespace Aldara
             float dt = Mathf.Min(Time.deltaTime, 0.1f); var H = AldaraHero.I; var P = AldaraPlayer.I; if (!P || !H || !AldaraSave.Ready) return;
             float px = P.x, py = P.y;
             TrackPlayerVelocity(dt, px, py);
-            UpdateEnemyFx(dt);
+            UpdateEnemyFx(dt); UpdateCorpses(dt);
             int busy = 0; foreach (var o in all) if (!o.dead && o.act != null && o.act.mv.cd > 0 && !o.boss) busy++;
             foreach (var m in all)
             {
@@ -328,7 +329,7 @@ namespace Aldara
             if (t.boss) AldaraHud.Banner(t.name + " defeated!");
             if (H.target == t) H.target = null;
             H.kills++;
-            Hide(t);
+            SpawnCorpse(t);
             if (t.dun && AldaraDungeon.Active) AldaraDungeon.OnKill(t);
         }
         /// into a dungeon: the world's monsters wait (hidden) while the dungeon's run
@@ -384,6 +385,12 @@ namespace Aldara
             if (m.hurtT > 0 && m.act == null) pos.x += Mathf.Cos(Mathf.Atan2(m.y - AldaraPlayer.I.y, m.x - AldaraPlayer.I.x)) * m.hurtT / 0.22f * 5 / AldaraWorld.PX;
             m.view.transform.position = pos;
             if (m.model) m.model.localRotation = Quaternion.Euler(0, 90 + m.face * Mathf.Rad2Deg, 0);
+            // the hit flash: the browser adds a 55% copy of the frame on top
+            bool fo = m.flash > 0; if (fo != m.flashOn)
+            {
+                m.flashOn = fo; if (m.rends == null) m.rends = m.view.GetComponentsInChildren<Renderer>();
+                foreach (var r in m.rends) { if (!r) continue; if (fo) { var mp = new MaterialPropertyBlock(); r.GetPropertyBlock(mp); var mat = r.sharedMaterial; mp.SetFloat("_Emit", (mat && mat.HasProperty("_Emit") ? mat.GetFloat("_Emit") : 0) + 0.55f); r.SetPropertyBlock(mp); } else r.SetPropertyBlock(null); }
+            }
             if (m.anim)
             {
                 bool moving = mvd && m.act == null;

@@ -77,7 +77,7 @@ namespace Aldara
         {
             if (!AldaraItems.CanUse(it, cls)) { AldaraFx.Text(P.x, P.y - 56, "Left behind: " + it.name, new Color(0.6f, 0.6f, 0.6f)); return false; }
             if (inventory.Count >= AldaraItems.BACKPACK_MAX) { AldaraFx.Text(P.x, P.y - 56, "Backpack full", AldaraRules.Hex("#ff9a6a")); return false; }
-            inventory.Add(it); if (it.rarity == "Mythical") AldaraHud.Banner("MYTHICAL DROP: " + it.name + "!"); return true;
+            inventory.Add(it); if (it.rarity == "Mythical") { AldaraHud.Banner("MYTHICAL DROP: " + it.name + "!"); AldaraSkills.I.Later_(1.2f, () => AldaraGear.CheckTitles()); } return true;
         }
         public void EquipItem(Item it)
         {
@@ -124,7 +124,7 @@ namespace Aldara
                 xp -= xpNeed; lvl++; xpNeed = AldaraRules.XpNeedFor(lvl);
                 baseHp += 18; baseAtk += 3; statPoints += 10; AldaraTree.sp++; AldaraTree.spTotal++;
                 Recompute(); hp = maxHp; mana = maxMana;
-                AldaraHud.Banner("LEVEL UP! Lv." + lvl); AldaraSave.Dirty();
+                AldaraHud.Banner("LEVEL UP! Lv." + lvl); AldaraSave.Dirty(); AldaraSkills.I.Later_(1.5f, () => AldaraGear.CheckTitles());
                 if (lvl == AldaraTree.B.SUB_LEVEL && AldaraTree.sub == null) AldaraSkills.I.Later_(1.8f, () => { AldaraHud.Banner("You can now choose a subclass: open Skills (K)"); if (AldaraWindows.I) AldaraWindows.I.Toggle("sub", true); });
             }
         }
