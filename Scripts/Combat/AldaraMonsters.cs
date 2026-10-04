@@ -33,6 +33,8 @@ namespace Aldara
             /// a Kingsroad ambusher ('bandit' or 'warg'): it never comes back on its own
             public string ambush;
             public Renderer[] rends; public bool flashOn;
+            /// the boss's sculpted model with its clips, when it has one
+            public AldaraBossSculpt sculpt;
         }
 
         void Awake()
@@ -337,7 +339,7 @@ namespace Aldara
         /// into a dungeon: the world's monsters wait (hidden) while the dungeon's run
         public void EnterDungeon(out List<Mon> saved)
         {
-            saved = new List<Mon>(all); foreach (var m in all) { if (m.view) Destroy(m.view); m.view = null; m.anim = null; m.model = null; }
+            saved = new List<Mon>(all); foreach (var m in all) { if (m.view) Destroy(m.view); m.view = null; m.anim = null; m.model = null; m.sculpt = null; m.rends = null; }
             all.Clear(); ClearFx();
         }
         public void LeaveDungeon(List<Mon> saved)
@@ -373,7 +375,9 @@ namespace Aldara
                 var pf = Prefab(m.def); if (!pf) return;
                 m.view = new GameObject(m.name); m.view.transform.SetParent(transform, false); m.view.transform.localScale = AldaraView.Squash;
                 var inst = Instantiate(pf, m.view.transform, false); m.model = inst.transform; m.anim = inst.GetComponent<AldaraMonsterAnimator>();
-                if (!(m.chest > 0)) { var rs = inst.GetComponentsInChildren<Renderer>(); if (rs.Length > 0) { m.view.transform.position = AldaraWorld.ToUnity(m.x, m.y); float top = float.MinValue, bot = float.MaxValue; foreach (var r in rs) { top = Mathf.Max(top, r.bounds.max.y); bot = Mathf.Min(bot, r.bounds.min.y); } m.chest = (top - bot) * AldaraWorld.PX * 0.55f; } }
+                bool sc = m.boss && AldaraBossSculpt.Has(m.name);
+                if (!(m.chest > 0) || sc) { var rs = inst.GetComponentsInChildren<Renderer>(); if (rs.Length > 0) { m.view.transform.position = AldaraWorld.ToUnity(m.x, m.y); float top = float.MinValue, bot = float.MaxValue; foreach (var r in rs) { top = Mathf.Max(top, r.bounds.max.y); bot = Mathf.Min(bot, r.bounds.min.y); } if (!(m.chest > 0)) m.chest = (top - bot) * AldaraWorld.PX * 0.55f;
+                        if (sc) { float oldH = top - Mathf.Max(bot, m.view.transform.position.y); var s = AldaraBossSculpt.Make(m, m.view.transform, oldH); if (s) { inst.SetActive(false); Destroy(inst); m.model = s.transform; m.anim = null; m.sculpt = s; } } } }
             }
             if (!m.view.activeSelf) m.view.SetActive(true);
             // facing, as drawMonster3: the move's aim, else the hero while engaged, else the way it walks
@@ -393,6 +397,7 @@ namespace Aldara
                 m.flashOn = fo; if (m.rends == null) m.rends = m.view.GetComponentsInChildren<Renderer>();
                 foreach (var r in m.rends) { if (!r) continue; if (fo) { var mp = new MaterialPropertyBlock(); r.GetPropertyBlock(mp); var mat = r.sharedMaterial; mp.SetFloat("_Emit", (mat && mat.HasProperty("_Emit") ? mat.GetFloat("_Emit") : 0) + 0.55f); r.SetPropertyBlock(mp); } else r.SetPropertyBlock(null); }
             }
+            if (m.sculpt) m.sculpt.Tick(mvd && m.act == null, dt);
             if (m.anim)
             {
                 bool moving = mvd && m.act == null;

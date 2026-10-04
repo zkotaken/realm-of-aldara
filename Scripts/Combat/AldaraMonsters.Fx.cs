@@ -584,12 +584,20 @@ namespace Aldara
         }
 
         // ---- death: the body topples (or dissolves upward for spirits), hits the ground and fades into motes (spawnCorpse / drawCorpse) ----
-        class Corpse { public GameObject go; public Material[] fades; public Vector3 pos; public float x, y, dir, t, T, T1, fade, len, h; public bool fl, big, landed, faded; public Color c; }
+        class Corpse { public GameObject go; public Material[] fades; public Vector3 pos; public float x, y, dir, t, T, T1, fade, len, h; public bool fl, big, landed, faded; public Color c; public AldaraBossSculpt bm; }
         readonly List<Corpse> corpses = new List<Corpse>();
         void SpawnCorpse(Mon t)
         {
             var go = t.view; if (!go || !go.activeSelf) { Hide(t); AldaraVfx.Burst(t.x, t.y, Hx(t.def.color ?? "#ffffff"), 14, 160); return; }
+            var bm = t.sculpt; t.sculpt = null; t.rends = null;
             t.view = null; var anim = t.anim; t.anim = null; t.model = null; if (anim) { anim.ClearAction(); anim.Hurt(); }
+            if (bm && bm.HasDeath)
+            {   // the corpse plays the Death clip, rests on the ground, then fades into motes
+                float De = bm.DeathLen, len = Mathf.Max(bm.Height * AldaraWorld.PX * 0.6f, 40) * 0.8f;
+                var kb = new Corpse { go = go, pos = go.transform.position, x = t.x, y = t.y + 15 * t.r / 16, dir = t.x >= AldaraPlayer.I.x ? 1 : -1, T = De + 3.2f, T1 = Mathf.Min(De, bm.DeathHit + 0.1f), fade = De + 1.4f, big = true, len = len, h = len, c = Hx(t.def.color ?? "#ffffff"), bm = bm };
+                corpses.Add(kb); if (corpses.Count > 14) { var o = corpses[0]; if (o.go) Destroy(o.go); corpses.RemoveAt(0); }
+                AldaraVfx.Burst(t.x, t.y, kb.c, 30, 260); Shake(8, 0.5f); return;
+            }
             bool fl = t.def.floater != 0 || t.def.flyer != 0, big = t.boss; float dir = t.x >= AldaraPlayer.I.x ? 1 : -1;
             float hh = Chest(t) / 0.55f;
             var k = new Corpse { go = go, pos = go.transform.position, x = t.x, y = t.y + 15 * t.r / 16, dir = dir, T = fl ? 1.1f : (big ? 3.2f : 2.3f), T1 = big ? 0.7f : 0.45f, fade = fl ? 0.15f : (big ? 1.9f : 1.25f), fl = fl, big = big, len = hh * 0.7f, h = hh, c = Hx(t.def.color ?? "#ffffff") };
@@ -609,12 +617,18 @@ namespace Aldara
                 if (a < 1 && !k.faded)
                 {   // from here it is drawn see-through: a depth pass, then the colours at the alpha
                     k.faded = true; var rs = k.go.GetComponentsInChildren<Renderer>(); var list = new List<Material>();
-                    foreach (var r in rs) { var m0 = r.sharedMaterial; var f = new Material(AldaraOccluders.FadeOf(m0)); list.Add(f); r.sharedMaterials = new[] { AldaraOccluders.Prime, f }; }
+                    foreach (var r in rs)
+                    {
+                        var sm = r.sharedMaterials;
+                        if (sm.Length > 1) { var nm = new Material[sm.Length]; for (int q = 0; q < sm.Length; q++) { var f2 = new Material(AldaraOccluders.FadeOf(sm[q])); list.Add(f2); nm[q] = f2; } r.sharedMaterials = nm; continue; }
+                        var m0 = r.sharedMaterial; var f = new Material(AldaraOccluders.FadeOf(m0)); list.Add(f); r.sharedMaterials = new[] { AldaraOccluders.Prime, f };
+                    }
                     k.fades = list.ToArray(); var an = k.go.GetComponentInChildren<AldaraMonsterAnimator>(); if (an) an.enabled = false;
                 }
                 if (k.fades != null) foreach (var f in k.fades) f.SetFloat("_Alpha", a);
                 var tr = k.go.transform;
-                if (k.fl)
+                if (k.bm) { k.bm.DeathPose(k.t); float sk = k.t > k.fade ? (k.t - k.fade) * 6 : 0; tr.position = k.pos + Vector3.down * (sk / AldaraWorld.PX); }
+                else if (k.fl)
                 {
                     float u = Mathf.Min(1, k.t / k.T), s = 1 - u * 0.5f; tr.position = k.pos + Vector3.up * (u * 36 / AldaraWorld.PX);
                     tr.localScale = Vector3.Scale(AldaraView.Squash, new Vector3(s * (1 + u * 0.2f), s, s * (1 + u * 0.2f)));
