@@ -54,7 +54,15 @@ namespace Aldara
             // display mode
             string disp = (string)SET["disp"] ?? "windowed";
             var mode = disp == "fullscreen" ? FullScreenMode.ExclusiveFullScreen : disp == "borderless" ? FullScreenMode.FullScreenWindow : FullScreenMode.Windowed;
-            if (!Application.isEditor && Screen.fullScreenMode != mode) Screen.fullScreenMode = mode;
+            // resolution: native is the screen's own size (a window keeps whatever size it has); a size sets it
+            string res = (string)SET["res"] ?? "native";
+            if (!Application.isEditor && (Screen.fullScreenMode != mode || res != lastRes))
+            {
+                int rw = 0, rh = 0; var parts = res.Split('x');
+                if (parts.Length == 2) { int.TryParse(parts[0], out rw); int.TryParse(parts[1], out rh); }
+                if (rw <= 0 || rh <= 0) { if (mode != FullScreenMode.Windowed) { rw = Display.main.systemWidth; rh = Display.main.systemHeight; } else { rw = Screen.width; rh = Screen.height; } }
+                Screen.SetResolution(rw, rh, mode); lastRes = res;
+            }
             // quality preset onto Unity's quality levels by name
             string pr = (string)SET["preset"] ?? "high"; var names = QualitySettings.names;
             for (int i = 0; i < names.Length; i++) if (names[i].ToLower().Replace(" ", "") == pr) { if (QualitySettings.GetQualityLevel() != i) QualitySettings.SetQualityLevel(i, true); break; }
@@ -63,6 +71,7 @@ namespace Aldara
             if (AldaraHudUI.I) AldaraHudUI.I.ApplySettings();
             if (AldaraWindows.I) AldaraWindows.I.ApplySettings();
         }
+        static string lastRes;
         static bool focused = true;
         /// called every frame: the background throttle (30 fps while another window has focus)
         public static void Tick()

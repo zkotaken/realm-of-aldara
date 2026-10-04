@@ -105,7 +105,7 @@ namespace Aldara
             }
             else if (js.Contains("hudResetAll"))
             {
-                foreach (var k in new[] { "ui", "hudS", "chatS", "mmS", "txtS", "hudA", "winA" }) AldaraSettings.SET[k] = "1"; AldaraSettings.SET["theme"] = "gold";
+                foreach (var k in new[] { "ui", "uiAll", "hudS", "chatS", "mmS", "txtS", "hudA", "winA" }) AldaraSettings.SET[k] = "1"; AldaraSettings.SET["theme"] = "gold";
                 foreach (var k in new[] { "showChat", "showQuest", "showParty", "showTarget", "showBuffs", "showPops", "showPlayer", "showZone" }) AldaraSettings.SET[k] = true;
                 AldaraSettings.Set("ui", "1"); AldaraHud.Banner("Interface restored");
             }

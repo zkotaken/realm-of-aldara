@@ -8,6 +8,7 @@ Shader "Aldara/Ground"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
         #include "../Materials/AldaraLighting.hlsl"
+        #include "../Materials/AldaraNoise.hlsl"
         TEXTURE2D(_BaseMap); SAMPLER(sampler_BaseMap);
         CBUFFER_START(UnityPerMaterial) float4 _BaseMap_ST; CBUFFER_END
         ENDHLSL
@@ -33,10 +34,27 @@ Shader "Aldara/Ground"
                 float nl = saturate(dot(n, L.direction)), flat = saturate(L.direction.y);
                 float lit = lerp(0.55, 1.0, L.shadowAttenuation) * (0.62 + 0.38 * nl / max(flat, 0.35));
                 if (_AldaraHQ < 0.5) return half4(c * lit * 1.08, 1);
-                // enhanced: fine grain in the paint, soft shadows that keep a cool sky tint, ambient occlusion, local lights
-                float2 g = i.wp.xz;
-                float d1 = frac(sin(dot(floor(g * 9.0), float2(12.9898, 78.233))) * 43758.5453), d2 = frac(sin(dot(floor(g * 2.7), float2(39.346, 11.135))) * 24634.6345);
-                float grain = 1 + (d1 - 0.5) * 0.045 + (d2 - 0.5) * 0.06;
+                // enhanced: the painted ground gains surface detail the paint is too soft to hold. Slopes and cliffs get
+                // layered, cracked rock lit by the sun; flat ground gets soft clumps and fine grit. Both bend the normal,
+                // so the detail catches light and shadow instead of being printed on.
+                float3 wp = i.wp, n0 = n;
+                float slope = saturate((1 - n0.y - 0.16) / 0.34);
+                // (no branch around the rock: the bump below takes screen derivatives of it)
+                float warp = AFbm3(wp * 0.22, 2);
+                // weathered rock: a rough face with soft layering, no hard lines
+                float sv = wp.y * 1.05 + warp * 2.4 + AGrad2(wp.xz * 0.35) * 0.8;
+                float strata = sin(sv * 6.2832) * 0.5 + 0.5;
+                float rough = AFbm3(wp * float3(1.2, 1.9, 1.2), 3) + 0.5;
+                float crack = 0;
+                float hRock = strata * 0.22 + rough * 0.78;
+                float2 g = wp.xz;
+                float clump = AFbm2(g * 0.9, 3) + 0.5; float grit = AGrad2(g * 3.1) * 0.5 + 0.5;
+                float hFlat = clump * 0.65 + grit * 0.35;
+                float h = lerp(hFlat * 0.28, hRock, slope);
+                n = ABump(n0, wp, h, lerp(0.35, 1.1, slope));
+                nl = saturate(dot(n, L.direction));
+                c *= lerp(1 + (clump - 0.5) * 0.16 + (grit - 0.5) * 0.06, (0.82 + 0.38 * hRock) * (1 - crack * 0.16), slope * 0.9);
+                float grain = 1;
                 float aoI = 1, aoD = 1;
                 #if defined(_SCREEN_SPACE_OCCLUSION)
                 AmbientOcclusionFactor ao = GetScreenSpaceAmbientOcclusion(GetNormalizedScreenSpaceUV(i.pos)); aoI = ao.indirectAmbientOcclusion; aoD = ao.directAmbientOcclusion;

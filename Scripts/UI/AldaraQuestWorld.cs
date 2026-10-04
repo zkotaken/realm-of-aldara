@@ -50,12 +50,12 @@ namespace Aldara
         Vector2 W2P(float x, float y)
         {
             var sp = cam.WorldToScreenPoint(AldaraWorld.ToUnity(x, y));
-            return RuntimePanelUtils.ScreenToPanel(root.panel, new Vector2(sp.x, Screen.height - sp.y));
+            return root.WorldToLocal(RuntimePanelUtils.ScreenToPanel(root.panel, new Vector2(sp.x, Screen.height - sp.y)));
         }
         Vector2 W2P3(Vector3 w)
         {
             var sp = cam.WorldToScreenPoint(w);
-            return RuntimePanelUtils.ScreenToPanel(root.panel, new Vector2(sp.x, Screen.height - sp.y));
+            return root.WorldToLocal(RuntimePanelUtils.ScreenToPanel(root.panel, new Vector2(sp.x, Screen.height - sp.y)));
         }
         bool OnView(Vector2 p, float m = 0) { var r = root.layout; return p.x > -m && p.x < r.width + m && p.y > -m && p.y < r.height + m; }
 

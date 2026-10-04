@@ -49,6 +49,10 @@ namespace Aldara
             if (vol.enabled != hq) vol.enabled = hq; bool ao = hq && On("ssao"); if (ssao && ssao.isActive != ao) ssao.SetActive(ao);
             bool b = On("bloom"), d = On("dof", false), g = On("grain", true);
             if (bl.active != b) bl.active = b; if (dof.active != d) dof.active = d; if (fg.active != g) { fg.active = g; chr.active = g; }
+            // edge smoothing on top of the multisampling: SMAA catches shader edges (rock fissures, lava seams, glints)
+            var cam = Camera.main; var cd = cam ? cam.GetComponent<UniversalAdditionalCameraData>() : null;
+            if (cd) { var want = hq ? AntialiasingMode.SubpixelMorphologicalAntiAliasing : AntialiasingMode.None; if (cd.antialiasing != want) { cd.antialiasing = want; cd.antialiasingQuality = AntialiasingQuality.High; } }
+            if (!GetComponent<AldaraGrass>()) gameObject.AddComponent<AldaraGrass>();
         }
         void Update()
         {
