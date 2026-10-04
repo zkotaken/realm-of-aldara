@@ -23,7 +23,7 @@ namespace Aldara
             public GameObject view; public AldaraMonsterAnimator anim; public Transform model;
             public float lx, ly, dotT, dotTick, dotDmg, navIgnore;
             // dungeons: its section, its own speed, the boss's ability timers, line-of-sight caches
-            public bool dun, enraged, summoned, slowHit, los, sees; public int room; public float spd = -1, mt, mt2, losT, seeT; public string mech, color, bolt;
+            public bool dun, enraged, summoned, slowHit, los, sees; public int room; public float spd = -1, mt, mt2, losT, seeT, spT, sp, spin; public string mech, color, bolt;
         }
 
         void Awake()

@@ -97,6 +97,7 @@ namespace Aldara
         }
         // #fortFade: black over everything, 0 -> 1 at 25% -> 0 over 0.9 s
         VisualElement fade; float fadeT;
+        public void FadeNow() { StartFade(); }
         void StartFade()
         {
             if (fade == null)

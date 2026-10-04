@@ -11,7 +11,7 @@ namespace Aldara
     public class AldaraDungeonView : MonoBehaviour
     {
         public static AldaraDungeonView I;
-        GameObject inst; AldaraSketch gA, gAdd, aA, aAdd, cores; Material lightMat; Texture2D lightTex; Mesh lightMesh; Color32[] lpx; float[] lacc;
+        GameObject inst; AldaraSketch gA, gAdd, aA, aAdd, cores, wxA, wxAdd; Material lightMat; Texture2D lightTex; Mesh lightMesh; Color32[] lpx; float[] lacc;
         float shakeAmp, shakeT, shakeMax; readonly List<KeyValuePair<Vector3, Color>> propGlows = new List<KeyValuePair<Vector3, Color>>();
         float[] ambNow = { 1, 1, 1 };
         void Awake() { I = this; }
@@ -24,7 +24,7 @@ namespace Aldara
             var pf = Resources.Load<GameObject>("DunPrefabs/Dun_" + M.id);
             if (pf) { inst = Instantiate(pf); inst.transform.position = new Vector3(AldaraWorld.DOX, 0, 0); }
             gA = new AldaraSketch("normal", false, 3001); gAdd = new AldaraSketch("add", false, 3002); aA = new AldaraSketch("normal", true, 3110); aAdd = new AldaraSketch("add", true, 3111);
-            cores = new AldaraSketch("add", true, 3301);
+            cores = new AldaraSketch("add", true, 3301); wxA = new AldaraSketch("normal", true, 3302); wxAdd = new AldaraSketch("add", true, 3303); wx.Clear();
             if (!lightMat) lightMat = AldaraSketch.Mat(UnityEngine.Rendering.BlendMode.DstColor, UnityEngine.Rendering.BlendMode.Zero, true, 3300);
             ambNow = new[] { M.amb[0], M.amb[1], M.amb[2] };
             // the glows painted onto set pieces (glowDot in their sprites)
@@ -41,14 +41,14 @@ namespace Aldara
         {
             if (inst) Destroy(inst); inst = null;
             if (gA != null && Camera.main) { Camera.main.clearFlags = camFlags; Camera.main.backgroundColor = camBg; }
-            gA = gAdd = aA = aAdd = cores = null;
+            gA = gAdd = aA = aAdd = cores = wxA = wxAdd = null;
         }
 
         void LateUpdate()
         {
             var D = A.DM; if (D == null || gA == null) return; var cam = Camera.main; if (!cam) return; var P = AldaraPlayer.I;
             if (shakeT > 0) shakeT -= Time.deltaTime;
-            float t = D.t; gA.Clear(); gAdd.Clear(); aA.Clear(); aAdd.Clear(); cores.Clear();
+            float t = D.t; gA.Clear(); gAdd.Clear(); aA.Clear(); aAdd.Clear(); cores.Clear(); wxA.Clear(); wxAdd.Clear();
             float vh = cam.orthographicSize * 2 * AldaraWorld.PX, vw = vh * cam.aspect, x0 = P.x - vw / 2, y0 = P.y - vh / 2;
             System.Func<float, float, bool> vis = (x, y) => x > x0 - 200 && x < x0 + vw + 200 && y > y0 - 200 && y < y0 + vh + 260;
             // the exit portal where you came in
@@ -86,10 +86,11 @@ namespace Aldara
                 if (m.boss) gA.Arc(m.x, m.y + m.r * 0.95f, m.r * 1.2f, m.r * 0.35f, 0, 6.3f, 2.5f, Hx("#e0b64b", 0.8f));
                 if (m.slowT > 0) gA.Arc(m.x, m.y + m.r * 0.95f, m.r * 0.9f, m.r * 0.3f, 0, 6.3f, 2, Hx("#8fdfff"));
             }
-            DrawTrapsGround(D, t, vis); DrawGates(D, t); DrawAir(D, t, vis);
+            DrawTrapsGround(D, t, vis); DrawGates(D, t); DrawAir(D, t, vis); DrawDeep(D, t, vis, x0, y0, vw, vh);
             foreach (var g in propGlows) if (vis(g.Key.x, g.Key.y)) aAdd.Glow(g.Key.x, g.Key.y, g.Key.z, g.Value, g.Value.a);
             gA.Draw(cam); gAdd.Draw(cam); aA.Draw(cam); aAdd.Draw(cam);
             LightMap(D, cam, x0, y0, vw, vh, t); cores.Draw(cam);
+            Weather(D.wx, vw, vh, Time.time); wxA.Draw(cam); wxAdd.Draw(cam);
         }
         static Vector2 Quad(Vector2 a, Vector2 c, Vector2 b, float u) { float m = 1 - u; return m * m * a + 2 * m * u * c + u * u * b; }
         static Color Hx(string h) { return AldaraRules.Hex(h); }
@@ -321,6 +322,75 @@ namespace Aldara
             }
         }
 
+        // ---------- what each deep dungeon adds (dunxDraw, ksewDraw) ----------
+        void DrawDeep(A.Map D, float t, System.Func<float, float, bool> vis, float x0, float y0, float vw, float vh)
+        {
+            string id = D.id;
+            if (id == "sunken" && D.tide > 0)
+            {
+                aA.Rect(x0 - 100, y0 - 100, vw + 200, vh + 200, new Color(30 / 255f, 120 / 255f, 140 / 255f, 0.28f * D.tide));
+                foreach (var d in D.decals) if (d.kind == "dais" && vis(d.x, d.y)) { float r = d.r + Mathf.Sin(t * 3) * 4; aA.Arc(d.x, d.y, r, r * 0.9f, 0, 6.3f, 2, new Color(180 / 255f, 240 / 255f, 1, 0.4f * D.tide)); }
+            }
+            if (id == "nest")
+            {
+                var wc = new Color(230 / 255f, 240 / 255f, 220 / 255f, 0.55f);
+                foreach (var w in D.traps)
+                {
+                    if (w.type != "web" || !vis(w.x, w.y)) continue;
+                    for (int k = 0; k < 8; k++) { float a = k / 8f * Mathf.PI * 2; aA.Line(w.x, w.y, w.x + Mathf.Cos(a) * w.r, w.y + Mathf.Sin(a) * w.r * 0.8f, 1.2f, wc); }
+                    for (int ring = 1; ring <= 3; ring++) { var pl = new List<Vector2>(); for (int k = 0; k <= 8; k++) { float a = k / 8f * Mathf.PI * 2, rr = w.r * ring / 3.3f; pl.Add(new Vector2(w.x + Mathf.Cos(a) * rr, w.y + Mathf.Sin(a) * rr * 0.8f)); } aA.Polyline(pl, 1.2f, wc); }
+                }
+            }
+            if (id == "clock")
+                foreach (var tr in D.traps)
+                {
+                    if (tr.type != "turret" || !vis(tr.x, tr.y)) continue;
+                    for (int k = 0; k < tr.n; k++)
+                    {
+                        float a = tr.a + k * Mathf.PI * 2 / tr.n, ex = tr.x + Mathf.Cos(a) * tr.len, ey = tr.y + Mathf.Sin(a) * tr.len;
+                        aAdd.Line(tr.x, tr.y - 18, ex, ey - 4, 14, new Color(106 / 255f, 224 / 255f, 1, 0.25f)); aAdd.Line(tr.x, tr.y - 18, ex, ey - 4, 3, new Color(220 / 255f, 250 / 255f, 1, 0.95f));
+                        float s = 5 + Mathf.Sin(t * 20) * 1.5f; aA.Ellipse(ex, ey - 4, s, s, new Color(106 / 255f, 224 / 255f, 1, 0.8f), -1, 0, 12);
+                    }
+                    aA.Ellipse(tr.x, tr.y, 26, 12, Hx("#3a3228")); aA.Ellipse(tr.x, tr.y - 18, 14, 14, Hx("#c8a050"), -1, 0, 18); aA.Ellipse(tr.x, tr.y - 18, 6, 6, Hx("#6ae0ff"), -1, 0, 12);
+                }
+            if (id == "blood")
+                foreach (var d in D.decals) { if (d.kind != "circle" || d.col != "#ffe07a" || !vis(d.x, d.y)) continue; aAdd.Glow(d.x, d.y - 20, d.r * 1.2f, Hx("#ffe07a"), 0.22f + 0.08f * Mathf.Sin(t * 2)); }
+            if (id == "sewer")
+                foreach (var g in D.gas)
+                {
+                    float k = g.life / g.max, a = (g.life < 1.2f ? g.life / 1.2f : 1 - Mathf.Max(0, (k - 0.75f) / 0.25f)) * 0.34f, rx = g.r * (1 + Mathf.Sin(t + g.x) * 0.05f);
+                    aA.Glow(g.x, g.y - 20, rx, g.r * 0.62f, new[] { 0f, 1f }, new[] { new Color(140 / 255f, 200 / 255f, 60 / 255f, a), new Color(90 / 255f, 140 / 255f, 40 / 255f, 0) });
+                }
+        }
+        // ---------- weather (updateWeather / drawWeather): ash, snow, embers, motes drifting past in world space ----------
+        class Wp { public float x, y, s, ph; public string k; }
+        readonly List<Wp> wx = new List<Wp>(); float wxLast;
+        void Weather(string kind, float W, float H, float t)
+        {
+            if (string.IsNullOrEmpty(kind) || !AldaraSettings.On("weather")) return; var P = AldaraPlayer.I; float dt = Mathf.Min(0.05f, t - wxLast); wxLast = t;
+            int want = kind == "snow" ? 140 : kind == "fireflies" ? 60 : 90; float cx = P.x, cy = P.y, hw = W / 2 + 60, hh = H / 2 + 60;
+            System.Action<Wp, bool> spawn = (p, any) => { p.x = cx + (Random.value * 2 - 1) * hw; p.y = any ? cy + (Random.value * 2 - 1) * hh : (kind == "embers" || kind == "motes" ? cy + hh : cy - hh); p.k = kind; p.s = Random.value; p.ph = Random.value * 7; };
+            while (wx.Count < want) { var p = new Wp(); spawn(p, true); wx.Add(p); }
+            if (wx.Count > want) wx.RemoveRange(want, wx.Count - want);
+            foreach (var p in wx)
+            {
+                if (p.k != kind) spawn(p, true); float s = p.s;
+                switch (kind)
+                {
+                    case "snow": p.y += (28 + s * 46) * dt; p.x += (Mathf.Sin(t * 0.8f + p.ph) * 14 + 10) * dt; break;
+                    case "ash": p.y += (12 + s * 16) * dt; p.x += (Mathf.Sin(t * 0.6f + p.ph) * 18 + 14) * dt; break;
+                    case "embers": case "motes": p.y -= (22 + s * 40) * dt; p.x += Mathf.Sin(t * 1.3f + p.ph) * 16 * dt; break;
+                }
+                if (p.x < cx - hw || p.x > cx + hw || p.y < cy - hh || p.y > cy + hh) spawn(p, false);
+                switch (kind)
+                {
+                    case "snow": { float r = 0.8f + s * 2.2f; wxA.Ellipse(p.x, p.y, r, r, new Color(1, 1, 1, 0.55f + s * 0.4f), -1, 0, 8); break; }
+                    case "ash": wxA.Rect(p.x, p.y, 1.5f + s * 2, 1 + s * 1.4f, new Color(70 / 255f, 64 / 255f, 60 / 255f, 0.35f + s * 0.3f)); break;
+                    case "embers": { float k = 0.5f + 0.5f * Mathf.Sin(t * 6 + p.ph * 5); wxAdd.Rect(p.x, p.y, 1.4f + s * 1.6f, 2 + s * 2.4f, new Color(1, (120 + k * 100) / 255f, 40 / 255f, 0.55f + k * 0.4f)); break; }
+                    case "motes": { float k = 0.5f + 0.5f * Mathf.Sin(t * 3 + p.ph * 4), r = 1 + s * 1.8f; wxAdd.Ellipse(p.x, p.y, r, r, new Color(190 / 255f, 150 / 255f, 1, 0.35f + k * 0.55f), -1, 0, 8); break; }
+                }
+            }
+        }
         // ---------- the light map ----------
         const float LS = 0.25f;
         void LightMap(A.Map D, Camera cam, float x0, float y0, float vw, float vh, float t)

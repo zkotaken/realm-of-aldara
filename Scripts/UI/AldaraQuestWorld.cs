@@ -60,7 +60,7 @@ namespace Aldara
         bool OnView(Vector2 p, float m = 0) { var r = root.layout; return p.x > -m && p.x < r.width + m && p.y > -m && p.y < r.height + m; }
 
         // ---------- interaction ----------
-        public class It { public string npc; public Q.GNode node; public float x, y; public int lore = -1; public string label; }
+        public class It { public string npc; public Q.GNode node; public float x, y; public int lore = -1; public string label; public bool sewer; }
         public It Interactable()
         {
             var P = AldaraPlayer.I; var H = AldaraHero.I; if (!H.alive || AldaraFolk.I == null) return null; It best = null; float bd = 80;
@@ -77,6 +77,12 @@ namespace Aldara
                 var L = lore[i]; if (L["px"] == null || L["px"].Type == Newtonsoft.Json.Linq.JTokenType.Null) continue; float lx = (float)L["px"], ly = (float)L["py"];
                 float d = Vector2.Distance(new Vector2(lx, ly), new Vector2(P.x, P.y)); if (d < 75 && d < ld) { ld = d; best = new It { lore = i, x = lx, y = ly, label = (AldaraLore.Read(i) ? "Read again: " : "Read: ") + (string)L["t"] }; }
             }
+            // the grates down into the Undercity
+            if (AldaraFolk.I.KdNear(P.x, P.y)) foreach (var g in AldaraDungeon.GRATES)
+                {
+                    float d = Vector2.Distance(g, new Vector2(P.x, P.y)); float bd2 = best != null ? Vector2.Distance(new Vector2(best.x, best.y), new Vector2(P.x, P.y)) : 1e9f;
+                    if (d < 55 && d < bd2) best = new It { sewer = true, x = g.x, y = g.y, label = "Climb down into the Undercity" };
+                }
             return best;
         }
         bool Interact()
@@ -84,7 +90,7 @@ namespace Aldara
             if (AldaraLore.IsOpen) { AldaraLore.Close(); return true; }
             { var ws = AldaraWaystones.Near(); if (ws != null) { AldaraWaystones.Open(ws); return true; } }
             var it = Interactable(); if (it == null) return false;
-            if (it.lore >= 0) AldaraLore.Open(it.lore); else if (it.npc != null) AldaraQuestDlg.Open(it.npc); else if (it.node != null) Q.StartGather(it.node);
+            if (it.sewer) AldaraDungeon.EnterSewer(); else if (it.lore >= 0) AldaraLore.Open(it.lore); else if (it.npc != null) AldaraQuestDlg.Open(it.npc); else if (it.node != null) Q.StartGather(it.node);
             return true;
         }
         /// a click in the world on a person or a gathering spot (before the hero attacks there)
@@ -184,7 +190,7 @@ namespace Aldara
             {
                 float y; var g = W2P(it.x, it.npc != null ? it.y + 15 : it.y);
                 if (it.npc != null) { var f = AldaraFolk.I.Of(it.npc); float tp = Q.QOBJ[it.npc].board != 0 ? 48 : f != null ? f.top + 15 : 70; y = g.y - tp * k - 58; }
-                else y = g.y - (it.lore >= 0 ? 70 : 40) * k;
+                else y = g.y - (it.lore >= 0 || it.sewer ? 70 : 40) * k;
                 string txt = it.label ?? (it.npc != null ? (Q.QNPC[it.npc].board != 0 ? "Read the bounties" : "Talk to " + Q.QNPC[it.npc].name) : "Gather " + Q.QNODE[it.node.type].name);
                 float w = txt.Length * 6.1f + 34; string key = AldaraKeys.Name(AldaraKeys.KeyOf("interact"));
                 paint.Box(new Rect(g.x - w / 2, y - 12, w, 22), 5, new Color(10 / 255f, 8 / 255f, 16 / 255f, 0.8f), C("#e0b64b"));
