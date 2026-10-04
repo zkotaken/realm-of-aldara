@@ -13,7 +13,7 @@ namespace Aldara
         public static AldaraPet I;
         public float x, y, t, cd, healCd = 2, lunge, lungeA, face = Mathf.PI / 2; public bool placed;
         public AldaraMonsters.Mon target;
-        public JObject info; public JObject meta; public string name;
+        public JObject info; public JObject meta; public string petName;
         GameObject view; Transform model; AldaraMonsterAnimator anim; string built; float lx, ly;
         static JObject book; public static JObject Book { get { if (book == null) book = JObject.Parse(Resources.Load<TextAsset>("pets_meta").text); return book; } }
         class Shot { public GameObject go; public float x, y, tx, ty; public AldaraMonsters.Mon t; public float mult; public bool fire; }
@@ -47,7 +47,7 @@ namespace Aldara
             float dt = Mathf.Min(Time.deltaTime, 0.1f);
             var it = AldaraSave.Ready && H && P ? H.Eq("pet") : null;
             if (it == null) { placed = false; Hide(); shots.ForEach(s => { if (s.go) Destroy(s.go); }); shots.Clear(); return; }
-            if (name != it.name) { name = it.name; meta = Book["pets"][it.name] as JObject; info = meta != null ? meta["info"] as JObject : null; }
+            if (petName != it.name) { petName = it.name; meta = Book["pets"][it.name] as JObject; info = meta != null ? meta["info"] as JObject : null; }
             t += dt; if (lunge > 0) lunge -= dt;
             float back = P.facing + Mathf.PI * 0.75f, dist = Myth ? 60 : 34;
             float tx = P.x + Mathf.Cos(back) * dist, ty = P.y + Mathf.Sin(back) * dist;
