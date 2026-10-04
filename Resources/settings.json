@@ -382,6 +382,14 @@
     },
     {
      "k": "row",
+     "t": "High-resolution ground",
+     "hint": "Sharp photo-detailed grass, dirt, rock, sand and snow blended into the map.",
+     "id": "optGroundHd",
+     "c": "check",
+     "v": true
+    },
+    {
+     "k": "row",
      "t": "Ambient occlusion",
      "hint": "Soft contact shadows where things meet the ground and each other",
      "id": "optSsao",
@@ -407,7 +415,7 @@
     {
      "k": "row",
      "t": "Depth of field",
-     "hint": "A shallow focus on your hero, softening the far edges of the view",
+     "hint": "Blurs what is far from your hero. Off by default.",
      "id": "optDof",
      "c": "check",
      "v": false
@@ -1087,13 +1095,14 @@
   "ssao": true,
   "sunCycle": true,
   "localLights": true,
-  "dof": false,
   "grain": true,
   "ambFx": true,
   "res": "native",
   "aspect": "auto",
   "uiAll": "1",
-  "grass": true
+  "grass": true,
+  "dofOn": false,
+  "groundHd": true
  },
  "PRESETS": {
   "low": {
@@ -1113,10 +1122,11 @@
    "ssao": false,
    "sunCycle": false,
    "localLights": false,
-   "dof": false,
    "grain": false,
    "ambFx": false,
-   "grass": false
+   "grass": false,
+   "dofOn": false,
+   "groundHd": false
   },
   "medium": {
    "hiDetail": true,
@@ -1135,10 +1145,11 @@
    "ssao": false,
    "sunCycle": true,
    "localLights": false,
-   "dof": false,
    "grain": false,
    "ambFx": true,
-   "grass": false
+   "grass": false,
+   "dofOn": false,
+   "groundHd": true
   },
   "high": {
    "hiDetail": true,
@@ -1157,10 +1168,11 @@
    "ssao": true,
    "sunCycle": true,
    "localLights": true,
-   "dof": false,
    "grain": true,
    "ambFx": true,
-   "grass": true
+   "grass": true,
+   "dofOn": false,
+   "groundHd": true
   },
   "ultra": {
    "hiDetail": true,
@@ -1179,10 +1191,11 @@
    "ssao": true,
    "sunCycle": true,
    "localLights": true,
-   "dof": true,
    "grain": true,
    "ambFx": true,
-   "grass": true
+   "grass": true,
+   "dofOn": false,
+   "groundHd": true
   }
  },
  "BIND": [
@@ -1384,7 +1397,7 @@
   ],
   [
    "optDof",
-   "dof"
+   "dofOn"
   ],
   [
    "optGrain",
@@ -1409,6 +1422,10 @@
   [
    "optGrass",
    "grass"
+  ],
+  [
+   "optGroundHd",
+   "groundHd"
   ]
  ],
  "kb": [
