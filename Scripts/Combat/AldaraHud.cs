@@ -52,7 +52,7 @@ namespace Aldara
                 Bar(new Rect(sp.x - bw / 2, Hh - sp.y - 6, bw, 7), m.hp / m.maxHp, m == AldaraHero.I.target ? new Color(0.9f, 0.2f, 0.15f) : new Color(0.75f, 0.15f, 0.1f), null);
             }
             // floating combat text
-            foreach (var f in AldaraFx.texts)
+            if (!AldaraQuestWorld.I) foreach (var f in AldaraFx.texts)
             {
                 var sp = cam.WorldToScreenPoint(AldaraWorld.ToUnityFlat(f.x, f.y) + Vector3.up * AldaraWorld.GroundY(f.x, f.y));
                 var st = new GUIStyle(txt); var c = f.col; c.a = Mathf.Clamp01(f.life * 1.6f); st.normal.textColor = c;

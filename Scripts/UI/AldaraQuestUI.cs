@@ -188,7 +188,7 @@ namespace Aldara
         public override bool NoTitle => true;
         public override float Y => 96; public override float W => 450; public override float MaxH => 880;
         public static string npc, view = "home", qid; public static int pick = -1, topic = -1;
-        static AldaraHero H { get { return AldaraHero.I; } }
+        static AldaraHero Hr { get { return AldaraHero.I; } }
         public static void Open(string n)
         {
             if (!Q.QNPC.ContainsKey(n)) return; Q.TalkTo(n);
@@ -243,7 +243,7 @@ namespace Aldara
             {
                 AldaraQuestUI.QHead(v, new AldaraQuestUI.QDef_(q.title), q.main != 0 ? "Chapter " + q.ch : "Side quest", q.main != 0 ? null : "side");
                 AldaraQuestUI.Text(v, q.text); AldaraQuestUI.Objectives(v, q, null); AldaraQuestUI.Rewards(v, q, null, -1, null);
-                if (Mathf.Max(1, q.lvl) > H.lvl + 1) { var w = T(v, "Recommended level " + q.lvl + ". You are level " + H.lvl + ".", 11, C("#ff9a8a")); Border(w, 1, C("#c0392b", 0.53f), 6); Pad(w, 6, 8); w.style.marginTop = 10; }
+                if (Mathf.Max(1, q.lvl) > Hr.lvl + 1) { var w = T(v, "Recommended level " + q.lvl + ". You are level " + Hr.lvl + ".", 11, C("#ff9a8a")); Border(w, 1, C("#c0392b", 0.53f), 6); Pad(w, 6, 8); w.style.marginTop = 10; }
                 var bb = AldaraQuestUI.Btns(v);
                 AldaraQuestUI.Button(bb, "Accept", () => { Q.Accept(qid); Go("home"); if (Q.AvailFrom(npc).Count == 0 && Q.ReadyFor(npc).Count == 0) Close(); }, true);
                 AldaraQuestUI.Button(bb, "Back", () => Go("home"), false); ApplyLater(bb);
@@ -309,13 +309,13 @@ namespace Aldara
         {
             var kd = Kd(); if (!(kd["heard"] is Newtonsoft.Json.Linq.JArray a)) { a = new Newtonsoft.Json.Linq.JArray(); kd["heard"] = a; }
             if (a.Any(x => (string)x == k)) return; a.Add(k);
-            float xp = Mathf.Max(500, Mathf.Round(H.xpNeed * 0.004f)); H.GainXp(xp); var P = AldaraPlayer.I; AldaraFx.Text(P.x, P.y - 16 - 60, "+" + xp + " XP  (Lore)", C("#bfe8ff")); AldaraSave.Dirty();
+            float xp = Mathf.Max(500, Mathf.Round(Hr.xpNeed * 0.004f)); Hr.GainXp(xp); var P = AldaraPlayer.I; AldaraFx.Text(P.x, P.y - 16 - 60, "+" + xp + " XP  (Lore)", C("#bfe8ff")); AldaraSave.Dirty();
         }
         static void GrantBlessing()
         {
             var kd = Kd(); if (KdFlag("blessed")) { AldaraHud.Banner("You already carry the King's Blessing"); return; }
-            var it = new Item { id = AldaraItems.itemSeq++, type = "relic", relic = "kingsblessing", name = "The King's Blessing", rarity = "Common", color = AldaraItems.RARITY[0].c, lvl = H.lvl };
-            if (H.inventory.Count >= AldaraItems.BACKPACK_MAX || !H.AddLoot(it)) { AldaraHud.Banner("Your backpack is full: make room for the blessing"); return; }
+            var it = new Item { id = AldaraItems.itemSeq++, type = "relic", relic = "kingsblessing", name = "The King's Blessing", rarity = "Common", color = AldaraItems.RARITY[0].c, lvl = Hr.lvl };
+            if (Hr.inventory.Count >= AldaraItems.BACKPACK_MAX || !Hr.AddLoot(it)) { AldaraHud.Banner("Your backpack is full: make room for the blessing"); return; }
             kd["blessed"] = 1; AldaraHud.Banner("The King's Blessing: equip it from your backpack (I)"); var P = AldaraPlayer.I; AldaraFx.Text(P.x, P.y - 16 - 70, "The King's Blessing", C("#ffd35a"));
             AldaraWindows.Refresh("inv"); AldaraSave.Dirty();
         }

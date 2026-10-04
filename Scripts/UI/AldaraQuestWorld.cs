@@ -144,7 +144,7 @@ namespace Aldara
                 {
                     bool low = mk.EndsWith("low"); float y = top - (o.q != 0 || o.board != 0 ? 30 : 22) * k + Mathf.Sin(t * 3 + pos.Value.x) * 3;
                     if (!low) paint.Glow(new Vector2(g.x, y - 9), 22, C("#ffd35a", 0.35f));
-                    var l = Lab(mk.Substring(0, 1), 26, low ? C("#9a9a9a") : C("#ffd35a"), true, true, g.x, y + 6, 1, TextAnchor.LowerCenter, 0.3f); l.style.unityTextOutlineColor = C("#1a1008");
+                    var l = Lab(mk.Substring(0, 1), 26, low ? C("#9a9a9a") : C("#ffd35a"), true, true, g.x, y + 6, 1, TextAnchor.LowerCenter, 0.12f); l.style.unityTextOutlineColor = C("#1a1008");
                 }
             }
             // gathering spots (glow) and the scouting beacons are in 3D; the gather ring is drawn here
@@ -191,6 +191,12 @@ namespace Aldara
                     Lab(wp.label + "  " + dist + " m", 11, C("#ffe9a8"), false, true, ex - Mathf.Cos(ang) * 30, ey - Mathf.Sin(ang) * 30 + 8, 1, TextAnchor.LowerCenter, 0.15f);
                 }
             }
+            // floating combat text (floaters), under the windows like the browser's canvas
+            foreach (var f in AldaraFx.texts)
+            {
+                var g = W2P(f.x, f.y); if (!OnView(g, 100)) continue;
+                Lab(f.text, 15, f.col, true, true, g.x, g.y + 5, Mathf.Clamp01(f.life * 1.6f), TextAnchor.LowerCenter, 0.2f);
+            }
             for (int i = used; i < pool.Count; i++) if (pool[i].style.display != DisplayStyle.None) pool[i].style.display = DisplayStyle.None;
             paint.MarkDirtyRepaint();
         }
@@ -227,7 +233,7 @@ namespace Aldara
                 bool show = Mathf.Abs(p.x - P.x) < 1600 && Mathf.Abs(p.y - P.y) < 1200; if (v.activeSelf != show) v.SetActive(show); if (!show) continue;
                 v.transform.position = AldaraWorld.ToUnity(p.x, p.y); float pul = 0.7f + 0.3f * Mathf.Sin(t * 2);
                 var ring = v.transform.GetChild(0); ring.localRotation = Quaternion.Euler(0, t * 30 / 190 * Mathf.Rad2Deg, 0);
-                ring.GetComponent<MeshRenderer>().material.color = new Color(1, 0.83f, 0.35f, 0.5f * pul);
+                var rm = ring.GetComponent<MeshFilter>().mesh; var rc = new Color(1, 0.83f, 0.35f, 0.5f * pul); var cols = rm.colors; if (cols.Length > 0 && Mathf.Abs(cols[0].a - rc.a) > 0.02f) { for (int ci = 0; ci < cols.Length; ci++) cols[ci] = rc; rm.colors = cols; }
                 var col = v.transform.GetChild(1); col.rotation = cam.transform.rotation; col.GetComponent<SpriteRenderer>().color = new Color(1, 0.83f, 0.35f, 0.45f * pul / 0.45f * 0.6f);
                 var gl = v.transform.GetChild(2); gl.rotation = cam.transform.rotation; gl.GetComponent<SpriteRenderer>().color = new Color(1, 0.83f, 0.35f, 0.4f * pul);
             }

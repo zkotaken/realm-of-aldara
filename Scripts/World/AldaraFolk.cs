@@ -46,8 +46,8 @@ namespace Aldara
             }
             ApplyCrowd();
         }
-        static string Id(string name) { var m = meta[name]; return m != null ? (string)m["id"] : null; }
-        static float Top(string name) { var m = meta[name]; return m != null ? (float)m["top"] * (float)m["unitW"] : 60; }
+        static string Id(string name) { if (name == null) return null; var m = meta[name]; return m != null ? (string)m["id"] : null; }
+        static float Top(string name) { if (name == null) return 48; var m = meta[name]; return m != null ? (float)m["top"] * (float)m["unitW"] : 60; }
         Folk Make(JObject o, bool isKd)
         {
             var f = new Folk { name = (string)o["name"], role = (string)o["role"], x = (float)o["x"], y = (float)o["y"], kd = isKd };
