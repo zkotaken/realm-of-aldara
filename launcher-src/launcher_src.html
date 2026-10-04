@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Realm of Aldara Launcher</title>
+<style>
+/*FONTS*/
+:root{--bg:#0b0d14;--panel:#12101a;--panel2:#18141f;--line:rgba(217,169,58,.28);--gold:#f2c46a;--gold2:#d9a93a;--text:#efe4cc;--dim:#a99c80;--mute:#776d5a;--ok:#7adf8a;--bad:#ff8a7a;--fix:#8ab4ff}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:15px Alegreya,Georgia,serif;overflow:hidden;user-select:none}
+.app{display:grid;grid-template-columns:232px 1fr;grid-template-rows:1fr 84px;height:100vh}
+.side{grid-row:1/3;background:linear-gradient(180deg,#14101c,#0d0b12);border-right:1px solid var(--line);display:flex;flex-direction:column;padding:26px 18px 18px;position:relative;z-index:2}
+.logo{text-align:center;margin-bottom:28px}
+.logo .crest{width:54px;height:54px;margin:0 auto 10px;border-radius:50%;border:1px solid var(--gold2);display:grid;place-items:center;box-shadow:0 0 24px rgba(242,196,106,.18),inset 0 0 14px rgba(242,196,106,.12)}
+.logo .crest svg{width:30px;height:30px;stroke:var(--gold);fill:none;stroke-width:1.4}
+.logo small{display:block;font:600 11px Cinzel,Georgia,serif;letter-spacing:4px;color:var(--dim)}
+.logo b{display:block;font:700 34px 'Cinzel Decorative',Cinzel,Georgia,serif;color:var(--gold);letter-spacing:1px;text-shadow:0 0 18px rgba(242,196,106,.3);line-height:1.1}
+.nav button{display:flex;align-items:center;gap:11px;width:100%;padding:11px 14px;margin:3px 0;border:1px solid transparent;border-radius:9px;background:none;color:var(--dim);font:700 13.5px Cinzel,Georgia,serif;letter-spacing:.6px;cursor:pointer;text-align:left;transition:.15s}
+.nav button svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.6;flex:none}
+.nav button:hover{color:var(--text);background:rgba(255,255,255,.03)}
+.nav button.on{color:#f7e3b0;background:linear-gradient(90deg,rgba(242,196,106,.16),rgba(242,196,106,.03));border-color:rgba(242,196,106,.35)}
+.nav .dot{margin-left:auto;min-width:20px;height:18px;padding:0 6px;border-radius:9px;background:var(--gold2);color:#1a1206;font:700 11px Alegreya,Georgia,serif;display:none;place-items:center}
+.nav .dot.show{display:grid}
+.side .foot{margin-top:auto;font-size:12px;color:var(--mute);line-height:1.5}
+.side .foot b{color:var(--dim);font-weight:600}
+.main{position:relative;overflow:hidden}
+.hero{position:absolute;inset:0;background:url(HERO) center 30%/cover no-repeat;filter:saturate(.95);opacity:.8}
+.hero:after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(11,13,20,.96) 0%,rgba(11,13,20,.82) 42%,rgba(11,13,20,.55) 100%),linear-gradient(180deg,rgba(11,13,20,.2) 0%,rgba(11,13,20,.95) 100%)}
+.view{position:absolute;inset:0;overflow-y:auto;padding:38px 46px 30px;display:none}
+.view.on{display:block}
+.view::-webkit-scrollbar{width:10px}.view::-webkit-scrollbar-thumb{background:rgba(217,169,58,.25);border-radius:5px}
+h1{font:700 30px Cinzel,Georgia,serif;color:var(--gold);margin:0 0 4px;letter-spacing:.5px}
+h2{font:700 15px Cinzel,Georgia,serif;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin:30px 0 12px}
+.sub{color:var(--dim);margin:0 0 22px}
+.feat{max-width:760px;border:1px solid var(--line);border-radius:14px;padding:22px 24px;background:linear-gradient(180deg,rgba(24,20,31,.92),rgba(14,12,20,.88));box-shadow:0 10px 40px rgba(0,0,0,.4)}
+.badge{display:inline-flex;align-items:center;gap:6px;font:700 11px Cinzel,Georgia,serif;letter-spacing:1.2px;padding:3px 9px;border-radius:6px;border:1px solid}
+.badge.update{color:var(--gold);border-color:rgba(242,196,106,.5);background:rgba(242,196,106,.08)}
+.badge.hotfix{color:var(--fix);border-color:rgba(138,180,255,.5);background:rgba(138,180,255,.08)}
+.badge.new{color:#1a1206;background:var(--gold);border-color:var(--gold)}
+.meta{display:flex;gap:10px;align-items:center;flex-wrap:wrap;color:var(--mute);font-size:13px;margin-bottom:8px}
+.feat h3,.card h3{font:700 21px Cinzel,Georgia,serif;margin:2px 0 10px;color:#f7e3b0}
+.card h3{font-size:17px}
+ul.notes{margin:0;padding-left:20px;line-height:1.5}
+ul.notes li{margin:3px 0}
+ul.notes li::marker{color:var(--gold2)}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;max-width:1100px}
+.card{border:1px solid var(--line);border-radius:12px;padding:16px 18px;background:rgba(18,16,26,.9);cursor:default}
+.card.small ul{display:none}
+.card.small .more{color:var(--dim);font-size:13px}
+.list{max-width:860px}
+.list .card{margin-bottom:14px}
+.chips{display:flex;gap:8px;margin:0 0 18px}
+.chips button{padding:7px 16px;border-radius:20px;border:1px solid var(--line);background:rgba(255,255,255,.03);color:var(--dim);font:700 12.5px Cinzel,Georgia,serif;letter-spacing:.6px;cursor:pointer}
+.chips button.on{color:#f7e3b0;border-color:rgba(242,196,106,.7);background:rgba(242,196,106,.12)}
+.set{max-width:720px}
+.row{display:flex;align-items:center;gap:16px;padding:16px 18px;border:1px solid var(--line);border-radius:12px;background:rgba(18,16,26,.9);margin-bottom:12px}
+.row .t{flex:1}.row .t b{display:block;font:700 14px Cinzel,Georgia,serif;color:#f7e3b0;letter-spacing:.4px}.row .t span{color:var(--dim);font-size:13.5px}
+.btn{padding:9px 18px;border-radius:9px;border:1px solid rgba(217,169,58,.5);background:linear-gradient(180deg,rgba(242,196,106,.16),rgba(242,196,106,.05));color:#f7e3b0;font:700 12.5px Cinzel,Georgia,serif;letter-spacing:.6px;cursor:pointer}
+.btn:hover{border-color:var(--gold)}
+.btn:disabled{opacity:.45;cursor:default}
+select,input[type=text]{background:#0e0c14;border:1px solid var(--line);border-radius:8px;color:var(--text);font:14px Alegreya,Georgia,serif;padding:8px 10px;min-width:240px;user-select:text}
+.tog{width:46px;height:26px;border-radius:13px;background:#2a2430;border:1px solid var(--line);position:relative;cursor:pointer;flex:none}
+.tog:after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#776d5a;transition:.18s}
+.tog.on{background:rgba(242,196,106,.35)}.tog.on:after{left:23px;background:var(--gold)}
+.bar{grid-column:2;display:flex;align-items:center;gap:22px;padding:0 30px 0 34px;border-top:1px solid var(--line);background:linear-gradient(180deg,#14101c,#0d0b12);position:relative;z-index:2}
+.status{flex:1;min-width:0}
+.status .l{font-size:14px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.status .l.err{color:var(--bad)}.status .l.ok{color:var(--ok)}
+.prog{height:6px;border-radius:4px;background:rgba(255,255,255,.07);margin-top:8px;overflow:hidden;visibility:hidden}
+.prog.show{visibility:visible}
+.prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--gold2),var(--gold));transition:width .2s}
+.ver{color:var(--mute);font-size:12.5px;text-align:right;line-height:1.5}
+.play{min-width:210px;height:54px;border-radius:12px;border:1px solid #f7d78a;background:linear-gradient(180deg,#f2c46a,#c38a22);color:#1a1206;font:700 21px Cinzel,Georgia,serif;letter-spacing:3px;cursor:pointer;box-shadow:0 0 26px rgba(242,196,106,.35),inset 0 1px 0 rgba(255,255,255,.5);transition:.15s}
+.play:hover{filter:brightness(1.08);box-shadow:0 0 34px rgba(242,196,106,.5),inset 0 1px 0 rgba(255,255,255,.5)}
+.play:disabled{filter:grayscale(.7) brightness(.7);cursor:default;box-shadow:none}
+.classic{max-width:760px;display:flex;gap:22px;align-items:center;padding:20px 24px;border:1px solid rgba(242,196,106,.55);border-radius:14px;background:linear-gradient(135deg,rgba(242,196,106,.13),rgba(20,16,28,.92) 60%);box-shadow:0 10px 40px rgba(0,0,0,.4);margin:18px 0 6px}
+.classic .ct{flex:1;min-width:0}.classic h3{font:700 22px Cinzel,Georgia,serif;color:var(--gold);margin:8px 0 4px}
+.classic p{margin:0 0 10px;color:var(--dim);line-height:1.5}.classic .cs{font-size:13.5px;color:var(--text)}.classic .cs.err{color:var(--bad)}
+.classic .cb{display:flex;flex-direction:column;gap:8px;flex:none}.classic .prog{max-width:420px}
+.btn.gold{background:linear-gradient(180deg,#f2c46a,#c38a22);color:#1a1206;border-color:#f7d78a;padding:11px 22px;font-size:14px;letter-spacing:1.5px}
+.btn:disabled{opacity:.5;cursor:default}
+.empty{color:var(--dim);padding:20px 0}
+.toast{position:fixed;right:24px;bottom:100px;padding:12px 18px;border-radius:10px;background:#1c1724;border:1px solid var(--gold2);color:#f7e3b0;box-shadow:0 10px 30px rgba(0,0,0,.5);opacity:0;transform:translateY(8px);transition:.25s;z-index:5;pointer-events:none}
+.toast.show{opacity:1;transform:none}
+</style></head><body>
+<div class="app">
+  <aside class="side">
+    <div class="logo"><div class="crest"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 2v20M2 12h20M5.6 5.6l12.8 12.8M18.4 5.6L5.6 18.4"/><circle cx="12" cy="12" r="3.2"/></svg></div><small>REALM OF</small><b>Aldara</b><small style="margin-top:6px;letter-spacing:5px">LAUNCHER</small></div>
+    <nav class="nav">
+      <button data-v="home" class="on"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Home</button>
+      <button data-v="notes"><svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 12h7M9 16h7"/></svg>Updates &amp; Hotfixes<span class="dot" id="newDot"></span></button>
+      <button data-v="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 9 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.6 9a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></svg>Settings</button>
+    </nav>
+    <div class="foot" id="sideFoot"></div>
+  </aside>
+  <main class="main">
+    <div class="hero"></div>
+    <section class="view on" id="v-home"></section>
+    <section class="view" id="v-notes"><h1>Updates &amp; Hotfixes</h1><p class="sub">Everything that has changed in Aldara, newest first.</p>
+      <div class="chips" id="chips"><button data-f="all" class="on">All</button><button data-f="update">Updates</button><button data-f="hotfix">Hotfixes</button></div><div class="list" id="noteList"></div></section>
+    <section class="view" id="v-settings"><h1>Settings</h1><p class="sub">Launcher and game options.</p><div class="set" id="setBox"></div></section>
+  </main>
+  <footer class="bar">
+    <div class="status"><div class="l" id="stLine">Starting...</div><div class="prog" id="prog"><i id="progI"></i></div></div>
+    <div class="ver" id="verBox"></div>
+    <button class="play" id="play" disabled>PLAY</button>
+  </footer>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+let S={}, NOTES={entries:[]}, FILT='all', POLL=null, GPUS=null, WAS_BUSY=false;
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+async function api(p,body){ const o=body===undefined?{method:p.includes('/state')||p.includes('/notes')||p.endsWith('/gpus')?'GET':'POST'}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}; const r=await fetch(p,o); if(!r.ok) throw new Error(await r.text()); return r.status===204?null:r.json(); }
+function verLess(a,b){ const pa=String(a||'0').split('.'), pb=String(b||'0').split('.'); for(let i=0;i<Math.max(pa.length,pb.length);i++){ const x=+pa[i]||0, y=+pb[i]||0; if(x!==y) return x<y; } return false; }
+function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(toast.t); toast.t=setTimeout(()=>t.classList.remove('show'),3200); }
+let SEEN=''; try{ SEEN=localStorage.getItem('aldara_seen_notes')||''; }catch(e){}
+function isNew(e){ return e.v&&SEEN&&verLess(SEEN,e.v); }
+function entryHTML(e,big){ const t=e.type==='hotfix'?'hotfix':'update';
+  return `<div class="${big?'feat':'card'}"><div class="meta"><span class="badge ${t}">${t==='hotfix'?'HOTFIX':'UPDATE'}</span>${isNew(e)?'<span class="badge new">NEW</span>':''}<span>${e.v?'Version '+esc(e.v):esc(e.label||'')}</span>${e.date?'<span>&middot; '+esc(e.date)+'</span>':''}</div>
+    <h3>${esc(e.title)}</h3><ul class="notes">${(e.notes||[]).map(n=>'<li>'+esc(n)+'</li>').join('')}</ul></div>`; }
+function renderHome(){ const E=NOTES.entries||[], first=E[0];
+  const fresh=S.separate&&!S.installed;
+  let h=fresh?`<h1>Welcome to Aldara</h1><p class="sub">Press Install to download the game. It installs once, then updates itself whenever there is something new.</p>`:`<h1>Welcome back</h1><p class="sub">${S.installed?'Version '+esc(S.installed)+' is installed. ':''}${E.length?'Here is what is new in Aldara.':''}</p>`;
+  h+='<div id="clBox"></div>';
+  if(first) h+=`<h2>Latest ${first.type==='hotfix'?'hotfix':'update'}</h2>`+entryHTML(first,true);
+  const rest=E.slice(1,7); if(rest.length){ h+=`<h2>Recent changes</h2><div class="cards">`+rest.map(e=>{ const t=e.type==='hotfix'?'hotfix':'update';
+    return `<div class="card small"><div class="meta"><span class="badge ${t}">${t==='hotfix'?'HOTFIX':'UPDATE'}</span>${isNew(e)?'<span class="badge new">NEW</span>':''}<span>${e.v?'Version '+esc(e.v):esc(e.label||'')}</span></div><h3>${esc(e.title)}</h3><div class="more">${(e.notes||[]).length} change${(e.notes||[]).length===1?'':'s'} &middot; see Updates &amp; Hotfixes</div></div>`; }).join('')+`</div>`; }
+  $('v-home').innerHTML=h; renderClassic(); }
+function renderNotes(){ const E=(NOTES.entries||[]).filter(e=>FILT==='all'||(e.type||'update')===FILT);
+  $('noteList').innerHTML=E.length?E.map(e=>entryHTML(e,false)).join(''):'<div class="empty">Nothing here yet.</div>';
+  const n=(NOTES.entries||[]).filter(isNew).length; const d=$('newDot'); d.textContent=n; d.classList.toggle('show',n>0); }
+async function renderSettings(){ if(!GPUS){ try{ GPUS=await api('/api/gpus'); }catch(e){ GPUS={adapters:[],current:'default'}; } }
+  const opts=[['default','Let Windows choose'],['high','Most powerful card'],['low','Power saving card']].concat((GPUS.adapters||[]).map(a=>['luid:'+a.luid,a.name+(a.vram?' ('+Math.round(a.vram/1073741824)+' GB)':'')]));
+  $('setBox').innerHTML=`
+    <div class="row"><div class="t"><b>Automatic updates</b><span>Download new versions as soon as the launcher opens.</span></div><div class="tog ${S.auto?'on':''}" id="autoTog"></div></div>
+    <div class="row"><div class="t"><b>Check for updates</b><span>${S.checkErr?'Last check failed: '+esc(S.checkErr):S.latest?'Newest version online: '+esc(S.latest.version):'Not checked yet.'}</span></div><button class="btn" id="chkBtn">Check now</button></div>
+    <div class="row"><div class="t"><b>Graphics card</b><span>Which card draws the game. Takes effect the next time you open the game.</span></div><select id="gpuSel">${opts.map(o=>`<option value="${esc(o[0])}" ${o[0]===GPUS.current?'selected':''}>${esc(o[1])}</option>`).join('')}</select></div>
+    ${S.separate?`<div class="row"><div class="t"><b>Game files</b><span>${S.installed?'Installed in '+esc(S.dir||''):'Not installed yet.'}</span></div></div>`:''}
+    <div class="row"><div class="t"><b>Your saves</b><span>Characters are stored on this computer. Updates never touch them.</span></div><button class="btn" id="saveBtn">Open folder</button></div>`;
+  $('autoTog').onclick=async()=>{ S=await api('/api/launcher/settings',{auto:!S.auto}); renderSettings(); renderBar(); if(S.auto) maybeUpdate(); };
+  $('chkBtn').onclick=()=>check(true);
+  $('gpuSel').onchange=async e=>{ try{ await api('/api/gpu',{gpu:e.target.value}); GPUS.current=e.target.value; toast('Graphics card saved. It is used the next time you open the game.'); }catch(er){ toast('Could not save the graphics card'); } };
+  $('saveBtn').onclick=()=>api('/api/launcher/saves',{}).catch(()=>{}); }
+function mb(n){ return (n/1048576).toFixed(1)+' MB'; }
+function renderBar(){ const l=$('stLine'), p=$('prog'), pi=$('progI'), play=$('play'); l.className='l';
+  const newer=S.latest&&(verLess(S.installed,S.latest.version)||S.missing>0), inst=!!S.installed||!S.separate;
+  if(S.busy&&!inst){ const f=S.tot>0?S.got/S.tot:0; l.textContent='Installing Realm of Aldara '+(S.latest?S.latest.version:'')+'...  '+(S.tot>0?Math.round(f*100)+'%  ('+mb(S.got)+' of '+mb(S.tot)+')':mb(S.got)); p.classList.add('show'); pi.style.width=(f*100).toFixed(1)+'%'; play.disabled=true; play.textContent='INSTALLING'; }
+  else if(!inst){ p.classList.remove('show'); play.disabled=false; play.textContent='INSTALL';
+    if(S.err){ l.textContent=S.err; l.className='l err'; }
+    else if(S.latest) l.textContent='Realm of Aldara is not installed yet. Version '+S.latest.version+(S.latest.size?' ('+mb(S.latest.size)+')':'')+' is ready to install.';
+    else if(S.checkErr){ l.textContent='Could not reach the update server to install the game: '+S.checkErr; l.className='l err'; }
+    else l.textContent='Looking for the newest version to install...'; }
+  else if(S.busy){ const f=S.tot>0?S.got/S.tot:0; l.textContent='Downloading version '+(S.latest?S.latest.version:'')+'...  '+(S.tot>0?Math.round(f*100)+'%  ('+mb(S.got)+' of '+mb(S.tot)+')':mb(S.got)); p.classList.add('show'); pi.style.width=(f*100).toFixed(1)+'%'; play.disabled=true; play.textContent='UPDATING'; }
+  else { p.classList.remove('show'); play.disabled=false;
+    if(S.err){ l.textContent=S.err; l.className='l err'; play.textContent='PLAY'; }
+    else if(newer){ l.textContent=verLess(S.installed,S.latest.version)?'Version '+S.latest.version+' is available.':'New game files (music) are ready to download.'; play.textContent=S.auto?'PLAY':'UPDATE'; if(!S.auto){ play.dataset.upd='1'; } }
+    else if(!S.checked){ l.textContent='Checking for updates...'; play.textContent='PLAY'; }
+    else if(S.checkErr){ l.textContent='Could not reach the update server. You can still play version '+S.installed+'.'; l.className='l err'; play.textContent='PLAY'; }
+    else { l.textContent='Up to date.'; l.className='l ok'; play.textContent='PLAY'; }
+    if(!(newer&&!S.auto)) delete play.dataset.upd; }
+  $('verBox').innerHTML=(S.installed?'Installed <b>'+esc(S.installed)+'</b>':'<b>Not installed</b>')+(S.latest?'<br>Newest '+esc(S.latest.version):'');
+  $('sideFoot').innerHTML=(S.installed?'Version <b>'+esc(S.installed)+'</b>':'Game not installed')+'<br>Saves stay on this computer.'; }
+async function loadNotes(){ try{ NOTES=await api('/api/launcher/notes'); }catch(e){ NOTES={entries:[]}; } if(!SEEN&&NOTES.entries&&NOTES.entries[0]) { SEEN=NOTES.entries[0].v||''; try{ localStorage.setItem('aldara_seen_notes',SEEN); }catch(e){} } renderHome(); renderNotes(); }
+async function poll(){ clearTimeout(POLL); try{ S=await api('/api/launcher/state'); }catch(e){} renderBar(); if(!(S.classic&&S.classic.busy)) renderClassic();
+  if(S.busy) POLL=setTimeout(poll,250); else if(WAS_BUSY){ WAS_BUSY=false; if(!S.err){ renderHome(); toast(INSTALLING?'Realm of Aldara '+S.installed+' is installed. Press Play to start.':'Updated to version '+S.installed); INSTALLING=false; await loadNotes(); if(LAUNCH){ LAUNCH=false; launchGame(); return; } } else { LAUNCH=false; UPD_FAIL=true; } } }
+async function maybeUpdate(){ if(S.separate&&!S.installed) return; if(S.latest&&(verLess(S.installed,S.latest.version)||S.missing>0)&&!S.busy){ S=await api('/api/launcher/update'); WAS_BUSY=true; renderBar(); poll(); } }
+async function check(manual){ try{ S=await api('/api/launcher/check'); }catch(e){} renderBar(); if($('v-settings').classList.contains('on')) renderSettings(); await loadNotes(); renderClassic(); clAuto();
+  if(S.auto) maybeUpdate(); else if(manual) toast(S.latest&&verLess(S.installed,S.latest.version)?'Version '+S.latest.version+' is available':'You have the newest version'); }
+function show(v){ document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v)); document.querySelectorAll('.view').forEach(x=>x.classList.toggle('on',x.id==='v-'+v));
+  if(v==='settings') renderSettings();
+  if(v==='notes'&&NOTES.entries&&NOTES.entries[0]&&NOTES.entries[0].v){ setTimeout(()=>{ SEEN=NOTES.entries[0].v; try{ localStorage.setItem('aldara_seen_notes',SEEN); }catch(e){} $('newDot').classList.remove('show'); },1500); } }
+document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>show(b.dataset.v));
+$('chips').onclick=e=>{ const b=e.target.closest('button'); if(!b) return; FILT=b.dataset.f; $('chips').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); renderNotes(); };
+
+// ---------- Realm of Aldara Classic (the Unity edition), installed beside the browser edition ----------
+let CL_POLL=null, CL_WAS=false;
+function clLatest(){ return (S.classic&&S.classic.latest)||(S.latest&&S.latest.classic)||null; }
+function renderClassic(){ const box=$('clBox'); if(!box) return; const L=clLatest(); if(!L){ box.innerHTML=''; return; }
+  const c=S.classic; let st='', cls='cs', btn='', prog='';
+  if(!c){ st=S.exeUpdated?'The launcher has updated itself. Close it and open it again to install Classic.':'The launcher is updating itself so it can install Classic. Close it and open it again in a moment.'; }
+  else if(c.busy){ const f=c.tot>0?c.got/c.tot:0; st=c.phase==='check'?'Checking the game files...':c.phase==='install'?'Installing...':'Downloading Realm of Aldara Classic '+esc(L.version)+'...  '+(c.tot>0?Math.round(f*100)+'%  ('+mb(c.got)+' of '+mb(c.tot)+')':mb(c.got));
+    prog=`<div class="prog show"><i style="width:${c.phase==='install'?100:(f*100).toFixed(1)}%"></i></div>`; btn='<button class="btn gold" disabled>'+(c.installed?'UPDATING':'INSTALLING')+'</button>'; }
+  else if(!c.installed){ if(c.err){ st=esc(c.err); cls='cs err'; } else st='Not installed yet. Version '+esc(L.version)+(L.size?', '+mb(L.size):'')+'.'; btn='<button class="btn gold" id="clInst">INSTALL</button>'; }
+  else if(verLess(c.installed,L.version)){ if(c.err){ st=esc(c.err); cls='cs err'; } else st='Version '+esc(L.version)+' is available (you have '+esc(c.installed)+').'; btn='<button class="btn gold" id="clUpd">UPDATE</button><button class="btn" id="clPlay">PLAY CLASSIC</button>'; }
+  else { if(c.err){ st=esc(c.err); cls='cs err'; } else st='Version '+esc(c.installed)+' is installed and up to date.'; btn='<button class="btn gold" id="clPlay">PLAY CLASSIC</button>'; }
+  box.innerHTML=`<div class="classic"><div class="ct"><span class="badge new">NEW</span><h3>Realm of Aldara Classic</h3><p>${esc(L.title||'The whole game rebuilt in Unity, with richer lighting, water, lava and grass. Your characters carry over.')}</p><div class="${cls}">${st}</div>${prog}</div><div class="cb">${btn}</div></div>`;
+  const i=$('clInst'), u=$('clUpd'), pl=$('clPlay'); if(i) i.onclick=clUpdate; if(u) u.onclick=clUpdate; if(pl) pl.onclick=clPlay; }
+async function clUpdate(){ try{ S=await api('/api/launcher/classic/update',{}); }catch(e){ toast(String(e.message||e)); } CL_WAS=true; renderClassic(); clPoll(); }
+async function clPoll(){ clearTimeout(CL_POLL); try{ S=await api('/api/launcher/state'); }catch(e){} renderClassic();
+  if(S.classic&&S.classic.busy) CL_POLL=setTimeout(clPoll,400);
+  else if(CL_WAS){ CL_WAS=false; if(S.classic&&!S.classic.err&&S.classic.installed) toast('Realm of Aldara Classic '+S.classic.installed+' is installed. Press Play Classic to start.'); } }
+async function clPlay(){ const pl=$('clPlay'); if(pl){ pl.disabled=true; pl.textContent='STARTING'; }
+  try{ await api('/api/launcher/classic/play',{}); setTimeout(()=>{ try{ if(window.aldaraQuit) window.aldaraQuit(); }catch(e){} },500); }
+  catch(e){ toast(String(e.message||e)); renderClassic(); } }
+function clAuto(){ const c=S.classic, L=clLatest(); if(S.auto&&c&&c.installed&&L&&!c.busy&&!c.err&&verLess(c.installed,L.version)) clUpdate(); }
+let LAUNCH=false, UPD_FAIL=false, INSTALLING=false;
+// a launcher program from before the game became its own program opens the game in this window instead
+async function launchGame(){ const p=$('play'); p.disabled=true; p.textContent='STARTING';
+  if(!S.separate){ try{ if(window.aldaraTitle) window.aldaraTitle('Realm of Aldara'); }catch(e){} location.href='/'; return; }
+  $('stLine').textContent='Starting Realm of Aldara...'; $('stLine').className='l';
+  try{ await api('/api/launcher/play',{}); setTimeout(()=>{ try{ if(window.aldaraQuit) window.aldaraQuit(); }catch(e){} },500); }
+  catch(e){ p.disabled=false; p.textContent='PLAY'; $('stLine').textContent=String(e.message||e); $('stLine').className='l err'; } }
+async function install(){ const p=$('play'); p.disabled=true; p.textContent='INSTALLING';
+  if(!S.latest){ try{ S=await api('/api/launcher/check'); }catch(e){} }
+  if(!S.latest){ renderBar(); toast('Could not reach the update server. Check your connection and try again.'); return; }
+  INSTALLING=true; S=await api('/api/launcher/update'); WAS_BUSY=true; renderBar(); poll(); }
+$('play').onclick=async()=>{ const p=$('play'); if(p.disabled) return;
+  if(S.separate&&!S.installed){ install(); return; }
+  p.disabled=true; p.textContent='CHECKING'; $('stLine').textContent='Making sure you have the newest version...';
+  if(UPD_FAIL){ launchGame(); return; }
+  try{ S=await api('/api/launcher/check'); }catch(e){}
+  if(S.latest&&(verLess(S.installed,S.latest.version)||S.missing>0)){ LAUNCH=true; S=await api('/api/launcher/update'); WAS_BUSY=true; renderBar(); poll(); return; }
+  launchGame(); };
+
+addEventListener('keydown',e=>{ if(e.key==='Enter'&&document.activeElement.tagName!=='INPUT') $('play').click(); });
+(async()=>{ try{ if(window.aldaraTitle) window.aldaraTitle('Realm of Aldara Launcher'); }catch(e){} try{ S=await api('/api/launcher/state'); }catch(e){} renderBar(); await loadNotes(); check(false); setInterval(()=>{ fetch('/api/ping').catch(()=>{}); },5000); setInterval(()=>{ if(!S.busy) check(false); },180000); fetch('/api/ping').catch(()=>{}); })();
+</script></body></html>
