@@ -147,11 +147,24 @@ namespace Aldara
                 var gr = P.model ? P.model.GetComponent<AldaraHeroGear>() : null; float hov = gr && gr.flying ? gr.flyH : 0;
                 var g0 = W2P(P.x, P.y); float top = g0.y - (hov + 42) * k; var tt = AldaraGear.TitleById(AldaraHero.I.title);
                 var nl = Lab("", 12, C("#f4f0e6"), true, true, g0.x, (tt != null ? top - 13 * k : top) + 4, 1, TextAnchor.LowerCenter, 0.2f);
-                nl.enableRichText = true; nl.text = "<color=#ffd35a>Lv " + AldaraHero.I.lvl + "</color> " + AldaraQuestUI.Esc(AldaraHero.I.heroName);
+                nl.enableRichText = true; var gt = AldaraGuild.Tag; nl.text = (gt != null ? "<color=#" + ColorUtility.ToHtmlStringRGB(AldaraGuild.TagCol) + ">[" + gt + "]</color> " : "") + "<color=#ffd35a>Lv " + AldaraHero.I.lvl + "</color> " + AldaraQuestUI.Esc(AldaraHero.I.heroName);
                 if (tt != null)
                 {
                     var tc = C(tt.col); var tl = Lab(tt.name, 11, tc, true, true, g0.x, top + 4, 1, TextAnchor.LowerCenter, 0.15f);
-                    if (tt.glow) { float pu = 0.5f + 0.5f * Mathf.Sin(t * 2.6f); tl.style.textShadow = new TextShadow { color = new Color(tc.r, tc.g, tc.b, 0.7f + 0.3f * pu), offset = Vector2.zero, blurRadius = 6 + 6 * pu }; }
+                    if (tt.glow)
+                    {   // drawGlowTitle: a pulsing coloured halo, and twinkles drifting over the letters
+                        float pu = 0.5f + 0.5f * Mathf.Sin(t * 2.6f);
+                        var halo = Lab(tt.name, 11, new Color(tc.r, tc.g, tc.b, 0.35f + 0.3f * pu), true, true, g0.x, top + 4, 1, TextAnchor.LowerCenter, 0.15f); halo.style.textShadow = new TextShadow { color = tc, offset = Vector2.zero, blurRadius = 12 + 8 * pu }; halo.SendToBack();
+                        tl.style.textShadow = new TextShadow { color = new Color(tc.r, tc.g, tc.b, 0.7f + 0.3f * pu), offset = Vector2.zero, blurRadius = 6 + 6 * pu };
+                        float w = tt.name.Length * 7.2f * k, y0 = top - 6 * k;
+                        for (int i = 0; i < 4; i++)
+                        {
+                            float ph = t * 0.8f + i * 1.7f, kk = (Mathf.Sin(ph * 2.3f + i) + 1) / 2; if (kk < 0.55f) continue;
+                            float px = g0.x + Mathf.Sin(ph * 0.9f + i * 2.1f) * w * 0.5f, py = y0 - 5 * k + Mathf.Cos(ph * 1.3f + i) * 7 * k, r = (1.2f + 2.2f * (kk - 0.55f) / 0.45f) * k, al = (kk - 0.55f) / 0.45f;
+                            paint.Glow(new Vector2(px, py), r * 4, new Color(tc.r, tc.g, tc.b, 0.5f * al));
+                            paint.Diamond(new Vector2(px, py), r * 0.5f, r * 2, new Color(1, 1, 1, al), Color.clear, 0.01f); paint.Diamond(new Vector2(px, py), r * 2, r * 0.5f, new Color(1, 1, 1, al), Color.clear, 0.01f);
+                        }
+                    }
                 }
             }
             bool names = AldaraSettings.On("names");

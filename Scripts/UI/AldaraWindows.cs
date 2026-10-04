@@ -32,7 +32,7 @@ namespace Aldara
             var go = new GameObject("WindowsUI"); go.SetActive(false); doc = go.AddComponent<UIDocument>();
             doc.panelSettings = Resources.Load<PanelSettings>("UI/AldaraPanel"); doc.sortingOrder = 5; go.SetActive(true);
             root = doc.rootVisualElement; root.pickingMode = PickingMode.Ignore; root.style.position = Position.Absolute; root.style.left = root.style.top = root.style.right = root.style.bottom = 0;
-            Register(new AldaraInvWin()); Register(new AldaraAttWin()); Register(new AldaraSkillWin()); Register(new AldaraSubWin()); Register(new AldaraVaultWin()); Register(new AldaraMenuWin()); Register(new AldaraMapWin()); Register(new AldaraQuestLog()); Register(new AldaraQuestDlg()); Register(new AldaraLoreWin()); Register(new AldaraWsWin()); Register(new AldaraDunWin()); Register(new AldaraDunResWin());
+            Register(new AldaraInvWin()); Register(new AldaraAttWin()); Register(new AldaraSkillWin()); Register(new AldaraSubWin()); Register(new AldaraVaultWin()); Register(new AldaraMenuWin()); Register(new AldaraMapWin()); Register(new AldaraQuestLog()); Register(new AldaraQuestDlg()); Register(new AldaraLoreWin()); Register(new AldaraWsWin()); Register(new AldaraDunWin()); Register(new AldaraDunResWin()); Register(new AldaraGuildWin());
             AldaraSettings.Apply();
             if (!GetComponent<AldaraTitle>()) gameObject.AddComponent<AldaraTitle>();
             if (!GetComponent<AldaraFolk>()) gameObject.AddComponent<AldaraFolk>();

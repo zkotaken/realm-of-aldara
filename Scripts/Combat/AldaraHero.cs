@@ -250,7 +250,7 @@ namespace Aldara
                 UpdateShots(dt); return;
             }
             if (atkCd > 0) atkCd -= dt;
-            TickSwing(dt); KdTick(dt);
+            TickSwing(dt); KdTick(dt); AldaraGuild.Tick(dt);
             if (cls == "mage" && cast > 0 && Random.value < dt * 40) { float tx = P.x + Mathf.Cos(P.facing) * 20, ty = P.y + Mathf.Sin(P.facing) * 20, aa = Random.value * Mathf.PI * 2; AldaraVfx.Mpush(new AldaraVfx.Mp { x = tx + Mathf.Cos(aa) * 20, y = ty + Mathf.Sin(aa) * 10, z = AldaraVfx.PH_Y + 10 + Mathf.Sin(aa) * 10, vx = -Mathf.Cos(aa) * 60, vy = -Mathf.Sin(aa) * 30, life = 0.3f, max = 0.3f, c = castCol, s = 2, glow = true }); }
             mana = Mathf.Min(maxMana, mana + (2 + effEne * 0.12f) * (1 + AldaraTree.T("mreg")) * dt);
             // click: the monster under the cursor (compared on screen, as the browser does with LZ); empty ground attacks there

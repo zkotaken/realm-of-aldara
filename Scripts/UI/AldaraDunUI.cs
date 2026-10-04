@@ -134,11 +134,11 @@ namespace Aldara
                 Skin(box, "panel"); Pad(box, 12, 14); box.style.alignItems = Align.Center;
                 nameL = T(box, "", 15, C("#efcf78"), true, true, false, 1, true, false); Shadow(nameL, Color.black, 2, 1); nameL.style.unityTextAlign = TextAnchor.MiddleCenter;
                 status = T(box, "", 11, C("#d8d0bc")); status.style.unityTextAlign = TextAnchor.MiddleCenter; status.style.marginTop = 2;
-                leave = B(box, "Leave Dungeon", () => { if (A.Throne) AldaraThrone.Leave(); else if (A.Active) A.Exit(A.done ? "done" : "left"); }, "btn_buy", 10); leave.style.marginTop = 6; leave.Padding(3, 14);
+                leave = B(box, "Leave Dungeon", () => { if (A.Throne) AldaraThrone.Leave(); else if (A.Fort) AldaraFort.Leave(); else if (A.Active) A.Exit(A.done ? "done" : "left"); }, "btn_buy", 10); leave.style.marginTop = 6; leave.Padding(3, 14);
             }
             bool on = A.Active && AldaraSave.Ready && !(AldaraWindows.I && AldaraWindows.I.IsOpen("map"));
             box.style.display = on ? DisplayStyle.Flex : DisplayStyle.None;
-            if (on) { nameL.text = A.def.name.ToUpper(); status.text = A.Status; leave.label.text = A.Throne ? "Leave the Palace" : A.done ? "Return to Town" : "Leave Dungeon"; }
+            if (on) { nameL.text = A.def.name.ToUpper(); status.text = A.Status; leave.label.text = A.Throne ? "Leave the Palace" : A.Fort ? "Leave Tavern" : A.done ? "Return to Town" : "Leave Dungeon"; }
             // the minimap
             var mv = hud.MinimapView; if (mv == null) return;
             if (mini == null) { mini = new VisualElement { pickingMode = PickingMode.Ignore }; mini.style.position = Position.Absolute; mini.style.left = mini.style.top = mini.style.right = mini.style.bottom = 0; mini.style.backgroundColor = C("#05050a"); mv.Add(mini); img = new VisualElement { pickingMode = PickingMode.Ignore }; img.style.position = Position.Absolute; mini.Add(img); marks = new MiniMarks(); mini.Add(marks); }

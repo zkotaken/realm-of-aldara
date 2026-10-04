@@ -329,10 +329,24 @@ namespace Aldara
             AldaraThrone.OnEnter();
         }
         public static bool Throne { get { return DM != null && def != null && def.id == "throne"; } }
+        /// fortEnter: the guild's tavern, a quiet interior with no monsters
+        public static void StartFort(string name, string accent)
+        {
+            var H = AldaraHero.I; var P = AldaraPlayer.I; if (!AldaraSave.Ready || DM != null || !H.alive) return;
+            var d = new Def { i = -1, id = "fort", name = name, accent = accent, mobs = new MobDef[0], layout = true, sections = 1, hidden = true };
+            Map M; try { M = Build(d); } catch (System.Exception e) { Debug.LogException(e); AldaraHud.Banner("The tavern failed to load"); return; }
+            def = d; idx = 0; open = 9; done = false; exitT = 0; ret = new Vector2(P.x, P.y);
+            DM = M; AldaraWorld.Dun = true; AldaraMonsters.I.EnterDungeon(out worldMons);
+            P.x = M.start.x; P.y = M.start.y; H.target = null; if (AldaraSkills.I) AldaraSkills.I.queued = null; M.safe = new Vector2(P.x, P.y);
+            AldaraAuto.questHunt = false; AldaraAuto.questWalk = null; AldaraQuests.Render(); if (AldaraPet.I) AldaraPet.I.placed = false;
+            FlowUpdate(true); if (AldaraDungeonView.I) AldaraDungeonView.I.Enter(M);
+            AldaraFort.OnEnter(name);
+        }
+        public static bool Fort { get { return DM != null && def != null && def.id == "fort"; } }
         public static void Exit(string reason)
         {
             if (DM == null) return; var H = AldaraHero.I; var P = AldaraPlayer.I;
-            bool raid = AldaraRaid.On; AldaraRaid.OnExit(); AldaraThrone.OnExit();
+            bool raid = AldaraRaid.On; AldaraRaid.OnExit(); AldaraThrone.OnExit(); AldaraFort.OnExit();
             if (AldaraDungeonView.I) AldaraDungeonView.I.Leave();
             AldaraMonsters.I.LeaveDungeon(worldMons); worldMons = null; DM = null; AldaraWorld.Dun = false;
             P.x = ret.x; P.y = ret.y; H.target = null; if (AldaraSkills.I) AldaraSkills.I.queued = null; H.slowT = 0; if (AldaraPet.I) AldaraPet.I.placed = false;
@@ -398,6 +412,7 @@ namespace Aldara
             if (DM == null) return; var H = AldaraHero.I; var P = AldaraPlayer.I; if (!AldaraSave.Ready) { Exit("left"); return; }
             float dt = Mathf.Min(Time.deltaTime, 0.1f); var D = DM; D.t += dt;
             if (Throne) { AldaraThrone.Tick(dt); return; }
+            if (Fort) { AldaraFort.Tick(dt); return; }
             foreach (var g in D.gates) if (g.open && g.openT < 1) g.openT = Mathf.Min(1, g.openT + dt / 1.2f);
             FlowUpdate(false); UpdateTraps(dt); if (H.alive) DunX(dt);
             if (done) { exitT -= dt; if (exitT <= 0) { Exit("done"); return; } }
@@ -411,7 +426,7 @@ namespace Aldara
         {
             get
             {
-                if (DM == null) return ""; if (Throne) return AldaraThrone.STATUS; int room = DM.psec; int left = AldaraMonsters.I.all.Count(m => !m.dead && m.room == room);
+                if (DM == null) return ""; if (Throne) return AldaraThrone.STATUS; if (Fort) return AldaraFort.Status; int room = DM.psec; int left = AldaraMonsters.I.all.Count(m => !m.dead && m.room == room);
                 return done ? "Cleared! Returning in " + Mathf.CeilToInt(exitT) + "s" : room == DM.names.Length - 1 ? DM.names[DM.names.Length - 1] : (room >= 0 && room < DM.names.Length ? DM.names[room] : "") + "  ·  " + left + " left";
             }
         }
