@@ -56,8 +56,8 @@ namespace Aldara
         /// called when no movement key is held and auto-combat is on
         public static void FindTarget(float dt)
         {
-            if (questHunt) QuestTarget(dt);
-            else if (H.target == null || H.target.dead) H.target = AldaraMonsters.I.FindNearest(P.x, P.y, FIND);
+            if (questHunt && !AldaraDungeon.Active) QuestTarget(dt);
+            else if (H.target == null || H.target.dead) H.target = AldaraMonsters.I.FindNearest(P.x, P.y, AldaraDungeon.Active ? 1e9f : FIND);
         }
         static void QuestTarget(float dt)
         {

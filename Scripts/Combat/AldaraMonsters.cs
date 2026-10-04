@@ -22,6 +22,8 @@ namespace Aldara
             public bool dead, hasFaceA; public Act act; public float[] mcd;
             public GameObject view; public AldaraMonsterAnimator anim; public Transform model;
             public float lx, ly, dotT, dotTick, dotDmg, navIgnore;
+            // dungeons: its section, its own speed, the boss's ability timers, line-of-sight caches
+            public bool dun, enraged, summoned, slowHit, los, sees; public int room; public float spd = -1, mt, mt2, losT, seeT; public string mech, color, bolt;
         }
 
         void Awake()
@@ -62,7 +64,7 @@ namespace Aldara
             }
         }
 
-        float MoveSpeed(Mon m) { return book.baseSpeed * (m.def.spd > 0 ? m.def.spd : 0.55f) * (m.boss ? book.bossSpeedMult : book.speedMult); }
+        float MoveSpeed(Mon m) { return book.baseSpeed * (m.spd > 0 ? m.spd : m.def.spd > 0 ? m.def.spd : 0.55f) * (m.boss ? book.bossSpeedMult : book.speedMult); }
         float MvMax(Mon m, MoveDef mv)
         {
             if (mv.max >= 0) return mv.max + (m.boss ? m.r * 0.5f : 0);
@@ -89,7 +91,7 @@ namespace Aldara
                     continue;
                 }
                 bool near = Mathf.Abs(m.x - px) < viewRangePx && Mathf.Abs(m.y - py) < viewRangePx * 0.8f;
-                if (!(m.aggroT > 0) && !near) { if (m.view) Hide(m); continue; }
+                if (!m.dun && !(m.aggroT > 0) && !near) { if (m.view) Hide(m); continue; }
                 if (m.flash > 0) m.flash -= dt; if (m.hurtT > 0) m.hurtT -= dt; if (m.engT > 0) m.engT -= dt; if (m.enrT > 0) m.enrT -= dt;
                 if (m.aggroT > 0) m.aggroT -= dt; if (m.slowT > 0) m.slowT -= dt;
                 if (m.dotT > 0) { m.dotT -= dt; m.dotTick -= dt; if (m.dotTick <= 0) { m.dotTick = 1; HitMonster(m, m.dotDmg, AldaraRules.Hex("#9aff6a")); if (m.dead) continue; } }
@@ -99,8 +101,8 @@ namespace Aldara
                 else
                 {
                     float sf = m.slowT > 0 ? 0.5f : 1, d = Mathf.Sqrt((px - m.x) * (px - m.x) + (py - m.y) * (py - m.y));
-                    float aggro = m.aggroT > 0 ? 650 : m.boss ? 320 : book.aggro[Mathf.Clamp(m.tier - 1, 0, book.aggro.Length - 1)];
-                    if (H.alive && d < aggro) Combat(m, dt * sf, d, Mathf.Atan2(py - m.y, px - m.x), ref busy);
+                    float aggro = m.aggroT > 0 ? 650 : m.dun ? 420 : m.boss ? 320 : book.aggro[Mathf.Clamp(m.tier - 1, 0, book.aggro.Length - 1)];
+                    if (H.alive && AldaraDungeon.SameRoom(m) && d < aggro && (!m.dun || AldaraDungeon.Aggro(m, aggro))) Combat(m, dt * sf, d, Mathf.Atan2(py - m.y, px - m.x), ref busy, !m.dun || AldaraDungeon.Sees(m));
                     else if (m.act != null) DoAct(m, dt * sf);
                     else
                     {
@@ -108,9 +110,9 @@ namespace Aldara
                         if (m.wanderT <= 0) { m.wanderT = 1.5f + Random.value * 2; float a = Random.value * Mathf.PI * 2; m.wx = Mathf.Cos(a); m.wy = Mathf.Sin(a); }
                         float ws = m.boss ? 18 : 28; m.x += m.wx * ws * dt; m.y += m.wy * ws * dt;
                         m.x = Mathf.Clamp(m.x, m.homeX - 120, m.homeX + 120); m.y = Mathf.Clamp(m.y, m.homeY - 120, m.homeY + 120);
+                        if (m.dun && AldaraDungeon.Active) AldaraDungeon.PushMon(m, mox, moy);
                     }
-                    SlideMove(m, mox, moy);
-                    if (AldaraWorld.LiquidAt(m.x, m.y) != 0 && AldaraWorld.LiquidAt(mox, moy) == 0) { m.x = mox; m.y = moy; }
+                    if (!m.dun) { SlideMove(m, mox, moy); if (AldaraWorld.LiquidAt(m.x, m.y) != 0 && AldaraWorld.LiquidAt(mox, moy) == 0) { m.x = mox; m.y = moy; } }
                 }
                 if (near) Show(m, m.x - mox, m.y - moy, dt); else if (m.view) Hide(m);
             }
@@ -123,19 +125,19 @@ namespace Aldara
         }
 
         // ---- monCombat / pickMove / startAct / monAct ----
-        void Combat(Mon m, float dt, float d, float ang, ref int busy)
+        void Combat(Mon m, float dt, float d, float ang, ref int busy, bool see)
         {
             m.engT = 0.35f; m.faceA = ang; m.hasFaceA = true;
             for (int k = 0; k < m.mcd.Length; k++) if (m.mcd[k] > 0) m.mcd[k] -= dt;
             if (m.act != null) { DoAct(m, dt); return; }
             m.atkCd -= dt * (m.enrT > 0 ? 1.6f : 1);
-            if (m.atkCd <= 0 && AldaraHero.I.alive)
+            if (m.atkCd <= 0 && see && AldaraHero.I.alive)
             {
                 var mv = PickMove(m, d, busy >= 2 && !m.boss);
                 if (mv != null) { StartAct(m, mv, ang); if (mv.cd > 0 && !m.boss) busy++; return; }
             }
             bool kite = m.def.kite != 0; float want = kite ? 210 : m.r + 24, ms = MoveSpeed(m);
-            if (d > want) { m.x += Mathf.Cos(ang) * ms * dt; m.y += Mathf.Sin(ang) * ms * dt; }
+            if (d > want || !see) { if (m.dun && AldaraDungeon.Active) AldaraDungeon.MonStep(m, ms * dt); else { m.x += Mathf.Cos(ang) * ms * dt; m.y += Mathf.Sin(ang) * ms * dt; } }
             else if (kite && d < 120) Step(m, ang + Mathf.PI, ms * 0.75f * dt);
             else if (!m.boss)
             {
@@ -167,11 +169,11 @@ namespace Aldara
         {
             var P = AldaraPlayer.I; float mx = MvMax(m, mv), tx = P.x + pvx * 0.18f, ty = P.y + pvy * 0.18f, dd = Mathf.Sqrt((tx - m.x) * (tx - m.x) + (ty - m.y) * (ty - m.y));
             if (dd > mx) { tx = m.x + (tx - m.x) / dd * mx; ty = m.y + (ty - m.y) / dd * mx; }
-            if (mv.move == "leap") for (int k = 0; k < 6 && !SpotOk(tx, ty); k++) { tx = m.x + (tx - m.x) * 0.8f; ty = m.y + (ty - m.y) * 0.8f; }
+            if (mv.move == "leap") for (int k = 0; k < 6 && !SpotOk(m, tx, ty); k++) { tx = m.x + (tx - m.x) * 0.8f; ty = m.y + (ty - m.y) * 0.8f; }
             A.tx = tx; A.ty = ty;
         }
-        static bool SpotOk(float x, float y) { return !AldaraWorld.BlockedAt(x, y) && AldaraWorld.LiquidAt(x, y) == 0; }
-        static void Step(Mon m, float a, float d) { m.x += Mathf.Cos(a) * d; m.y += Mathf.Sin(a) * d; }
+        static bool SpotOk(Mon m, float x, float y) { if (m.dun && AldaraDungeon.Active) return AldaraDungeon.SpotOk(m, x, y); return !AldaraWorld.BlockedAt(x, y) && AldaraWorld.LiquidAt(x, y) == 0; }
+        static void Step(Mon m, float a, float d) { float ox = m.x, oy = m.y; m.x += Mathf.Cos(a) * d; m.y += Mathf.Sin(a) * d; if (m.dun && AldaraDungeon.Active) AldaraDungeon.PushMon(m, ox, oy); }
         static float EIO(float x) { return x < 0.5f ? 2 * x * x : 1 - Mathf.Pow(-2 * x + 2, 2) / 2; }
         void DoAct(Mon m, float dt)
         {
@@ -194,13 +196,13 @@ namespace Aldara
                     case "drift": Step(m, Mathf.Atan2(py - m.y, px - m.x), mv.dist / S * dt); break;
                     case "dash":
                         {
-                            float ox = m.x, oy = m.y, st = mv.spd * dt; Step(m, A.a, st); SlideMove(m, ox, oy);
-                            if (AldaraWorld.LiquidAt(m.x, m.y) != 0 && AldaraWorld.LiquidAt(ox, oy) == 0) { m.x = ox; m.y = oy; }
+                            float ox = m.x, oy = m.y, st = mv.spd * dt; Step(m, A.a, st); if (!m.dun) SlideMove(m, ox, oy);
+                            if (!m.dun && AldaraWorld.LiquidAt(m.x, m.y) != 0 && AldaraWorld.LiquidAt(ox, oy) == 0) { m.x = ox; m.y = oy; }
                             if (f > 0.08f && Mathf.Sqrt((m.x - ox) * (m.x - ox) + (m.y - oy) * (m.y - oy)) < st * 0.3f) A.t = W + S;
                             if (!A.hit && AldaraHero.I.alive && Mathf.Sqrt((px - m.x) * (px - m.x) + (py - m.y) * (py - m.y)) < m.r + 16 * 0.8f + 4) { A.hit = true; HurtPlayer(m, mv, Mathf.Atan2(py - m.y, px - m.x)); }
                             break;
                         }
-                    case "leap": { float e = EIO(f); m.x = A.sx + (A.tx - A.sx) * e; m.y = A.sy + (A.ty - A.sy) * e; m.lift = Mathf.Sin(f * Mathf.PI) * (mv.lift > 0 ? mv.lift : 60) * (m.boss ? 1.3f : 1); break; }
+                    case "leap": { float e = EIO(f), lox = m.x, loy = m.y; m.x = A.sx + (A.tx - A.sx) * e; m.y = A.sy + (A.ty - A.sy) * e; if (m.dun && AldaraDungeon.Active) AldaraDungeon.PushMon(m, lox, loy); m.lift = Mathf.Sin(f * Mathf.PI) * (mv.lift > 0 ? mv.lift : 60) * (m.boss ? 1.3f : 1); break; }
                 }
             }
             else if (mv.move == "leap") m.lift = 0;
@@ -219,7 +221,7 @@ namespace Aldara
                 {
                     float a = bse + off, d = mv.move == "blink" ? 16 + m.r + 8 : 180;
                     float x = (mv.move == "blink" ? P.x : m.x) + Mathf.Cos(a) * d, y = (mv.move == "blink" ? P.y : m.y) + Mathf.Sin(a) * d;
-                    if (SpotOk(x, y)) { AldaraFx.Burst(m.x, m.y, 30, ElCol(mv.el)); m.x = x; m.y = y; AldaraFx.Burst(m.x, m.y, 30, ElCol(mv.el)); A.a = Mathf.Atan2(P.y - m.y, P.x - m.x); break; }
+                    if (SpotOk(m, x, y)) { AldaraFx.Burst(m.x, m.y, 30, ElCol(mv.el)); m.x = x; m.y = y; AldaraFx.Burst(m.x, m.y, 30, ElCol(mv.el)); A.a = Mathf.Atan2(P.y - m.y, P.x - m.x); break; }
                 }
             }
         }
@@ -265,14 +267,14 @@ namespace Aldara
         }
         static void Knock(float a, float dist)
         {
-            var P = AldaraPlayer.I;
+            var P = AldaraPlayer.I; if (AldaraDungeon.Active) { AldaraDungeon.Shove(a, dist); return; }
             for (int k = 0; k < 6; k++) { float ox = P.x, oy = P.y; P.x += Mathf.Cos(a) * dist / 6; P.y += Mathf.Sin(a) * dist / 6; if (AldaraWorld.BlockedAt(P.x, P.y)) { P.x = ox; P.y = oy; break; } }
         }
 
         // ---- doHit: what each move shape does when it lands ----
         class Proj { public float x, y, vx, vy, life, dmg, rad, slow, kb; public Color col; public bool pierce, hitP, ground; public GameObject go; }
         class Lob { public float sx, sy, tx, ty, t, T, H, aoe, dmg, slow; public Color col; public GameObject go; }
-        class Hz { public float x, y, r, delay, dmg, slow; public Color col; public bool ring; public float rr, r1, spd, w, kb; public bool hit; public GameObject go; }
+        class Hz { public float x, y, r, delay, max, dmg, slow, dur, dps, tick; public Color col; public bool ring, icicle, pool; public float rr, r1, spd, w, kb; public bool hit; public GameObject go, ic; }
         readonly List<Proj> eproj = new List<Proj>(); readonly List<Lob> lobs = new List<Lob>(); readonly List<Hz> hazards = new List<Hz>();
         void DoHit(Mon m, Act A, int i)
         {
@@ -340,6 +342,18 @@ namespace Aldara
                 life = (MvMax(m, mv) + 160) / sp, rad = mv.look == "flamewave" ? 26 : mv.look == "lance" || mv.look == "spear" ? 9 : 7, slow = mv.slow, kb = mv.kb, pierce = mv.look == "flamewave", ground = ground };
             p.go = AldaraFx.Orb(E, mv.look == "arrow" || mv.look == "dagger" ? 0.22f : 0.32f); eproj.Add(p);
         }
+        /// a ground hazard from a dungeon (a boss's nova, falling icicles, a lava pool that burns while you stand in it)
+        public void AddHazard(float x, float y, float r, float delay, float dmg, Color col, float slow, bool icicle, float poolDur, float dps)
+        {
+            var h = new Hz { x = x, y = y, r = r, delay = delay, max = delay, dmg = dmg, col = col, slow = slow, icicle = icicle, pool = poolDur > 0, dur = poolDur, dps = dps };
+            AldaraFx.Disc(x, y, r, new Color(col.r, col.g, col.b, 0.3f), delay); if (icicle) h.ic = AldaraFx.Icicle(); hazards.Add(h);
+        }
+        /// enemyShoot: a bolt from a dungeon boss
+        public void EnemyShoot(Mon m, float ang, float dmg, Color col, float spd)
+        {
+            var p = new Proj { x = m.x + Mathf.Cos(ang) * m.r, y = m.y + Mathf.Sin(ang) * m.r, vx = Mathf.Cos(ang) * spd, vy = Mathf.Sin(ang) * spd, dmg = dmg, col = col, life = 2.2f, rad = 7, slow = m.slowHit ? 1.5f : 0 };
+            p.go = AldaraFx.Orb(col, 0.32f); eproj.Add(p);
+        }
         void AddHz(float x, float y, float r, float delay, float dmg, Color col, float slow)
         {
             var h = new Hz { x = x, y = y, r = r, delay = delay, dmg = dmg, col = col, slow = slow };
@@ -358,7 +372,7 @@ namespace Aldara
                     if (!e.pierce) { Kill(e.go); eproj.RemoveAt(i); continue; }
                     e.hitP = true;
                 }
-                if (e.life <= 0 || (!e.ground && AldaraWorld.BlockedAt(e.x, e.y))) { Kill(e.go); eproj.RemoveAt(i); }
+                if (e.life <= 0 || (!e.ground && (AldaraDungeon.Active ? AldaraDungeon.ShotWall(e.x, e.y, e.x - e.vx * dt, e.y - e.vy * dt) : AldaraWorld.BlockedAt(e.x, e.y)))) { Kill(e.go); eproj.RemoveAt(i); }
             }
             for (int i = lobs.Count - 1; i >= 0; i--)
             {
@@ -381,9 +395,19 @@ namespace Aldara
                     if (h.rr >= h.r1) { Kill(h.go); hazards.RemoveAt(i); }
                     continue;
                 }
+                if (h.pool && h.delay <= 0)
+                {   // a burning pool: hurts every 0.3 s while you stand in it
+                    h.dur -= dt; h.tick -= dt;
+                    if (h.tick <= 0 && H.alive && Mathf.Sqrt((P.x - h.x) * (P.x - h.x) + (P.y - h.y) * (P.y - h.y)) < h.r) { h.tick = 0.3f; H.Damage(Mathf.Round(h.dps * 0.3f), 0, 0); }
+                    if (h.dur <= 0) { Kill(h.go); hazards.RemoveAt(i); }
+                    continue;
+                }
                 h.delay -= dt;
+                if (h.icicle && h.ic) { float k = 1 - h.delay / Mathf.Max(0.01f, h.max); h.ic.SetActive(k > 0.45f); if (k > 0.45f) { float f = (k - 0.45f) / 0.55f; h.ic.transform.position = AldaraWorld.ToUnity(h.x, h.y) + Vector3.up * ((1 - f * f) * 420 / AldaraWorld.PX); } }
                 if (h.delay <= 0)
                 {
+                    if (h.pool) { if (h.ic) Kill(h.ic); h.go = AldaraFx.Pool(h.x, h.y, h.r, h.col); h.delay = 0; continue; }
+                    if (h.ic) Kill(h.ic);
                     if (h.dmg > 0 && H.alive && Mathf.Sqrt((P.x - h.x) * (P.x - h.x) + (P.y - h.y) * (P.y - h.y)) < h.r + 16 * 0.4f) { H.Damage(h.dmg, 0, 0); if (h.slow > 0) H.slowT = Mathf.Max(H.slowT, h.slow); }
                     AldaraFx.Burst(h.x, h.y, h.r, h.col); hazards.RemoveAt(i);
                 }
@@ -397,7 +421,7 @@ namespace Aldara
             if (m.dead) return; var H = AldaraHero.I; int g = m.lvl - H.lvl;
             if (g > 0 && Random.value < AldaraRules.LvMiss(g)) { m.aggroT = 6; AldaraFx.Text(m.x, m.y - m.r - 10, "Glance", new Color(0.6f, 0.6f, 0.6f)); dmg = Mathf.Max(1, Mathf.Round(dmg * 0.15f)); }
             dmg = Mathf.Max(1, Mathf.Round(dmg * AldaraRules.LvOut(g)));
-            m.hp -= dmg; m.flash = 0.15f; m.aggroT = 6;
+            DStat.Hit(m, dmg); m.hp -= dmg; m.flash = 0.15f; m.aggroT = 6;
             m.hurtT = 0.22f; if (m.anim) m.anim.Hurt();
             if (m.act != null && !m.boss && m.act.t < m.act.mv.wind && dmg >= m.maxHp * 0.12f) { m.act = null; m.lift = 0; m.atkCd = 0.6f; AldaraFx.Text(m.x, m.y - m.r - 44, "Interrupted", AldaraRules.Hex("#ffd35a")); }
             if (H.critFrame == Time.frameCount) { H.critFrame = -1; AldaraFx.Text(m.x + 8, m.y - m.r - 22, "CRIT", AldaraRules.Hex("#ffe08a")); }
@@ -408,7 +432,7 @@ namespace Aldara
         void KillMonster(Mon t)
         {
             var H = AldaraHero.I;
-            t.act = null; t.lift = 0; t.enrT = 0; t.dead = true; t.respawnT = t.boss ? 420 : 28 + Random.value * 18;
+            t.act = null; t.lift = 0; t.enrT = 0; t.dead = true; t.respawnT = t.dun ? 1e9f : t.boss ? 420 : 28 + Random.value * 18; if (t.dun) DStat.Kill();
             int g = t.lvl - H.lvl; float xm = g >= 0 ? Mathf.Min(1.6f, 1 + 0.04f * g) : g >= -2 ? 1 : Mathf.Max(0.05f, 1 + 0.12f * (g + 2));
             H.GainXp(Mathf.Max(1, Mathf.Round(t.xp * xm)));
             if (AldaraLoot.I) AldaraLoot.I.OnKill(t); else H.gold += t.gold;
@@ -419,11 +443,33 @@ namespace Aldara
             if (H.target == t) H.target = null;
             H.kills++;
             Hide(t);
+            if (t.dun && AldaraDungeon.Active) AldaraDungeon.OnKill(t);
+        }
+        /// into a dungeon: the world's monsters wait (hidden) while the dungeon's run
+        public void EnterDungeon(out List<Mon> saved)
+        {
+            saved = new List<Mon>(all); foreach (var m in all) { if (m.view) Destroy(m.view); m.view = null; m.anim = null; m.model = null; }
+            all.Clear(); ClearFx();
+        }
+        public void LeaveDungeon(List<Mon> saved)
+        {
+            foreach (var m in all) if (m.view) Destroy(m.view);
+            all.Clear(); ClearFx(); if (saved != null) all.AddRange(saved);
+        }
+        void ClearFx()
+        {
+            foreach (var e in eproj) Kill(e.go); foreach (var l in lobs) Kill(l.go); foreach (var h in hazards) { Kill(h.go); Kill(h.ic); }
+            eproj.Clear(); lobs.Clear(); hazards.Clear();
         }
         public Mon FindNearest(float x, float y, float range)
         {
             Mon best = null; float bd = range;
-            foreach (var m in all) { if (m.dead) continue; float d = Mathf.Sqrt((m.x - x) * (m.x - x) + (m.y - y) * (m.y - y)); if (d < bd) { best = m; bd = d; } }
+            foreach (var m in all)
+            {
+                if (m.dead || !AldaraDungeon.Reachable(m)) continue; float d = Mathf.Sqrt((m.x - x) * (m.x - x) + (m.y - y) * (m.y - y));
+                if (m.dun && AldaraDungeon.Active) { int f = AldaraDungeon.FlowAt(m.x, m.y); if (f < 0) continue; d = Mathf.Max(d, f * AldaraDungeon.NCS); }
+                if (d < bd) { best = m; bd = d; }
+            }
             return best;
         }
 

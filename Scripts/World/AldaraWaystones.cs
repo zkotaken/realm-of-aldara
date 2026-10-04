@@ -38,14 +38,14 @@ namespace Aldara
         /// the attuned stone within 95 px (F travels from it)
         public static Ws Near()
         {
-            if (!AldaraSave.Ready || !P) return null; Load(); Ws best = null; float bd = 95;
+            if (!AldaraSave.Ready || !P || AldaraWorld.Dun) return null; Load(); Ws best = null; float bd = 95;
             foreach (var w in ALL) { float d = Dist(w.x, w.y, P.x, P.y); if (d < bd && Known(w)) { bd = d; best = w; } }
             return best;
         }
         /// a click in the world on a stone
         public static bool Click(float wx, float wy)
         {
-            Load();
+            Load(); if (AldaraWorld.Dun) return false;
             foreach (var w in ALL)
             {
                 if (Dist(wx, wy, w.x, w.y - 40) < 40 || Dist(wx, wy, w.x, w.y) < 40)
@@ -62,7 +62,7 @@ namespace Aldara
         void Update()
         {
             if (fade != null) Fade();
-            if (!AldaraSave.Ready || !P || !H || !H.alive) { Sync3D(false); return; }
+            if (!AldaraSave.Ready || !P || !H || !H.alive || AldaraWorld.Dun) { Sync3D(false); return; }
             fxT -= Time.deltaTime;
             if (fxT <= 0)
             {

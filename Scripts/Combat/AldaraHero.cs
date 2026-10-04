@@ -141,7 +141,7 @@ namespace Aldara
             if (srcLvl > 0) dmg = Mathf.Max(1, Mathf.Round(dmg * AldaraRules.LvIn(srcLvl - lvl)));
             float blk = AldaraTree.T("block"); if (blk > 0) dmg = Mathf.Round(dmg * (1 - blk));
             if (shield > 0) { float ab = Mathf.Min(shield, dmg); shield -= ab; dmg -= ab; if (ab > 0) AldaraFx.Text(P.x + 14, P.y - 26, "(" + ab + ")", AldaraRules.Hex("#8ab4ff")); }
-            hp -= dmg; hurt = 0.15f; lastFight = Time.time;
+            hp -= dmg; DStat.Taken(dmg); hurt = 0.15f; lastFight = Time.time;
             if (dmg > 0) AldaraFx.Text(P.x, P.y - 26, "-" + dmg, AldaraRules.Hex("#ff6a6a"));
             if (hp <= 0) Died();
         }
@@ -197,7 +197,7 @@ namespace Aldara
             {
                 if (Time.time - deadAt > 1.8f)
                 {   // back to town, as the browser does outside dungeons
-                    P.x = AldaraWorld.TOWN_SPAWN.x; P.y = AldaraWorld.TOWN_SPAWN.y; alive = true; hp = maxHp; mana = maxMana; gold = Mathf.Floor(gold * 0.9f); target = null;
+                    if (AldaraDungeon.Active) AldaraDungeon.Exit("fail"); else { P.x = AldaraWorld.TOWN_SPAWN.x; P.y = AldaraWorld.TOWN_SPAWN.y; } alive = true; hp = maxHp; mana = maxMana; gold = Mathf.Floor(gold * 0.9f); target = null;
                     if (anim) anim.Load();
                 }
                 UpdateShots(dt); return;
@@ -210,7 +210,7 @@ namespace Aldara
             {
                 var w = AldaraCamera.I.ScreenToWorldPx(mouse.position.ReadValue());
                 float gy = AldaraWorld.HeightPx(P.x, P.y);
-                if (AldaraWaystones.Click(w.x, w.y) || AldaraQuestWorld.I && AldaraQuestWorld.I.Click(w.x, w.y)) { UpdateShots(dt); return; }
+                if (AldaraWaystones.Click(w.x, w.y) || !AldaraWorld.Dun && AldaraQuestWorld.I && AldaraQuestWorld.I.Click(w.x, w.y)) { UpdateShots(dt); return; }
                 AldaraMonsters.Mon best = null; float bd = 40;
                 foreach (var m in AldaraMonsters.I.all)
                 {
@@ -246,6 +246,9 @@ namespace Aldara
             {
                 var t = target; float d = Mathf.Sqrt((t.x - P.x) * (t.x - P.x) + (t.y - P.y) * (t.y - P.y));
                 aiming = d <= AttackRange(t);
+                bool walled = AldaraDungeon.Active && !AldaraDungeon.LOS(P.x, P.y, t.x, t.y, false);   // no attacking through walls
+                if (walled) aiming = false;
+                if (!aiming && AldaraDungeon.Active) { ang = AldaraDungeon.Steer(t.x, t.y); return true; }
                 if (!aiming)
                 {
                     var na = AldaraNav.Angle(t.x, t.y);
@@ -328,7 +331,7 @@ namespace Aldara
                 {
                     s.x += dx / d * st; s.y += dy / d * st;
                     if (s.t == null) foreach (var m in M.all) { if (m.dead) continue; if ((m.x - s.x) * (m.x - s.x) + (m.y - s.y) * (m.y - s.y) < m.r * m.r) { if (s.hit != null) s.hit(m); done = true; break; } }
-                    if (AldaraWorld.BlockedAt(s.x, s.y)) done = true;
+                    if (AldaraDungeon.Active ? AldaraDungeon.WallD(s.x, s.y) < 0 : AldaraWorld.BlockedAt(s.x, s.y)) done = true;
                 }
                 if (s.life <= 0) done = true;
                 if (s.go) s.go.transform.position = AldaraWorld.ToUnity(s.x, s.y) + Vector3.up * 0.85f;

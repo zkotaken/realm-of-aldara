@@ -31,9 +31,12 @@ namespace Aldara
         static float[] height;
         public static bool Loaded { get { return height != null; } }
 
-        public static Vector3 ToUnity(float x, float y) { return new Vector3(x / PX, GroundY(x, y), (YTOP - y) / PX); }
-        public static Vector3 ToUnityFlat(float x, float y) { return new Vector3(x / PX, 0, (YTOP - y) / PX); }
-        public static Vector2 ToPx(Vector3 p) { return new Vector2(p.x * PX, YTOP - p.z * PX); }
+        /// in a dungeon (Dun): the map's own pixel space, flat, shown DOX units west of the world
+        public static bool Dun; public const float DOX = -2400f;
+        public static float OX { get { return Dun ? DOX : 0; } }
+        public static Vector3 ToUnity(float x, float y) { return new Vector3(x / PX + OX, GroundY(x, y), (YTOP - y) / PX); }
+        public static Vector3 ToUnityFlat(float x, float y) { return new Vector3(x / PX + OX, 0, (YTOP - y) / PX); }
+        public static Vector2 ToPx(Vector3 p) { return new Vector2((p.x - OX) * PX, YTOP - p.z * PX); }
 
         public static void Load()
         {
@@ -56,7 +59,7 @@ namespace Aldara
         }
         public static float HeightPx(float x, float y)
         {
-            if (!Loaded) return 0;
+            if (!Loaded || Dun) return 0;
             float fx = x / CELL, fy = y / CELL; int i = Mathf.FloorToInt(fx), j = Mathf.FloorToInt(fy);
             float u = fx - i, v = fy - j;
             float a = Hc(i, j), b = Hc(i + 1, j), c = Hc(i, j + 1), d = Hc(i + 1, j + 1);
@@ -65,16 +68,18 @@ namespace Aldara
         static float Hc(int i, int j) { if (i < 0 || j < 0 || i >= W || j >= H) return 0; return height[j * W + i]; }
         public static float GroundY(float x, float y) { return HeightPx(x, y) / PX * HS; }
         /// 0 land, 1 lake water, 2 lava, 3 sea
-        public static int LiquidAt(float x, float y) { int k = Idx(x, y); return k < 0 ? 3 : liquid[k]; }
+        public static int LiquidAt(float x, float y) { if (Dun) return 0; int k = Idx(x, y); return k < 0 ? 3 : liquid[k]; }
         public static int ZoneAt(float x, float y) { int k = Idx(x, y); return k < 0 ? 0 : zone[k]; }
         public static bool BlockedAt(float x, float y)
         {
+            if (Dun) return AldaraDungeon.Active && AldaraDungeon.Blocked(x, y);
             if (x < 20 || y < 20 || x > WORLD_W - 20 || y > WORLD_H - 20) return true;
             int k = Idx(x, y); return k < 0 || blocked[k] != 0;
         }
-        public static float RoadDist(float x, float y) { int k = Idx(x, y); return k < 0 ? 255 : road[k]; }
+        public static float RoadDist(float x, float y) { if (Dun) return 255; int k = Idx(x, y); return k < 0 ? 255 : road[k]; }
         public static string ZoneName(float x, float y)
         {
+            if (Dun && AldaraDungeon.def != null) return AldaraDungeon.def.name;
             if (Vector2.Distance(new Vector2(x, y), CENTER) < 1020) return "Lorenmar";
             if (Vector2.Distance(new Vector2(x, y), new Vector2(KINGDOM.x, KINGDOM.y)) < 2760) return "Valcrest";
             return ZoneNames[ZoneAt(x, y)];

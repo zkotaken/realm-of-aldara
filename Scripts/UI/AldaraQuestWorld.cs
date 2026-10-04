@@ -115,8 +115,8 @@ namespace Aldara
             root.style.display = live ? DisplayStyle.Flex : DisplayStyle.None;
             if (!live) { Sync3D(false); return; }
             cam = Camera.main; if (!cam) return;
-            if (AldaraKeys.Pressed("interact")) Interact();
-            Draw(); Sync3D(true);
+            if (AldaraKeys.Pressed("interact") && !AldaraWorld.Dun) Interact();
+            Draw(); Sync3D(!AldaraWorld.Dun);
             if (mini != null) mini.MarkDirtyRepaint();
         }
         static float Ttime { get { return Time.time; } }
@@ -124,7 +124,7 @@ namespace Aldara
         {
             used = 0; paint.Clear(); var P = AldaraPlayer.I; float t = Ttime;
             var a = W2P(P.x, P.y); var b = W2P(P.x + 100, P.y); k = Mathf.Max(0.2f, Mathf.Abs(b.x - a.x) / 100f);
-            AldaraWaystones.Labels(W2P, k, (s1, sz, c1, ci, bo, x1, y1) => Lab(s1, sz, c1, ci, bo, x1, y1, 1, TextAnchor.LowerCenter, 0.15f));
+            if (!AldaraWorld.Dun) AldaraWaystones.Labels(W2P, k, (s1, sz, c1, ci, bo, x1, y1) => Lab(s1, sz, c1, ci, bo, x1, y1, 1, TextAnchor.LowerCenter, 0.15f));
             AldaraHeroFx.DrawPet(paint, W2P3, k);
             AldaraHeroFx.Draw(paint, W2P3, k);
             // a mythical pet carries its name over its head
@@ -143,6 +143,7 @@ namespace Aldara
                 }
             }
             bool names = AldaraSettings.On("names");
+            if (!AldaraWorld.Dun) {
             // townsfolk name tags
             foreach (var n in AldaraFolk.I.Visible())
             {
@@ -215,6 +216,21 @@ namespace Aldara
                     Lab(wp.label + "  " + dist + " m", 11, C("#ffe9a8"), false, true, ex - Mathf.Cos(ang) * 30, ey - Mathf.Sin(ang) * 30 + 8, 1, TextAnchor.LowerCenter, 0.15f);
                 }
             }
+            }
+            // monster labels (drawMonLabel): the health bar, and the level and name coloured by the level gap; bosses in gold
+            foreach (var m in AldaraMonsters.I.all)
+            {
+                if (m.dead || !m.view || !m.view.activeSelf) continue;
+                var g = W2P(m.x, m.y + 15 * m.r / 16); var c0 = W2P(m.x, m.y);
+                float topPx = (m.def != null && m.def.top > 0 ? m.def.top * m.def.unitW * AldaraView.TCP : m.r * 2.1f) + m.lift;
+                float top = Mathf.Min(g.y - topPx * k + 4 * k, c0.y - m.r * 1.2f * k);
+                float bw = (m.boss ? Mathf.Max(60, m.r * 2.4f) : Mathf.Max(30, m.r * 2.2f)) * k, bh = (m.boss ? 7 : 5) * k;
+                paint.Bar(new Rect(g.x - bw / 2, top - 8 * k - bh, bw, bh), C("#3a1414")); paint.Bar(new Rect(g.x - bw / 2, top - 8 * k - bh, bw * Mathf.Clamp01(m.hp / m.maxHp), bh), C("#c0392b"));
+                int dg = m.lvl - AldaraHero.I.lvl; var lc = C(dg <= -6 ? "#8a8a8a" : dg <= 2 ? "#e8e8e8" : dg <= 4 ? "#ffe05a" : dg <= 7 ? "#ff9a3a" : "#ff4a4a");
+                if (m.boss) { Lab(m.name, 14, C("#ffcf5a"), true, true, g.x, top - 34 * k + 4, 1, TextAnchor.LowerCenter, 0.2f); Lab("Level " + m.lvl + " Boss", 11, lc, true, true, g.x, top - 20 * k + 3, 1, TextAnchor.LowerCenter, 0.2f); }
+                else { string tag = dg >= 10 ? "  Deadly" : dg >= 6 ? "  Dangerous" : ""; Lab((m.lvl > 0 ? "Lv " + m.lvl + "  " : "") + m.name + tag, 11, lc, false, true, g.x, top - 17 * k + 3, 1, TextAnchor.LowerCenter, 0.18f); }
+            }
+            if (AldaraDungeonView.I) AldaraDungeonView.I.Labels(W2P, k, (s1, sz, c1, ci, bo, x1, y1) => Lab(s1, sz, c1, ci, bo, x1, y1, 1, TextAnchor.LowerCenter, 0.15f));
             // floating combat text (floaters), under the windows like the browser's canvas
             foreach (var f in AldaraFx.texts)
             {
@@ -381,7 +397,7 @@ namespace Aldara
             readonly List<Label> labs = new List<Label>();
             void Gen(MeshGenerationContext ctx)
             {
-                var P = AldaraPlayer.I; if (!P || AldaraFolk.I == null) return; float S = contentRect.width; if (!(S > 1)) return; float s = S / 1400f, ox = P.x - 700, oy = P.y - 700;
+                var P = AldaraPlayer.I; if (!P || AldaraFolk.I == null || AldaraWorld.Dun) { foreach (var l0 in labs) l0.style.display = DisplayStyle.None; return; } float S = contentRect.width; if (!(S > 1)) return; float s = S / 1400f, ox = P.x - 700, oy = P.y - 700;
                 var g = ctx.painter2D; int li = 0;
                 AldaraWaystones.Minimap(g, ox, oy, s, S);
                 foreach (var kv in Q.QOBJ)

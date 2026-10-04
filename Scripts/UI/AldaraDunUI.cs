@@ -1,0 +1,151 @@
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+using UnityEngine.UIElements;
+using static Aldara.AldaraUI;
+using A = Aldara.AldaraDungeon;
+
+namespace Aldara
+{
+    // The Dungeons window (renderDungeons): the note, a card for each dungeon with its state, description, boss,
+    // level and an Enter button; raids on their own tab.
+    public class AldaraDunWin : AldaraWindows.Win
+    {
+        public AldaraDunWin() { id = "dun"; title = "Dungeons"; }
+        public override float Y => 56; public override float W => 440; public override float MaxH => 940;
+        string tab = "dun";
+        public override void Render(VisualElement body)
+        {
+            var H = AldaraHero.I; var sv = new ScrollView(ScrollViewMode.Vertical); body.Add(sv); Thin(sv); sv.style.flexShrink = 1; var v = sv.contentContainer;
+            var tabs = Row(v, 6); tabs.style.marginBottom = 8;
+            foreach (var t in new[] { new[] { "dun", "Dungeons" }, new[] { "raid", "Raids" } })
+            { string k = t[0]; bool on = tab == k; var b = new Btn(t[1], () => { tab = k; dirty = true; }, on ? "btn_tab_on" : "btn_tab", 12, true, on ? C("#ffe2a0") : C("#b8c0d0")); tabs.Add(b); b.style.flexGrow = 1; b.style.height = 30; }
+            ApplyGapLater(tabs);
+            if (tab == "raid") { T(v, "Raids are built for a party of five. They are not open in this version yet.", 11, C("#8f8a7c")); return; }
+            T(v, "Dungeons are private runs: only you (and your party) can enter while your run lasts. Fight through every section, past traps and obstacles, and defeat the boss for big rewards. Each dungeon unlocks after you clear the one before it.", 10, C("#8f8a7c")).style.marginBottom = 8;
+            bool lvlOk = H.lvl >= A.DUN_LEVEL;
+            if (!lvlOk) Warn(v, "Requires level " + A.DUN_LEVEL + ". You are level " + H.lvl + ".");
+            if (A.Active) Warn(v, "You are in " + A.def.name + ". Leave or finish it first.");
+            var L = A.List;
+            for (int i = 0; i < L.Count; i++)
+            {
+                var d = L[i]; if (d.hidden || d.raid) continue; bool un = A.Unlocked(i); int cl = A.Clears(d.id);
+                string tag = !un ? "Locked" : cl > 0 ? "Cleared x" + cl : "Available";
+                bool can = lvlOk && un && !A.Active && H.alive && !(d.deep && H.lvl < d.rec - 3);
+                var c = E(v); Skin(c, "sup_row"); Pad(c, 8, 10); c.style.marginBottom = 7; if (!un) c.style.opacity = 0.55f;
+                if (cl > 0 && un) { c.style.borderLeftWidth = 3; c.style.borderLeftColor = C("#e8c46a"); }
+                var hd = Row(c, 8); T(hd, d.name.ToUpper(), 13, C("#e8c46a"), true, true); var sp = E(hd); sp.style.flexGrow = 1; T(hd, tag.ToUpper(), 10, C("#aaaaaa"), false, false, false, 0.5f, false, false);
+                var de = T(c, d.desc, 11, C("#cccccc")); de.style.marginTop = 3;
+                var me = T(c, "Boss: " + d.boss.name + " · " + (d.deep ? "Requires level " + (d.rec - 3) + " · " + d.sections + " sections" : "Recommended level " + d.rec + "+") + " · Guards a relic", 10, C("#88aa88")); me.style.marginTop = 2;
+                var bt = Row(c, 5, Justify.FlexEnd); bt.style.marginTop = 6;
+                if (un) { int ii = i; var b = B(bt, "Enter", () => A.Start(ii), "btn_buy", 10); b.Padding(4, 9); b.Disabled = !can || !A.Ready(d); if (!A.Ready(d)) b.tooltip = "Not open in this version yet"; }
+                else T(bt, "Clear " + L[i - 1].name + " to unlock", 10, C("#88aa88"));
+            }
+        }
+        static void ApplyGapLater(VisualElement e) { e.schedule.Execute(() => ApplyGap(e)); }
+        static void Warn(VisualElement v, string s) { var w = T(v, s, 11, C("#ff9a7a")); w.style.marginBottom = 8; }
+    }
+
+    // The results window (dsShow): the run's damage, healing, kills, boss damage, damage taken and biggest hit, the
+    // party DPS, enemies slain, and XP and gold or rooms opened, any loot, and Return to town after a clear.
+    public class AldaraDunResWin : AldaraWindows.Win
+    {
+        public AldaraDunResWin() { id = "dres"; title = "Dungeon Results"; }
+        public override float Y => 70; public override float W => 760;
+        static string F(float n) { return n >= 1e6f ? (n / 1e6f).ToString("0.0") + "M" : n >= 1e4f ? Mathf.Round(n / 1e3f) + "K" : n >= 1e3f ? (n / 1e3f).ToString("0.0") + "K" : Mathf.Round(n).ToString(); }
+        public override void OnOpen() { title = DStat.verdict == "done" ? "Dungeon Cleared" : "Dungeon Results"; }
+        public override void Render(VisualElement v)
+        {
+            var H = AldaraHero.I; int secs = Mathf.RoundToInt(DStat.secs); string v1 = DStat.verdict;
+            var hd = Row(v, 10, Justify.SpaceBetween); hd.style.marginBottom = 10;
+            T(hd, (DStat.def != null ? DStat.def.name : "Dungeon").ToUpper(), 14, C("#e8c46a"), true, true);
+            T(hd, "TIME " + secs / 60 + ":" + (secs % 60).ToString("00"), 11, C("#cccccc"), true);
+            var vd = T(hd, v1 == "done" ? "CLEARED" : v1 == "fail" ? "FAILED" : "ABANDONED", 11, v1 == "done" ? C("#9fe09f") : v1 == "fail" ? C("#ff8a7a") : C("#c8c8d0"), true, true); Pad(vd, 2, 8); Border(vd, 1, C("#5a5a6a"), 8); vd.style.backgroundColor = C("#1a1c26");
+            string[] heads = { "Member", "Damage", "Healing", "Kills", "Boss damage", "Damage taken", "Biggest hit" }; float[] wd = { 150, 80, 80, 50, 100, 100, 90 };
+            var hr = Row(v); BorderBottom(hr, 1, C("#2a3040")); Pad(hr, 4, 0);
+            for (int i = 0; i < heads.Length; i++) { var l = T(hr, heads[i].ToUpper(), 10, C("#c8b890"), true, false, false, 0.5f, false, false); l.style.width = wd[i]; l.style.unityTextAlign = i == 0 ? TextAnchor.MiddleLeft : TextAnchor.MiddleRight; }
+            var row = Row(v, 0, Justify.FlexStart, Align.Center); Pad(row, 6, 0); BorderBottom(row, 1, C("#2a3040"));
+            var who = Col(row); who.style.width = wd[0]; T(who, H.heroName, 12, Color.white, true, true); T(who, "Level " + H.lvl + " " + char.ToUpper(H.cls[0]) + H.cls.Substring(1) + (DStat.pet != null ? " with " + DStat.pet : ""), 9.5f, C("#9a948a"));
+            Cell(row, F(DStat.dmg), wd[1], true); Cell(row, "0", wd[2], true); Cell(row, DStat.kills.ToString(), wd[3], false); Cell(row, F(DStat.boss), wd[4], true); Cell(row, F(DStat.taken), wd[5], false); Cell(row, F(DStat.big), wd[6], false);
+            var tot = Row(v, 0, Justify.FlexStart, Align.Center); Pad(tot, 6, 0);
+            var tl = T(tot, "PARTY TOTAL", 11, Color.white, true, true); tl.style.width = wd[0];
+            Cell(tot, F(DStat.dmg), wd[1], false); Cell(tot, "0", wd[2], false); Cell(tot, DStat.kills.ToString(), wd[3], false); Cell(tot, F(DStat.boss), wd[4], false); Cell(tot, F(DStat.taken), wd[5], false);
+            var sm = Row(v, 8); sm.style.marginTop = 10;
+            Sum(sm, "Party DPS", F(secs > 0 ? DStat.dmg / secs : 0)); Sum(sm, "Enemies slain", DStat.kills.ToString());
+            if (v1 == "done") { Sum(sm, "XP earned", F(DStat.xp)); Sum(sm, "Gold earned", F(DStat.gold)); } else Sum(sm, "Rooms opened", DStat.roomsOpen + " / " + DStat.rooms);
+            ApplyGapLater(sm);
+            if (DStat.loot.Count > 0) { var lt = T(v, "Loot: " + string.Join("  ", DStat.loot.Select(it => Span(it.name, Hex(it.Col)))), 12, C("#cccccc")); lt.style.marginTop = 10; }
+            var bb = Row(v, 8); bb.style.marginTop = 12;
+            if (A.Active && A.done) { var r = B(bb, "Return to town", () => { AldaraWindows.I.Toggle("dres", false); if (A.Active) A.Exit("done"); }, "btn_gold", 12); r.style.flexGrow = 1; r.style.height = 32; }
+            var cb = B(bb, A.Active && A.done ? "Stay a moment" : "Close", () => AldaraWindows.I.Toggle("dres", false), "btn", 12); cb.style.flexGrow = 1; cb.style.height = 32;
+            ApplyGapLater(bb);
+        }
+        static void Cell(VisualElement r, string s, float w, bool bar) { var l = T(r, s, 12, C("#e8e2d0"), false, false, false, 0, false, false); l.style.width = w; l.style.unityTextAlign = TextAnchor.MiddleRight; }
+        static void Sum(VisualElement r, string a, string b) { var c = Col(r); Skin(c, "sup_row"); Pad(c, 6, 10); c.style.flexGrow = 1; c.style.flexBasis = 0; T(c, a.ToUpper(), 9.5f, C("#c8b890"), true); T(c, b, 13, Color.white, true, true); }
+        static void ApplyGapLater(VisualElement e) { e.schedule.Execute(() => ApplyGap(e)); }
+    }
+
+    // The dungeon box at the top of the screen (#dunHud): the dungeon's name, where you are and what is left, Leave.
+    // And the minimap in a dungeon (drawDungeonMinimap): the whole map fitted in, sections you can reach lit, shut gates red.
+    public class AldaraDunHud : MonoBehaviour
+    {
+        VisualElement box, mini; Label nameL, status; Btn leave; MiniMarks marks; Texture2D miniTex; int miniOpen = -1; string miniId;
+        void Update()
+        {
+            var hud = AldaraHudUI.I; if (hud == null || hud.Root == null) return;
+            if (box == null)
+            {
+                box = new VisualElement { pickingMode = PickingMode.Position }; hud.Root.Add(box); box.style.position = Position.Absolute; box.style.left = Length.Percent(50); box.style.translate = new Translate(Length.Percent(-50), 0); box.style.top = 84; box.style.width = 220;
+                Skin(box, "panel"); Pad(box, 12, 14); box.style.alignItems = Align.Center;
+                nameL = T(box, "", 15, C("#efcf78"), true, true, false, 1, true, false); Shadow(nameL, Color.black, 2, 1); nameL.style.unityTextAlign = TextAnchor.MiddleCenter;
+                status = T(box, "", 11, C("#d8d0bc")); status.style.unityTextAlign = TextAnchor.MiddleCenter; status.style.marginTop = 2;
+                leave = B(box, "Leave Dungeon", () => { if (A.Active) A.Exit(A.done ? "done" : "left"); }, "btn_buy", 10); leave.style.marginTop = 6; leave.Padding(3, 14);
+            }
+            bool on = A.Active && AldaraSave.Ready && !(AldaraWindows.I && AldaraWindows.I.IsOpen("map"));
+            box.style.display = on ? DisplayStyle.Flex : DisplayStyle.None;
+            if (on) { nameL.text = A.def.name.ToUpper(); status.text = A.Status; leave.label.text = A.done ? "Return to Town" : "Leave Dungeon"; }
+            // the minimap
+            var mv = hud.MinimapView; if (mv == null) return;
+            if (mini == null) { mini = new VisualElement { pickingMode = PickingMode.Ignore }; mini.style.position = Position.Absolute; mini.style.left = mini.style.top = mini.style.right = mini.style.bottom = 0; mini.style.backgroundColor = C("#05050a"); mv.Add(mini); img = new VisualElement { pickingMode = PickingMode.Ignore }; img.style.position = Position.Absolute; mini.Add(img); marks = new MiniMarks(); mini.Add(marks); }
+            mini.style.display = A.Active ? DisplayStyle.Flex : DisplayStyle.None;
+            if (!A.Active) return;
+            var D = A.DM; if (miniId != D.id || miniOpen != A.open || !miniTex) { miniId = D.id; miniOpen = A.open; BuildMini(D); }
+            float S = mini.contentRect.width; if (S > 1) { float k = S / 220f; img.style.left = (S - marks.w * k) / 2; img.style.top = (S - marks.h * k) / 2; img.style.width = marks.w * k; img.style.height = marks.h * k; }
+            marks.MarkDirtyRepaint();
+        }
+        VisualElement img;
+        void BuildMini(A.Map D)
+        {
+            int S = 220; float s = S / (float)Mathf.Max(D.W, D.H); int w = Mathf.CeilToInt(D.W * s), h = Mathf.CeilToInt(D.H * s);
+            if (miniTex) Destroy(miniTex); miniTex = new Texture2D(w, h, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
+            var mm = C(D.mm); var px = new Color32[w * h];
+            for (int y = 0; y < h; y++) for (int x = 0; x < w; x++)
+                {
+                    float wx = x / s, wy = y / s; int k = A.Kind(wx, wy); Color32 col = new Color32(0, 0, 0, 0);
+                    if (k == A.KF || k == A.KB || k == A.KI || k == A.KS || k == A.KT || k == A.KX) { int sc = D.sec[A.NavIdx(wx, wy)]; bool lit = sc < 0 || sc <= A.open; col = lit ? (k == A.KI || k == A.KT ? new Color32(150, 200, 230, 255) : (Color32)mm) : new Color32(30, 30, 38, 255); }
+                    else if (k == A.KP) col = D.lava ? new Color32(150, 50, 14, 255) : new Color32(8, 6, 14, 255);
+                    px[(h - 1 - y) * w + x] = col;
+                }
+            miniTex.SetPixels32(px); miniTex.Apply(); marks.tex = miniTex; marks.s = s; marks.w = w; marks.h = h; img.style.backgroundImage = Background.FromTexture2D(miniTex);
+        }
+        class MiniMarks : VisualElement
+        {
+            public Texture2D tex; public float s, w, h;
+            public MiniMarks() { pickingMode = PickingMode.Ignore; style.position = Position.Absolute; style.left = style.top = style.right = style.bottom = 0; generateVisualContent += Gen; }
+            void Gen(MeshGenerationContext ctx)
+            {
+                var D = A.DM; if (D == null || tex == null) return; float S = contentRect.width; if (!(S > 1)) return; float k = S / 220f;
+                float ox = (S - w * k) / 2, oy = (S - h * k) / 2;
+                var g = ctx.painter2D; float sc = s * k;
+                g.strokeColor = C("#ff5a4a"); g.lineWidth = 2; foreach (var gt in D.gates) { if (gt.open) continue; g.BeginPath(); g.MoveTo(new Vector2(ox + gt.x1 * sc, oy + gt.y1 * sc)); g.LineTo(new Vector2(ox + gt.x2 * sc, oy + gt.y2 * sc)); g.Stroke(); }
+                foreach (var m in AldaraMonsters.I.all)
+                {
+                    if (m.dead) continue; var c = new Vector2(ox + m.x * sc, oy + m.y * sc);
+                    if (m.boss) { g.fillColor = C("#ff3a3a"); Sq(g, c, 3); } else { g.fillColor = C("#ff8a8a"); Sq(g, c, 1); }
+                }
+                var P = AldaraPlayer.I; g.fillColor = C("#6fc0ff"); g.BeginPath(); g.Arc(new Vector2(ox + P.x * sc, oy + P.y * sc), 3, 0, 360); g.Fill();
+            }
+            static void Sq(Painter2D g, Vector2 c, float r) { g.BeginPath(); g.MoveTo(c + new Vector2(-r, -r)); g.LineTo(c + new Vector2(r, -r)); g.LineTo(c + new Vector2(r, r)); g.LineTo(c + new Vector2(-r, r)); g.ClosePath(); g.Fill(); }
+        }
+    }
+}

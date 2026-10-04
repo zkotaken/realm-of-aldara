@@ -43,6 +43,7 @@ namespace Aldara
             float road = AldaraWorld.RoadDist(x, y) < 30 ? 1.12f : 1f;
             float liqK = liq == 2 ? 0.45f : liq != 0 ? 0.62f : 1f;
             float slow = AldaraHero.I && AldaraHero.I.slowT > 0 ? 0.65f : 1f;
+            if (AldaraDungeon.Active) road = 1;
             return road * speed * (wings ? 1.15f : 0.72f) * liqK * slow;
         }
 
@@ -76,8 +77,12 @@ namespace Aldara
                 y = Mathf.Clamp(y + Mathf.Sin(ang) * sp * dt, 20, AldaraWorld.WORLD_H - 20);
                 if (mul >= 1) facing = ang;
             }
-            CapsuleSlide(lx, ly);
-            if (AldaraWorld.BlockedAt(x, y)) { var f = FreeSpotNear(x, y); x = f.x; y = f.y; }
+            if (AldaraDungeon.Active) AldaraDungeon.PlayerPost(lx, ly, dt, PSpeed());
+            else
+            {
+                CapsuleSlide(lx, ly);
+                if (AldaraWorld.BlockedAt(x, y)) { var f = FreeSpotNear(x, y); x = f.x; y = f.y; }
+            }
             liq = wings ? 0 : AldaraWorld.LiquidAt(x, y);
 
             float mv = Mathf.Sqrt((x - lx) * (x - lx) + (y - ly) * (y - ly));

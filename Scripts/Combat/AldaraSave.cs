@@ -84,7 +84,9 @@ namespace Aldara
             if (!Ready) return; var H = AldaraHero.I; var P = AldaraPlayer.I; if (!H || !P) return;
             var j = raw ?? new JObject();
             j["name"] = H.heroName; j["cls"] = H.cls;
-            if (j["x"] == null || Mathf.Abs((float)j["x"] - P.x) > 0.01f || Mathf.Abs((float)j["y"] - P.y) > 0.01f) { j["x"] = P.x; j["y"] = P.y; } j["lvl"] = H.lvl; j["xp"] = H.xp; j["xpNeed"] = H.xpNeed; j["gold"] = H.gold;
+            // in a dungeon the save keeps where you entered it (the browser's dungeon.ret)
+            float sx = AldaraDungeon.Active ? AldaraDungeon.Ret.x : P.x, sy = AldaraDungeon.Active ? AldaraDungeon.Ret.y : P.y;
+            if (j["x"] == null || Mathf.Abs((float)j["x"] - sx) > 0.01f || Mathf.Abs((float)j["y"] - sy) > 0.01f) { j["x"] = sx; j["y"] = sy; } j["lvl"] = H.lvl; j["xp"] = H.xp; j["xpNeed"] = H.xpNeed; j["gold"] = H.gold;
             j["baseAtk"] = H.baseAtk; j["baseHp"] = H.baseHp; j["str"] = H.str; j["agi"] = H.agi; j["vit"] = H.vit; j["ene"] = H.ene; j["statPoints"] = H.statPoints;
             var eq = new JObject(); foreach (var sl in new[] { "helmet", "chest", "gauntlets", "leggings", "boots", "weapon", "back", "wings", "accessory", "pet", "relic1", "relic2" }) { var it = H.Eq(sl); eq[sl] = it == null ? null : ItemJ(it); }
             j["equip"] = eq;

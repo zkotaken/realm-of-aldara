@@ -43,14 +43,6 @@ namespace Aldara
             bool ui = AldaraHudUI.I != null;
             if (ui)
             {
-            // health bars over hurt or targeted monsters
-            foreach (var m in AldaraMonsters.I.all)
-            {
-                if (m.dead || !m.view || !m.view.activeSelf) continue; if (!(m.hp < m.maxHp || m == AldaraHero.I.target)) continue;
-                var sp = cam.WorldToScreenPoint(AldaraWorld.ToUnity(m.x, m.y) + Vector3.up * (m.r * 2.4f + m.lift) / AldaraWorld.PX);
-                if (sp.z < 0) continue; float bw = Mathf.Clamp(m.r * 2.4f, 34, 110);
-                Bar(new Rect(sp.x - bw / 2, Hh - sp.y - 6, bw, 7), m.hp / m.maxHp, m == AldaraHero.I.target ? new Color(0.9f, 0.2f, 0.15f) : new Color(0.75f, 0.15f, 0.1f), null);
-            }
             // floating combat text
             if (!AldaraQuestWorld.I) foreach (var f in AldaraFx.texts)
             {

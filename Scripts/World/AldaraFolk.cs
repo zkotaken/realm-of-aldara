@@ -75,7 +75,7 @@ namespace Aldara
 
         void Update()
         {
-            var P = AldaraPlayer.I; if (!AldaraSave.Ready || P == null) { HideAll(); return; }
+            var P = AldaraPlayer.I; if (!AldaraSave.Ready || P == null || AldaraWorld.Dun) { HideAll(); return; }
             float dt = Mathf.Min(Time.deltaTime, 0.1f);
             if (TownNear(P.x, P.y)) Sim(town, tG, dt, false); else HideList(town);
             if (KdNear(P.x, P.y)) Sim(kd, kG, dt, true); else HideList(kd);

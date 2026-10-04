@@ -171,7 +171,7 @@ namespace Aldara
         }
         public static void OnKill(AldaraMonsters.Mon m)
         {
-            if (S.act.Count == 0) return; int z = MonZone(m); bool any = false;
+            if (S.act.Count == 0) return; int z = m.dun ? -1 : MonZone(m); bool any = false;
             foreach (var inst in S.act.ToList())
             {
                 var d = Def(inst);

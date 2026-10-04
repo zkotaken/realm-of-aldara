@@ -73,7 +73,7 @@ namespace Aldara
                         float reach = tg.r + (Myth ? 40 : 16);
                         if (d > reach) { float a = Mathf.Atan2(tg.y - y, tg.x - x), sp = (Myth ? 300 : 330) * dt; x += Mathf.Cos(a) * sp; y += Mathf.Sin(a) * sp; }
                         else if (cd <= 0) { cd = Myth ? 1.1f : 0.8f; lunge = 0.2f; lungeA = Mathf.Atan2(tg.y - y, tg.x - x); Hit(tg, 1, it); AldaraFx.Burst(tg.x, tg.y, 20, AldaraRules.Hex("#ffb0e0")); }
-                        follow = false;
+                        follow = false; if (AldaraDungeon.Active) AldaraDungeon.Push(ref x, ref y, 8, 0, 0, false);
                     }
                     else if (d < 400 && cd <= 0)
                     {   // ranged and healer pets shoot from beside you

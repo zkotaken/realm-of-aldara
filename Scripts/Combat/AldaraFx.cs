@@ -71,6 +71,27 @@ namespace Aldara
             g.transform.localScale = Vector3.one * size; var m = g.GetComponent<MeshFilter>().mesh; var cs = new Color[m.vertexCount]; for (int i = 0; i < cs.Length; i++) cs[i] = col; m.colors = cs;
             g.GetComponent<MeshRenderer>().sharedMaterial = orbMat; return g;
         }
+        /// a falling icicle (the browser's ice spike over an icicle hazard): a long point, tip down
+        public static GameObject Icicle()
+        {
+            Init(); var g = new GameObject("icicle", typeof(MeshFilter), typeof(MeshRenderer)); g.transform.SetParent(I.transform, false);
+            var v = new List<Vector3>(); var c = new List<Color>(); var ix = new List<int>(); float w = 9 / AldaraWorld.PX, h = 46 / AldaraWorld.PX; int n = 6;
+            for (int i = 0; i < n; i++)
+            {
+                float a0 = i / (float)n * Mathf.PI * 2, a1 = (i + 1) / (float)n * Mathf.PI * 2; int b = v.Count;
+                v.Add(Vector3.zero); v.Add(new Vector3(Mathf.Cos(a0) * w, h, Mathf.Sin(a0) * w)); v.Add(new Vector3(Mathf.Cos(a1) * w, h, Mathf.Sin(a1) * w));
+                var col = i % 2 == 0 ? AldaraRules.Hex("#e8f8ff") : AldaraRules.Hex("#9fd8ff"); c.Add(col); c.Add(col); c.Add(col); ix.AddRange(new[] { b, b + 2, b + 1 });
+            }
+            var m = new Mesh(); m.SetVertices(v); m.SetColors(c); m.SetTriangles(ix, 0); m.RecalculateNormals();
+            g.GetComponent<MeshFilter>().sharedMesh = m; g.GetComponent<MeshRenderer>().sharedMaterial = orbMat; g.SetActive(false); return g;
+        }
+        /// a burning pool left on the ground: the colour with a bright core
+        public static GameObject Pool(float x, float y, float rPx, Color col)
+        {
+            var g = Flat(disc, new Color(col.r, col.g, col.b, 0.5f), "pool"); Place(g, x, y, rPx, 0.1f);
+            var core = Flat(disc, new Color(1, 0.83f, 0.35f, 0.7f), "core"); core.transform.SetParent(g.transform, false); core.transform.localScale = new Vector3(0.45f, 1, 0.45f); core.transform.localPosition = Vector3.up * 0.01f;
+            return g;
+        }
         public static void Text(float x, float y, string s, Color c) { texts.Add(new FloatText { x = x, y = y, text = s, col = c }); if (texts.Count > 80) texts.RemoveAt(0); }
 
         void Update()
