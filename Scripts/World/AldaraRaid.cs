@@ -116,6 +116,7 @@ namespace Aldara
             for (int s = c; s < RENC.Length; s++) { var e = RENC[s]; if (e.mobs == null) continue; foreach (var m in e.mobs) { var st = Stats((string)m[0]); float a = R.Next() * 6.283f, dd = R.Next() * 30; SpawnLocal((string)m[0], (float)m[1] + Mathf.Cos(a) * dd, (float)m[2] + Mathf.Sin(a) * dd, s, st, null, false, false, false); } }
             for (int g = 0; g < c; g++) OpenGate(g);
             A.open = c; for (int s = 0; s <= c && s < A.DM.seen.Length; s++) A.DM.seen[s] = true;
+            AldaraChat.Sys(c > 0 ? "Raid checkpoint: " + d.encNames[c] + ". Raid level " + L + "." : "You enter " + d.name + ". Raid level " + L + ". Wipes return the party to the last checkpoint.", "dun");
             var en = RENC[c].entry; var P = AldaraPlayer.I; P.x = en.x; P.y = en.y; A.DM.safe = en; A.DM.psec = c;
             A.FlowNow();
             Prog(d.id)["cp"] = c; AldaraSave.Dirty();
@@ -166,7 +167,7 @@ namespace Aldara
         }
 
         // ---------- messages, hazards ----------
-        public static string lastMsg; static void Msg(string m, string col = "#f2c46a") { AldaraHud.Banner(m); lastMsg = m; }
+        public static string lastMsg; static void Msg(string m, string col = "#f2c46a") { AldaraHud.Banner(m); AldaraChat.Sys(m, "dun"); lastMsg = m; }
         static void Haz(float x, float y, float r, float delay, float dmgF, string col) { AldaraMonsters.I.AddHazard(Mathf.Round(x), Mathf.Round(y), r, delay, Mathf.Round(LvsHp(L) * dmgF), AldaraRules.Hex(col), 0, false, 0, 0); }
         static void RingHaz(float x, float y, float r1, float spd, float w, float dmgF, string col) { AldaraMonsters.I.AddRing(Mathf.Round(x), Mathf.Round(y), 20, r1, spd, w, Mathf.Round(LvsHp(L) * dmgF), AldaraRules.Hex(col)); }
         static void OnPlayers(System.Action<Vector2> f) { var P = AldaraPlayer.I; if (AldaraHero.I.alive && A.Section(P.x, P.y) == E.s) f(new Vector2(P.x, P.y)); }
@@ -391,7 +392,7 @@ namespace Aldara
         {
             if (won) return; won = true; int s = System.Array.FindIndex(RENC, c => c.type == "sov"); done[s] = true; OpenGate(s);
             var p = Prog(def.id); p["cp"] = 0; p["clears"] = (int)p["clears"] + 1; int secs = Mathf.RoundToInt(Time.time - DStat.t0); if ((int)p["best"] == 0 || secs < (int)p["best"]) p["best"] = secs; AldaraSave.Dirty();
-            if (AldaraDungeonView.I) AldaraDungeonView.I.Shake(6, 1); AldaraHud.Banner(def.name + " conquered! Claim your reward in the Treasury.");
+            if (AldaraDungeonView.I) AldaraDungeonView.I.Shake(6, 1); AldaraHud.Banner(def.name + " conquered! Claim your reward in the Treasury."); AldaraChat.Sys(AldaraHero.I.heroName + " and party conquered " + def.name + "!", "dun");
         }
         static void Claim()
         {

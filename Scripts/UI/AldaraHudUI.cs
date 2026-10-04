@@ -37,6 +37,9 @@ namespace Aldara
         void Start() { Build(); }
         /// place a piece from outside in the browser's 1920 x 1080 frame, hanging off the nearest corner or edge
         public VisualElement PlaceAt(VisualElement e, Rect r) { return Place(e, r); }
+        VisualElement chatClip;
+        /// the chat box folded to its header (#chatBox.hidden)
+        public void ChatHidden(bool h) { if (chatClip != null) chatClip.style.height = h ? 31 : ShotR("chat").height; }
 
         // ---------- helpers ----------
         Font F(string css, string weight, string style)
@@ -164,7 +167,7 @@ namespace Aldara
             Img("minimap_ring", ShotR("minimap_ring"));
             Begin("zone"); Img("zone", ShotR("zone")); zone = Txt("zone");
             // ---- chat (bottom left) ----
-            Begin("chat"); Img("chat", ShotR("chat")); collect = null;
+            Begin("chat"); { var cr = ShotR("chat"); chatClip = new VisualElement { pickingMode = PickingMode.Ignore }; chatClip.style.overflow = Overflow.Hidden; Place(chatClip, cr); Img("chat", cr, chatClip, cr); } collect = null;
             // ---- bottom bar: base, orb liquid, gloss, claws, slots, vials ----
             Img("ab", ShotR("ab"));
             hpOrbR = RectR("orb_hp"); mpOrbR = RectR("orb_mp");

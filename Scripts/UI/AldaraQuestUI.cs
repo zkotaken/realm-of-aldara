@@ -323,7 +323,7 @@ namespace Aldara
             var kd = Kd(); if (KdFlag("blessed")) { AldaraHud.Banner("You already carry the King's Blessing"); return; }
             var it = new Item { id = AldaraItems.itemSeq++, type = "relic", relic = "kingsblessing", name = "The King's Blessing", rarity = "Common", color = AldaraItems.RARITY[0].c, lvl = Hr.lvl };
             if (Hr.inventory.Count >= AldaraItems.BACKPACK_MAX || !Hr.AddLoot(it)) { AldaraHud.Banner("Your backpack is full: make room for the blessing"); return; }
-            kd["blessed"] = 1; AldaraHud.Banner("The King's Blessing: equip it from your backpack (I)"); var P = AldaraPlayer.I; AldaraFx.Text(P.x, P.y - 16 - 70, "The King's Blessing", C("#ffd35a"));
+            kd["blessed"] = 1; AldaraHud.Banner("The King's Blessing: equip it from your backpack (I)"); AldaraChat.Sys(AldaraHero.I.heroName + " knelt before King Oswin and received the King's Blessing", "myth"); var P = AldaraPlayer.I; AldaraFx.Text(P.x, P.y - 16 - 70, "The King's Blessing", C("#ffd35a"));
             AldaraWindows.Refresh("inv"); AldaraSave.Dirty();
         }
     }

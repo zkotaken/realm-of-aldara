@@ -77,7 +77,7 @@ namespace Aldara
         {
             if (!AldaraItems.CanUse(it, cls)) { AldaraFx.Text(P.x, P.y - 56, "Left behind: " + it.name, new Color(0.6f, 0.6f, 0.6f)); return false; }
             if (inventory.Count >= AldaraItems.BACKPACK_MAX) { AldaraFx.Text(P.x, P.y - 56, "Backpack full", AldaraRules.Hex("#ff9a6a")); return false; }
-            inventory.Add(it); if (it.rarity == "Mythical") { AldaraHud.Banner("MYTHICAL DROP: " + it.name + "!"); AldaraSkills.I.Later_(1.2f, () => AldaraGear.CheckTitles()); } return true;
+            inventory.Add(it); if (it.rarity == "Mythical") { AldaraHud.Banner("MYTHICAL DROP: " + it.name + "!"); AldaraChat.Sys(heroName + " found a Mythical: " + it.name + "!", "myth"); AldaraSkills.I.Later_(1.2f, () => AldaraGear.CheckTitles()); } return true;
         }
         public void EquipItem(Item it)
         {
@@ -195,7 +195,7 @@ namespace Aldara
             if (!AldaraWorld.InCity(P.x, P.y)) return; var raw = AldaraSave.Raw; if (raw == null) return;
             var kd = raw["kd"] as Newtonsoft.Json.Linq.JObject; if (kd == null) { kd = new Newtonsoft.Json.Linq.JObject(); raw["kd"] = kd; }
             if (kd["arrived"] != null) return; kd["arrived"] = 1;
-            AldaraHud.Banner("Valcrest, the Crown City of Aldara");
+            AldaraHud.Banner("Valcrest, the Crown City of Aldara"); AldaraChat.Sys(heroName + " has reached Valcrest, the Crown City", "myth");
             float xp = Mathf.Max(5000, Mathf.Round(xpNeed * 0.15f)); GainXp(xp); AldaraFx.Text(P.x, P.y - 86, "+" + xp + " XP  You reached Valcrest", AldaraRules.Hex("#ffd35a")); AldaraSave.Dirty();
         }
         // ---- aiming: the cursor if it is over the game, else the way you face ----

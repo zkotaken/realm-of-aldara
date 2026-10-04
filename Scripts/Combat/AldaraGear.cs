@@ -81,7 +81,7 @@ namespace Aldara
         public static Item MaybeDropRelic(int i, int level, float x, float y)
         {
             if (Random.value >= 0.22f + i * 0.03f) return null; var it = RollRelic(i, level); if (it == null || !H.AddLoot(it)) return null;
-            AldaraFx.Text(x, y - 16 - 80, it.name + "!", it.Col); AldaraHud.Banner("RELIC FOUND: " + it.name + " (" + it.rarity + ")"); return it;
+            AldaraFx.Text(x, y - 16 - 80, it.name + "!", it.Col); AldaraHud.Banner("RELIC FOUND: " + it.name + " (" + it.rarity + ")"); if (it.rarity == "Legendary" || it.rarity == "Mythical") AldaraChat.Sys(H.heroName + " claimed a " + it.rarity + " relic: " + it.name + "!", "myth"); return it;
         }
         public static int RelicT(Item it) { int t; return it != null && it.rarity != null && RELIC_T.TryGetValue(it.rarity, out t) ? t : 0; }
         public static float RelicVal(Item it) { var d = RelicDefOf(it); return d == null ? 0 : d.v[RelicT(it)]; }

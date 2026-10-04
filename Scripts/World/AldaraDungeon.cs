@@ -379,14 +379,14 @@ namespace Aldara
             H.vialHp = Mathf.Min(AldaraItems.VIAL_MAX, H.vialHp + 2); H.vialMp = Mathf.Min(AldaraItems.VIAL_MAX, H.vialMp + 2);
             int sp = Clears(def.id) > 0 ? 1 : 2; AldaraTree.sp += sp; AldaraTree.spTotal += sp; AldaraHud.Banner("+" + sp + " Skill Point" + (sp > 1 ? "s" : "") + " (" + def.name + "): press K");
             if (Random.value < 0.012f) { var w = AldaraItems.RollWings(lv, 20); if (H.AddLoot(w)) AldaraHud.Banner("WINGS DROP: " + w.name + "!"); }
-            if (Random.value < 0.015f) { var a = AldaraItems.RollMythicArmor(lv); if (H.AddLoot(a)) { AldaraHud.Banner("MYTHICAL ARMOR: " + a.name + "!"); AldaraFx.Text(P.x, P.y - 110, a.name + "!", AldaraRules.Hex(AldaraItems.MythSetOf(a).glow)); } }
+            if (Random.value < 0.015f) { var a = AldaraItems.RollMythicArmor(lv); if (H.AddLoot(a)) { AldaraHud.Banner("MYTHICAL ARMOR: " + a.name + "!"); AldaraChat.Sys(H.heroName + " found Mythical armor: " + a.name + "!", "myth"); AldaraFx.Text(P.x, P.y - 110, a.name + "!", AldaraRules.Hex(AldaraItems.MythSetOf(a).glow)); } }
             var rl = AldaraGear.MaybeDropRelic(i, lv, P.x, P.y); if (rl != null) DStat.loot.Add(rl);
             bool first = Best <= i; var ds = DunSave();
             if (!def.hidden) ds["best"] = Mathf.Max(Best, i + 1);
             ((JObject)ds["clears"])[def.id] = Clears(def.id) + 1;
             AldaraQuests.OnDungeon(def.id);
             H.GainXp(xp); AldaraSkills.I.Later_(1.6f, () => AldaraGear.CheckTitles());
-            AldaraHud.Banner(def.name + " cleared!" + (first && i + 1 < List.Count && !List[i + 1].hidden ? " " + List[i + 1].name + " unlocked" : ""));
+            AldaraChat.Sys(H.heroName + " cleared " + def.name + "!", "dun"); AldaraHud.Banner(def.name + " cleared!" + (first && i + 1 < List.Count && !List[i + 1].hidden ? " " + List[i + 1].name + " unlocked" : ""));
             AldaraFx.Text(P.x, P.y - 16 - 40, "+" + xp + " XP  +" + gold + " Gold", AldaraRules.Hex("#e0b64b"));
             DStat.xp = xp; DStat.gold = gold; DStat.Show("done"); AldaraSave.Dirty();
         }

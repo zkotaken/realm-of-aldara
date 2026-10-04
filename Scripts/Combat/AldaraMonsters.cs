@@ -326,7 +326,7 @@ namespace Aldara
             AldaraQuests.OnKill(t); AldaraRelics.OnKill(t); AldaraSubclass.OnKill(t);
             if (t.boss) H.bossKills++;
             AldaraFx.Text(t.x, t.y - t.r - 26, "+" + t.xp + "xp", AldaraRules.Hex("#7ec8ff"));
-            if (t.boss) AldaraHud.Banner(t.name + " defeated!");
+            if (t.boss) { AldaraHud.Banner(t.name + " defeated!"); AldaraChat.Sys(H.heroName + " defeated " + t.name + (AldaraDungeon.Active && AldaraDungeon.def != null ? " in " + AldaraDungeon.def.name : "") + "!", "boss"); }
             if (H.target == t) H.target = null;
             H.kills++;
             SpawnCorpse(t);

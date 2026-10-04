@@ -71,7 +71,7 @@ namespace Aldara
             int back = sub != null ? SubRefund() : 0; if (back > 0) AldaraHud.Banner(back + " skill points refunded");
             var old = SubCur(); if (old != null) { string oid = (string)old.skill["id"]; AldaraSkills.I.equipped.Remove(oid); AldaraSkills.I.owned.Remove(oid); }
             sub = id; subTree.Clear(); AldaraSubclass.Reset(); Sync(); StripSubFromBar();
-            AldaraHud.Banner("You are now a " + S.name); AldaraSave.Dirty();
+            AldaraHud.Banner("You are now a " + S.name); AldaraChat.Sys(H.heroName + " became a " + S.name, "note"); AldaraSave.Dirty();
             var P = AldaraPlayer.I; AldaraVfx.Burst(P.x, P.y - 20, AldaraRules.Hex(S.col), 40, 240); AldaraVfx.Mfx(new AldaraVfx.Mf { k = "pillar", x = P.x, y = P.y, r = 30, c = AldaraRules.Hex(S.col), c2 = Color.white, H = 420, T = 1 });
         }
         public static void SubUnlock(string id)

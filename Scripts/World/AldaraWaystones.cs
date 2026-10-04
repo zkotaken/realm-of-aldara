@@ -71,7 +71,7 @@ namespace Aldara
                 {
                     if (Known(w) || Dist(w.x, w.y, P.x, P.y) >= 110) continue;
                     var r = AldaraSave.Raw; var m = Mine; if (m == null) { m = new JArray(); r["waystones"] = m; } m.Add(w.id);
-                    AldaraHud.Banner("Waystone attuned: " + w.n);
+                    AldaraHud.Banner("Waystone attuned: " + w.n); AldaraChat.Sys(AldaraHero.I.heroName + " attuned the " + w.n + " waystone", "note");
                     AldaraFx.Burst(w.x, w.y - 40, 36, C("#9fe8ff")); AldaraFx.Ring(w.x, w.y, 120, C("#9fe8ff"), 0.8f);
                     H.GainXp(Mathf.Round(40 * Mathf.Pow(1.35f, w.z))); AldaraSave.Dirty(); AldaraWindows.Refresh("ws");
                 }

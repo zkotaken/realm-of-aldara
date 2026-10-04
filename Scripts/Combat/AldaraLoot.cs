@@ -23,7 +23,7 @@ namespace Aldara
             if (mp > 0) { H.vialMp = Mathf.Min(AldaraItems.VIAL_MAX, H.vialMp + mp); AldaraFx.Text(t.x, y, "Mana Vial" + (mp > 1 ? " x" + mp : ""), AldaraRules.Hex("#8aa8ff")); }
             // wings and mythical armor
             if (Random.value < AldaraItems.WingsChance(t.lvl, t.boss)) { var w = AldaraItems.RollWings(t.lvl); if (H.AddLoot(w)) { AldaraHud.Banner("WINGS DROP: " + w.name + "!"); AldaraFx.Text(t.x, t.y - t.r - 90, w.name + "!", w.Col); } }
-            if (Random.value < AldaraItems.MythArmorChance(t.lvl, t.boss)) { var a = AldaraItems.RollMythicArmor(t.lvl); if (H.AddLoot(a)) { AldaraHud.Banner("MYTHICAL ARMOR: " + a.name + "!"); AldaraFx.Text(t.x, t.y - 110, a.name + "!", AldaraRules.Hex(AldaraItems.MythSetOf(a).glow)); } }
+            if (Random.value < AldaraItems.MythArmorChance(t.lvl, t.boss)) { var a = AldaraItems.RollMythicArmor(t.lvl); if (H.AddLoot(a)) { AldaraHud.Banner("MYTHICAL ARMOR: " + a.name + "!"); AldaraChat.Sys(H.heroName + " found Mythical armor: " + a.name + "!", "myth"); AldaraFx.Text(t.x, t.y - 110, a.name + "!", AldaraRules.Hex(AldaraItems.MythSetOf(a).glow)); } }
             if (t.boss)
             {
                 for (int k = 0; k < 2; k++) { var it = AldaraItems.RollItem(t.lvl, AldaraItems.PickRarity(t.lvl, 30, true), 5); if (H.AddLoot(it)) AldaraFx.Text(t.x, t.y - t.r - 42 - k * 16, it.name + "!", it.Col); }
