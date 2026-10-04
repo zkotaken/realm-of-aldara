@@ -46,6 +46,8 @@ namespace Aldara
             }
             ApplyCrowd();
         }
+        /// someone standing in an interior (the throne room's court)
+        public Folk NewFolk(string name, float x, float y) { var f = new Folk { name = name, role = "stand", x = x, y = y, walkT = Random.value * 6 }; f.id = Id(f.name); f.top = Top(f.name); return f; }
         static string Id(string name) { if (name == null) return null; var m = meta[name]; return m != null ? (string)m["id"] : null; }
         static float Top(string name) { if (name == null) return 48; var m = meta[name]; return m != null ? (float)m["top"] * (float)m["unitW"] : 60; }
         Folk Make(JObject o, bool isKd)
@@ -66,6 +68,7 @@ namespace Aldara
         /// where a quest giver stands now (townsfolk move)
         public static Vector2? Pos(string npc)
         {
+            var tp = AldaraThrone.Pos(npc); if (tp.HasValue) return tp;
             var o = AldaraQuests.NpcPos(npc); if (o == null) return null;
             if (I != null && o.folk >= 0 && o.folk < I.town.Count) { var f = I.town[o.folk]; return new Vector2(f.x, f.y); }
             return new Vector2(o.x, o.y);
@@ -75,7 +78,12 @@ namespace Aldara
 
         void Update()
         {
-            var P = AldaraPlayer.I; if (!AldaraSave.Ready || P == null || AldaraWorld.Dun) { HideAll(); return; }
+            var P = AldaraPlayer.I; if (!AldaraSave.Ready || P == null || AldaraWorld.Dun)
+            {
+                HideAll();
+                if (P != null && AldaraThrone.On) { float dt0 = Mathf.Min(Time.deltaTime, 0.1f); foreach (var n in AldaraThrone.court) Show(n, dt0); }
+                return;
+            }
             float dt = Mathf.Min(Time.deltaTime, 0.1f);
             if (TownNear(P.x, P.y)) Sim(town, tG, dt, false); else HideList(town);
             if (KdNear(P.x, P.y)) Sim(kd, kG, dt, true); else HideList(kd);
@@ -195,6 +203,7 @@ namespace Aldara
             foreach (var n in town) if (n.view && n.view.activeSelf) yield return n;
             foreach (var n in kd) if (n.view && n.view.activeSelf) yield return n;
             foreach (var n in guides) if (n.view && n.view.activeSelf) yield return n;
+            foreach (var n in AldaraThrone.court) if (n.view && n.view.activeSelf) yield return n;
         }
         public Folk Of(string npc) { foreach (var g in guides) if (g.npc == npc) return g; foreach (var t in town) if (t.npc == npc) return t; return null; }
     }

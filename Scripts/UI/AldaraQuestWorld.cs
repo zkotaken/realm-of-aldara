@@ -60,7 +60,7 @@ namespace Aldara
         bool OnView(Vector2 p, float m = 0) { var r = root.layout; return p.x > -m && p.x < r.width + m && p.y > -m && p.y < r.height + m; }
 
         // ---------- interaction ----------
-        public class It { public string npc; public Q.GNode node; public float x, y; public int lore = -1; public string label; public bool sewer; }
+        public class It { public string npc; public Q.GNode node; public float x, y; public int lore = -1; public string label; public bool sewer, palace; }
         public It Interactable()
         {
             var P = AldaraPlayer.I; var H = AldaraHero.I; if (!H.alive || AldaraFolk.I == null) return null; It best = null; float bd = 80;
@@ -83,6 +83,12 @@ namespace Aldara
                     float d = Vector2.Distance(g, new Vector2(P.x, P.y)); float bd2 = best != null ? Vector2.Distance(new Vector2(best.x, best.y), new Vector2(P.x, P.y)) : 1e9f;
                     if (d < 55 && d < bd2) best = new It { sewer = true, x = g.x, y = g.y, label = "Climb down into the Undercity" };
                 }
+            // the great doors of the palace
+            if (AldaraFolk.I.KdNear(P.x, P.y))
+            {
+                var pd = AldaraThrone.PALACE_DOOR + new Vector2(0, 6); float d = Vector2.Distance(pd, new Vector2(P.x, P.y)), bd2 = best != null ? Vector2.Distance(new Vector2(best.x, best.y), new Vector2(P.x, P.y)) : 1e9f;
+                if (d < 70 && d < bd2) best = new It { palace = true, x = pd.x, y = pd.y, label = "Enter the Palace of Valcrest" };
+            }
             return best;
         }
         bool Interact()
@@ -90,7 +96,7 @@ namespace Aldara
             if (AldaraLore.IsOpen) { AldaraLore.Close(); return true; }
             { var ws = AldaraWaystones.Near(); if (ws != null) { AldaraWaystones.Open(ws); return true; } }
             var it = Interactable(); if (it == null) return false;
-            if (it.sewer) AldaraDungeon.EnterSewer(); else if (it.lore >= 0) AldaraLore.Open(it.lore); else if (it.npc != null) AldaraQuestDlg.Open(it.npc); else if (it.node != null) Q.StartGather(it.node);
+            if (it.palace) AldaraThrone.Enter(); else if (it.sewer) AldaraDungeon.EnterSewer(); else if (it.lore >= 0) AldaraLore.Open(it.lore); else if (it.npc != null) AldaraQuestDlg.Open(it.npc); else if (it.node != null) Q.StartGather(it.node);
             return true;
         }
         /// a click in the world on a person or a gathering spot (before the hero attacks there)
@@ -121,7 +127,7 @@ namespace Aldara
             root.style.display = live ? DisplayStyle.Flex : DisplayStyle.None;
             if (!live) { Sync3D(false); return; }
             cam = Camera.main; if (!cam) return;
-            if (AldaraKeys.Pressed("interact") && !AldaraWorld.Dun) Interact();
+            if (AldaraKeys.Pressed("interact")) { if (!AldaraWorld.Dun) Interact(); else if (AldaraThrone.On) { if (AldaraQuestDlg.IsOpen) AldaraQuestDlg.Close(); else AldaraThrone.Interact(); } }
             Draw(); Sync3D(!AldaraWorld.Dun);
             if (mini != null) mini.MarkDirtyRepaint();
         }
@@ -190,7 +196,7 @@ namespace Aldara
             {
                 float y; var g = W2P(it.x, it.npc != null ? it.y + 15 : it.y);
                 if (it.npc != null) { var f = AldaraFolk.I.Of(it.npc); float tp = Q.QOBJ[it.npc].board != 0 ? 48 : f != null ? f.top + 15 : 70; y = g.y - tp * k - 58; }
-                else y = g.y - (it.lore >= 0 || it.sewer ? 70 : 40) * k;
+                else y = g.y - (it.lore >= 0 || it.sewer || it.palace ? 70 : 40) * k;
                 string txt = it.label ?? (it.npc != null ? (Q.QNPC[it.npc].board != 0 ? "Read the bounties" : "Talk to " + Q.QNPC[it.npc].name) : "Gather " + Q.QNODE[it.node.type].name);
                 float w = txt.Length * 6.1f + 34; string key = AldaraKeys.Name(AldaraKeys.KeyOf("interact"));
                 paint.Box(new Rect(g.x - w / 2, y - 12, w, 22), 5, new Color(10 / 255f, 8 / 255f, 16 / 255f, 0.8f), C("#e0b64b"));
@@ -222,6 +228,23 @@ namespace Aldara
                     Lab(wp.label + "  " + dist + " m", 11, C("#ffe9a8"), false, true, ex - Mathf.Cos(ang) * 30, ey - Mathf.Sin(ang) * 30 + 8, 1, TextAnchor.LowerCenter, 0.15f);
                 }
             }
+            }
+            // the throne room: the King and the Queen, their names, titles, quest markers and the Talk prompt (ktDrawLabels)
+            if (AldaraThrone.On)
+            {
+                foreach (var n in new[] { AldaraThrone.king, AldaraThrone.queen })
+                {
+                    if (n == null || !Q.QNPC.TryGetValue(n.npc, out Q.Npc N)) continue; var g = W2P(n.x, n.y + 15); float top = g.y - (n.top + 15) * k;
+                    Lab(N.name, 12, C("#ffe9a8"), false, true, g.x, top - 6 * k + 4, 1); if (!string.IsNullOrEmpty(N.title)) Lab("<" + N.title + ">", 10, C("#c8b890"), false, false, g.x, top + 7 * k + 3, 1);
+                    string mk = Q.Marker(n.npc); if (mk != null) { float y = top - 30 * k + Mathf.Sin(t * 3) * 3; paint.Glow(new Vector2(g.x, y - 9), 22, C("#ffd35a", 0.35f)); var l = Lab(mk.Substring(0, 1), 26, C("#ffd35a"), true, true, g.x, y + 6, 1, TextAnchor.LowerCenter, 0.12f); l.style.unityTextOutlineColor = C("#1a1008"); }
+                }
+                var nn = AldaraThrone.Near();
+                if (nn != null && !AldaraQuestDlg.IsOpen)
+                {
+                    var g = W2P(nn.x, nn.y + 15); float y = g.y - (nn.top + 15) * k - 58; string txt = "Talk to " + Q.QNPC[nn.npc].name; float w = txt.Length * 6.1f + 34; string key = AldaraKeys.Name(AldaraKeys.KeyOf("interact"));
+                    paint.Box(new Rect(g.x - w / 2, y - 12, w, 22), 5, new Color(10 / 255f, 8 / 255f, 16 / 255f, 0.8f), C("#e0b64b")); paint.Box(new Rect(g.x - w / 2 + 4, y - 9, 16, 16), 3, C("#e0b64b"), Color.clear);
+                    Lab(key, 11, C("#1a1008"), true, true, g.x - w / 2 + 12, y - 1, 1, TextAnchor.MiddleCenter, 0); Lab(txt, 12, C("#f0e6d0"), false, true, g.x - w / 2 + 25, y - 1, 1, TextAnchor.MiddleLeft, 0.1f);
+                }
             }
             // monster labels (drawMonLabel): the health bar, and the level and name coloured by the level gap; bosses in gold
             foreach (var m in AldaraMonsters.I.all)

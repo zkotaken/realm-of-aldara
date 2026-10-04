@@ -315,14 +315,28 @@ namespace Aldara
             if (AldaraDungeonView.I) AldaraDungeonView.I.Enter(M);
             AldaraHud.Banner(d.name + ": " + M.names[0]);
         }
+        /// ktEnter: the Throne Room of Valcrest (an interior with the court and no monsters)
+        public static void StartThrone()
+        {
+            var H = AldaraHero.I; var P = AldaraPlayer.I; if (!AldaraSave.Ready || DM != null || !H.alive) return;
+            var d = new Def { i = -1, id = "throne", name = "The Throne Room of Valcrest", accent = "#d9a93a", mobs = new MobDef[0], layout = true, sections = 1, hidden = true };
+            Map M; try { M = Build(d); } catch (System.Exception e) { Debug.LogException(e); AldaraHud.Banner("The palace doors are barred"); return; }
+            def = d; idx = 0; open = 9; done = false; exitT = 0; ret = AldaraThrone.PALACE_DOOR + new Vector2(0, 70);
+            DM = M; AldaraWorld.Dun = true; AldaraMonsters.I.EnterDungeon(out worldMons);
+            P.x = M.start.x; P.y = M.start.y; H.target = null; if (AldaraSkills.I) AldaraSkills.I.queued = null; M.safe = new Vector2(P.x, P.y);
+            AldaraAuto.questHunt = false; AldaraAuto.questWalk = null; AldaraQuests.Render(); if (AldaraPet.I) AldaraPet.I.placed = false;
+            FlowUpdate(true); if (AldaraDungeonView.I) AldaraDungeonView.I.Enter(M);
+            AldaraThrone.OnEnter();
+        }
+        public static bool Throne { get { return DM != null && def != null && def.id == "throne"; } }
         public static void Exit(string reason)
         {
             if (DM == null) return; var H = AldaraHero.I; var P = AldaraPlayer.I;
-            bool raid = AldaraRaid.On; AldaraRaid.OnExit();
+            bool raid = AldaraRaid.On; AldaraRaid.OnExit(); AldaraThrone.OnExit();
             if (AldaraDungeonView.I) AldaraDungeonView.I.Leave();
             AldaraMonsters.I.LeaveDungeon(worldMons); worldMons = null; DM = null; AldaraWorld.Dun = false;
             P.x = ret.x; P.y = ret.y; H.target = null; if (AldaraSkills.I) AldaraSkills.I.queued = null; H.slowT = 0; if (AldaraPet.I) AldaraPet.I.placed = false;
-            if (reason == "wipe") { }
+            if (reason == "wipe" || reason == "fort") { }
             else if (reason == "fail") { AldaraHud.Banner("Dungeon failed"); DStat.Show("fail"); }
             else if (reason == "left") { AldaraHud.Banner("You left the dungeon"); DStat.Show("left"); }
             AldaraQuests.Render(); AldaraSave.Dirty();
@@ -383,6 +397,7 @@ namespace Aldara
         {
             if (DM == null) return; var H = AldaraHero.I; var P = AldaraPlayer.I; if (!AldaraSave.Ready) { Exit("left"); return; }
             float dt = Mathf.Min(Time.deltaTime, 0.1f); var D = DM; D.t += dt;
+            if (Throne) { AldaraThrone.Tick(dt); return; }
             foreach (var g in D.gates) if (g.open && g.openT < 1) g.openT = Mathf.Min(1, g.openT + dt / 1.2f);
             FlowUpdate(false); UpdateTraps(dt); if (H.alive) DunX(dt);
             if (done) { exitT -= dt; if (exitT <= 0) { Exit("done"); return; } }
@@ -396,7 +411,7 @@ namespace Aldara
         {
             get
             {
-                if (DM == null) return ""; int room = DM.psec; int left = AldaraMonsters.I.all.Count(m => !m.dead && m.room == room);
+                if (DM == null) return ""; if (Throne) return AldaraThrone.STATUS; int room = DM.psec; int left = AldaraMonsters.I.all.Count(m => !m.dead && m.room == room);
                 return done ? "Cleared! Returning in " + Mathf.CeilToInt(exitT) + "s" : room == DM.names.Length - 1 ? DM.names[DM.names.Length - 1] : (room >= 0 && room < DM.names.Length ? DM.names[room] : "") + "  ·  " + left + " left";
             }
         }

@@ -22,6 +22,7 @@ namespace Aldara
             Leave();
             var pf = Resources.Load<GameObject>("DunPrefabs/Dun_" + M.id);
             if (pf) { inst = Instantiate(pf); inst.transform.position = new Vector3(AldaraWorld.DOX, 0, 0); }
+            if (AldaraOccluders.I) AldaraOccluders.I.SetDungeon(inst ? inst.transform.Find("Props") : null);
             gA = new AldaraSketch("normal", false, 3001); gAdd = new AldaraSketch("add", false, 3002); aA = new AldaraSketch("normal", true, 3110); aAdd = new AldaraSketch("add", true, 3111);
             // the glows painted onto set pieces (glowDot in their sprites)
             propGlows.Clear();
@@ -35,6 +36,7 @@ namespace Aldara
         Color camBg; CameraClearFlags camFlags = CameraClearFlags.Skybox;
         public void Leave()
         {
+            if (AldaraOccluders.I) AldaraOccluders.I.SetDungeon(null);
             if (inst) Destroy(inst); inst = null;
             if (gA != null && Camera.main) { Camera.main.clearFlags = camFlags; Camera.main.backgroundColor = camBg; }
             gA = gAdd = aA = aAdd = null;
