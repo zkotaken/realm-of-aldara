@@ -70,6 +70,24 @@ namespace Aldara
             }
             else motes.Clear();
         }
+        // the pet's glow and drifting sparkles (drawPet3)
+        static readonly List<Spark> petSparks = new List<Spark>(); static float petLast = -1;
+        public static void DrawPet(AldaraQuestWorld.Painter paint, System.Func<Vector3, Vector2> W2P, float k)
+        {
+            var A = AldaraPet.I; var it = AldaraHero.I ? AldaraHero.I.Eq("pet") : null; if (!A || !A.Shown || it == null || A.meta == null) { petSparks.Clear(); return; }
+            float t = Time.time, dt = petLast < 0 ? 0 : Mathf.Min(0.1f, t - petLast); petLast = t;
+            bool myth = A.Myth; float unit = (float)A.meta["unit"] * k; var g = W2P(A.Ground); float x = g.x, gy = g.y, hgt = myth ? unit * 1.1f : unit * 0.35f;
+            var gc = AldaraRules.Hex((string)A.meta["glow"] ?? it.color ?? "#ffffff"); float pulse = 0.8f + 0.2f * Mathf.Sin(t * 3), R = (myth ? unit * 2.4f : unit * 0.9f) * pulse;
+            paint.Glow(new Vector2(x, gy - hgt), R, new Color(gc.r, gc.g, gc.b, myth ? 0.4f : 0.22f));
+            for (int n = Mathf.FloorToInt((myth ? 12 : 6) * dt + Random.value); n > 0; n--) if (petSparks.Count < (myth ? 26 : 14))
+                    petSparks.Add(new Spark { x = (Random.value - 0.5f) * (myth ? 2f : 0.8f), y = -Random.value * hgt * 2 / unit, vy = -(12 + Random.value * 18), life = 0.8f + Random.value * 0.8f, max = 1.6f });
+            float r = myth ? 1.8f : 1.3f;
+            for (int i = petSparks.Count - 1; i >= 0; i--)
+            {
+                var q = petSparks[i]; q.life -= dt; if (q.life <= 0) { petSparks.RemoveAt(i); continue; } q.y += q.vy * dt / unit;
+                paint.Diamond(new Vector2(x + q.x * unit, gy + q.y * unit), r, r * 1.8f, new Color(gc.r, gc.g, gc.b, Mathf.Min(1, q.life * 1.3f)), Color.clear, 0);
+            }
+        }
         static Transform Node(AldaraHeroGear g, int i) { return g.wingNodes != null && i >= 0 && i < g.wingNodes.Length ? g.wingNodes[i] : null; }
         static Vector3 V3(JToken a) { return new Vector3((float)a[0], (float)a[1], (float)a[2]); }
     }

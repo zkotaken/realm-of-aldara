@@ -37,6 +37,7 @@ namespace Aldara
             if (!GetComponent<AldaraTitle>()) gameObject.AddComponent<AldaraTitle>();
             if (!GetComponent<AldaraFolk>()) gameObject.AddComponent<AldaraFolk>();
             if (!GetComponent<AldaraQuestWorld>()) gameObject.AddComponent<AldaraQuestWorld>();
+            if (!GetComponent<AldaraPet>()) gameObject.AddComponent<AldaraPet>();
         }
         public void Register(Win w) { wins[w.id] = w; }
         public bool Has(string id) { return wins.ContainsKey(id); }

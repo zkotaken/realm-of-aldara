@@ -37,7 +37,7 @@ namespace Aldara
         Label Lab(string s, float size, Color c, bool cinzel, bool bold, float x, float y, float alpha = 1, TextAnchor anchor = TextAnchor.LowerCenter, float outline = 0.18f)
         {
             Label l; if (used < pool.Count) l = pool[used]; else { l = new Label { pickingMode = PickingMode.Ignore }; l.style.position = Position.Absolute; l.style.whiteSpace = WhiteSpace.NoWrap; Pad(l, 0, 0); l.style.marginLeft = l.style.marginTop = l.style.marginRight = l.style.marginBottom = 0; l.enableRichText = false; root.Add(l); pool.Add(l); }
-            used++; l.style.display = DisplayStyle.Flex; l.text = s; l.style.fontSize = size; l.style.color = c; l.style.opacity = alpha;
+            used++; l.style.display = DisplayStyle.Flex; l.enableRichText = false; l.text = s; l.style.fontSize = size; l.style.color = c; l.style.opacity = alpha;
             l.style.unityFontDefinition = FontDefinition.FromFont(Font(cinzel, bold)); l.style.unityTextOutlineWidth = outline; l.style.unityTextOutlineColor = Color.black;
             l.style.textShadow = new TextShadow { color = new Color(0, 0, 0, 0.9f), offset = Vector2.zero, blurRadius = 2 };
             l.style.unityTextAlign = anchor; float w = 600, h = size * 1.6f; l.style.width = w; l.style.height = h;
@@ -123,7 +123,23 @@ namespace Aldara
         {
             used = 0; paint.Clear(); var P = AldaraPlayer.I; float t = Ttime;
             var a = W2P(P.x, P.y); var b = W2P(P.x + 100, P.y); k = Mathf.Max(0.2f, Mathf.Abs(b.x - a.x) / 100f);
+            AldaraHeroFx.DrawPet(paint, W2P3, k);
             AldaraHeroFx.Draw(paint, W2P3, k);
+            // a mythical pet carries its name over its head
+            { var A = AldaraPet.I; var pit = AldaraHero.I.Eq("pet"); if (A && A.Shown && A.Myth && pit != null && A.meta != null) { var gp = W2P3(A.Ground); Lab(pit.name, 12, pit.Col, true, true, gp.x, gp.y - ((float)A.meta["top"] * (float)A.meta["unit"] + 12) * k + 4, 1, TextAnchor.LowerCenter, 0.15f); } }
+            // the hero's name tag (drawNametag): level and name, the title under it (glowing titles pulse)
+            if (AldaraHero.I.alive)
+            {
+                var gr = P.model ? P.model.GetComponent<AldaraHeroGear>() : null; float hov = gr && gr.flying ? gr.flyH : 0;
+                var g0 = W2P(P.x, P.y); float top = g0.y - (hov + 42) * k; var tt = AldaraGear.TitleById(AldaraHero.I.title);
+                var nl = Lab("", 12, C("#f4f0e6"), true, true, g0.x, (tt != null ? top - 13 * k : top) + 4, 1, TextAnchor.LowerCenter, 0.2f);
+                nl.enableRichText = true; nl.text = "<color=#ffd35a>Lv " + AldaraHero.I.lvl + "</color> " + AldaraQuestUI.Esc(AldaraHero.I.heroName);
+                if (tt != null)
+                {
+                    var tc = C(tt.col); var tl = Lab(tt.name, 11, tc, true, true, g0.x, top + 4, 1, TextAnchor.LowerCenter, 0.15f);
+                    if (tt.glow) { float pu = 0.5f + 0.5f * Mathf.Sin(t * 2.6f); tl.style.textShadow = new TextShadow { color = new Color(tc.r, tc.g, tc.b, 0.7f + 0.3f * pu), offset = Vector2.zero, blurRadius = 6 + 6 * pu }; }
+                }
+            }
             bool names = AldaraSettings.On("names");
             // townsfolk name tags
             foreach (var n in AldaraFolk.I.Visible())
