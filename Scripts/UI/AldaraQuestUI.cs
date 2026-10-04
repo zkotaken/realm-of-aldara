@@ -168,8 +168,8 @@ namespace Aldara
             Color gc = kind == "low" || kind == "ac" ? C("#8a8a8a") : C("#ffd35a");
             if (kind == "topic" || kind == "bless") { i.style.width = 12; i.style.height = 18; i.style.backgroundColor = kind == "topic" ? C("#3a5a7a") : GOLD; gc = kind == "topic" ? C("#dff4ff") : C("#1a1008"); }
             var gl = T(i, glyph, kind == "topic" || kind == "bless" ? 13 : 16, gc, true, true, false, 0, false, false); gl.style.unityTextAlign = TextAnchor.MiddleCenter;
-            var t = T(b, title.ToUpper(), 13, C("#f7e7bd"), true, true, false, 0.5f, false, false); Shadow(t, Color.black, 1, 1); t.style.flexShrink = 1;
-            var n = T(b, note.ToUpper(), 10, kind == "rd" ? C("#9fe09f") : kind == "topic" ? C("#9fc8e8") : C("#999999"), true, true, false, 0.5f, false, false); n.style.marginLeft = StyleKeyword.Auto;
+            var t = T(b, title.ToUpper(), 13, C("#f7e7bd"), true, true, false, 0.5f, false, false); Shadow(t, Color.black, 1, 1); t.style.flexShrink = 1; t.style.flexGrow = 1;
+            var n = T(b, note.ToUpper(), 10, kind == "rd" ? C("#9fe09f") : kind == "topic" ? C("#9fc8e8") : C("#999999"), true, true, false, 0.5f, false, false); n.style.flexShrink = 0;
             if (disabled) b.style.opacity = 0.6f;
             else
             {
