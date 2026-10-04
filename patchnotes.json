@@ -1,6 +1,19 @@
 {
  "entries": [
   {
+   "v": "149.1",
+   "date": "October 5, 2026",
+   "type": "update",
+   "title": "Realm of Aldara Classic is here",
+   "notes": [
+    "Realm of Aldara Classic, the whole game rebuilt in Unity, can now be installed from the launcher. Find it at the top of the Home page and press Install.",
+    "Classic picks up the characters you already have, so you can carry on where you left off. The browser edition stays as it is and still opens with Play.",
+    "Classic adds enhanced rendering: ambient occlusion, soft shadows, a moving sun and moon, torchlight on models at night, deeper water, molten lava, rocky cliffs and wind-blown grass. Turn any of it off in Settings, Graphics.",
+    "New Graphics settings: aspect ratio, resolution and a working world zoom. The interface now scales to fit any screen shape, and Interface has a Whole interface size.",
+    "The launcher keeps Classic up to date, downloading only the files that change, and updates itself to do so. If Classic does not appear yet, close the launcher and open it again."
+   ]
+  },
+  {
    "v": "149",
    "date": "October 1, 2026",
    "type": "update",

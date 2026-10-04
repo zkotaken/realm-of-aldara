@@ -3,10 +3,10 @@
  "size": 24496186,
  "sha256": "2ca36332c90f21234c21aec1ab1760b1dcab59205e03b2eed23444a438b94f91",
  "file": "game.html",
- "date": "October 1, 2026",
- "title": "Smooth sliding along mountains",
- "launcher": "4",
- "launcher_sha256": "9d9cc00ee0a817bf88303333890a1a22121e0c24e54a56d963769845ecb398aa",
+ "date": "October 5, 2026",
+ "title": "Realm of Aldara Classic is here",
+ "launcher": "5",
+ "launcher_sha256": "47289dde2913a5094e2c0ab2555e638b5117f211c73f7428fdec4d581e9efa47",
  "assets": [
   {
    "p": "music/MUS_Boss_BloodEagle.webm",
@@ -140,6 +140,15 @@
   }
  ],
  "exe": "Realm of Aldara Launcher.exe",
- "exe_build": "2",
- "exe_sha256": "ce1519e6a6f2800aa0078cddb8705f658b84e6ea2521598622481ea5d946a179"
+ "exe_build": "3",
+ "exe_sha256": "ff2269037e384aeb557d3c5d91cb298245991d27e1224ff89c5b76f3a2562221",
+ "classic": {
+  "version": "1.0.0",
+  "title": "The whole game rebuilt in Unity, with richer lighting, water, lava and grass. Your characters carry over.",
+  "exe": "Realm of Aldara Classic.exe",
+  "base": "https://raw.githubusercontent.com/zkotaken/realm-of-aldara/classic-builds/",
+  "manifest": "manifests/1.0.0.json",
+  "manifest_sha": "2297864900581dffd2f9d534e090997fa2642989c9cea6ebd714f2dd09f49c12",
+  "size": 724618292
+ }
 }
