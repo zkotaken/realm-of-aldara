@@ -145,10 +145,16 @@ namespace Aldara
             if (dmg > 0) AldaraFx.Text(P.x, P.y - 26, "-" + dmg, AldaraRules.Hex("#ff6a6a"));
             if (hp <= 0) Died();
         }
+        /// back on your feet (raids: revived, risen at the checkpoint, or after a wipe)
+        public void Rise(float frac)
+        {
+            alive = true; hp = Mathf.Round(maxHp * frac); mana = Mathf.Max(mana, Mathf.Round(maxMana * frac)); target = null; if (anim) anim.Load();
+        }
         void Died()
         {
             alive = false; hp = 0; target = null; deadAt = Time.time; deaths++; AldaraSave.Dirty();
             if (anim) anim.Play("death");
+            if (AldaraRaid.On) { AldaraRaid.OnDeath(); return; }
             AldaraHud.Banner("You have fallen...");
         }
 
@@ -195,6 +201,7 @@ namespace Aldara
             if (vialCdHp > 0) vialCdHp -= dt; if (vialCdMp > 0) vialCdMp -= dt;
             if (!alive)
             {
+                if (AldaraRaid.On) { UpdateShots(dt); return; }   // the raid decides when you rise
                 if (Time.time - deadAt > 1.8f)
                 {   // back to town, as the browser does outside dungeons
                     if (AldaraDungeon.Active) AldaraDungeon.Exit("fail"); else { P.x = AldaraWorld.TOWN_SPAWN.x; P.y = AldaraWorld.TOWN_SPAWN.y; } alive = true; hp = maxHp; mana = maxMana; gold = Mathf.Floor(gold * 0.9f); target = null;

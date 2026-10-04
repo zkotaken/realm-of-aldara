@@ -17,7 +17,7 @@ namespace Aldara
 
         // ---------- the list (DUNGEONS) ----------
         public class MobDef { public string name, color, bolt; public float r, spd = -1; public bool ranged, tank, slowHit; public string mech; }
-        public class Def { public int i; public string id, name, accent, desc; public int rec, sections; public bool deep, hidden, raid, layout; public MobDef[] mobs; public MobDef boss; }
+        public class Def { public int i; public string id, name, accent, desc; public int rec, sections; public bool deep, hidden, raid, layout; public MobDef[] mobs; public MobDef boss; public string[] encNames; }
         static List<Def> list;
         public static List<Def> List { get { if (list == null) Load(); return list; } }
         static void Load()
@@ -27,7 +27,7 @@ namespace Aldara
             foreach (var d in j["list"])
             {
                 var D = new Def { i = (int)d["i"], id = (string)d["id"], name = (string)d["name"], accent = (string)d["accent"], desc = (string)d["desc"], rec = (int)d["rec"], deep = (bool)d["deep"], hidden = (bool)d["hidden"], raid = (bool)d["raid"], layout = (bool)d["layout"], sections = (int)d["sections"] };
-                D.mobs = d["mobs"] is JArray ma ? ma.Select(Mob).ToArray() : new MobDef[0]; D.boss = d["boss"] is JObject bo ? Mob(bo) : null; list.Add(D);
+                D.mobs = d["mobs"] is JArray ma ? ma.Select(Mob).ToArray() : new MobDef[0]; D.boss = d["boss"] is JObject bo ? Mob(bo) : null; D.encNames = d["encNames"] is JArray en ? en.ToObject<string[]>() : null; list.Add(D);
             }
         }
         static MobDef Mob(JToken t) { return new MobDef { name = (string)t["name"], color = (string)t["color"] ?? "#ffffff", bolt = (string)t["bolt"], r = (float)t["r"], spd = t["spd"] != null ? (float)t["spd"] : -1, ranged = t["ranged"] != null && (bool)t["ranged"], tank = t["tank"] != null && (bool)t["tank"], slowHit = t["slowHit"] != null && (bool)t["slowHit"], mech = (string)t["mech"] }; }
@@ -148,6 +148,7 @@ namespace Aldara
             return !SegHitsGate(ax, ay, bx, by);
         }
         // ---------- the flow field from the player ----------
+        public static void FlowNow() { FlowUpdate(true); }
         static void FlowUpdate(bool force)
         {
             var D = DM; if (!force && D.t - D.flowT < 0.2f) return; D.flowT = D.t; var P = AldaraPlayer.I;
@@ -254,6 +255,7 @@ namespace Aldara
         static bool CanUse(Def d, out string why)
         {
             var H = AldaraHero.I; why = null;
+            if (d.raid) { if (H.lvl < AldaraRaid.RAID_LVL_MIN) { why = d.name + " requires level " + AldaraRaid.RAID_LVL_MIN; return false; } return true; }
             if (H.lvl < DUN_LEVEL) { why = "Dungeons require level " + DUN_LEVEL; return false; }
             if (d.deep && H.lvl < d.rec - 3) { why = d.name + " requires level " + (d.rec - 3); return false; }
             if (!d.hidden && !Unlocked(d.i)) { why = "Clear " + List[d.i - 1].name + " first"; return false; }
@@ -274,7 +276,7 @@ namespace Aldara
             for (int t = 0; t < 40; t++) { float an = Rnd() * 6.283f, d = Mathf.Sqrt(Rnd()) * a.z, x = a.x + Mathf.Cos(an) * d, y = a.y + Mathf.Sin(an) * d; if (Clr(x, y) >= Mathf.Min(rad, 22) + 4 && Section(x, y) == s) return new Vector2(x, y); }
             return new Vector2(a.x, a.y);
         }
-        public static void Start(int i)
+        public static void Start(int i, int seed = -1)
         {
             var H = AldaraHero.I; var P = AldaraPlayer.I; if (!AldaraSave.Ready || DM != null || !H.alive) return;
             var d = List[i]; if (!CanUse(d, out string why)) { AldaraHud.Banner(why); return; }
@@ -284,6 +286,15 @@ namespace Aldara
             DM = M; AldaraWorld.Dun = true;
             var MS = AldaraMonsters.I; MS.EnterDungeon(out worldMons);
             int NRM = M.names.Length;
+            if (d.raid)
+            {
+                DStat.Start(d); H.target = null; if (AldaraSkills.I) AldaraSkills.I.queued = null;
+                AldaraAuto.questHunt = false; AldaraAuto.questWalk = null; AldaraQuests.Render(); if (AldaraPet.I) AldaraPet.I.placed = false;
+                if (AldaraWindows.I) AldaraWindows.I.Toggle("dun", false);
+                AldaraRaid.Init(d, i, seed > 0 ? seed : 1); FlowUpdate(true);
+                if (AldaraDungeonView.I) AldaraDungeonView.I.Enter(M);
+                return;
+            }
             for (int r = 0; r < NRM - 1; r++)
             {
                 int n = d.deep ? 7 + r * 2 : 6 + r * 2; var A = M.spawns[r]; if (A.Count == 0) continue;
@@ -307,10 +318,12 @@ namespace Aldara
         public static void Exit(string reason)
         {
             if (DM == null) return; var H = AldaraHero.I; var P = AldaraPlayer.I;
+            bool raid = AldaraRaid.On; AldaraRaid.OnExit();
             if (AldaraDungeonView.I) AldaraDungeonView.I.Leave();
             AldaraMonsters.I.LeaveDungeon(worldMons); worldMons = null; DM = null; AldaraWorld.Dun = false;
             P.x = ret.x; P.y = ret.y; H.target = null; if (AldaraSkills.I) AldaraSkills.I.queued = null; H.slowT = 0; if (AldaraPet.I) AldaraPet.I.placed = false;
-            if (reason == "fail") { AldaraHud.Banner("Dungeon failed"); DStat.Show("fail"); }
+            if (reason == "wipe") { }
+            else if (reason == "fail") { AldaraHud.Banner("Dungeon failed"); DStat.Show("fail"); }
             else if (reason == "left") { AldaraHud.Banner("You left the dungeon"); DStat.Show("left"); }
             AldaraQuests.Render(); AldaraSave.Dirty();
         }
@@ -327,6 +340,7 @@ namespace Aldara
         /// dungeonOnKill
         public static void OnKill(AldaraMonsters.Mon t)
         {
+            if (AldaraRaid.On) { AldaraRaid.OnKill(t); return; }
             t.respawnT = 1e9f; int NRK = DM.names.Length;
             while (open < NRK - 1 && RoomCleared(open))
             {
@@ -350,8 +364,9 @@ namespace Aldara
             }
             H.vialHp = Mathf.Min(AldaraItems.VIAL_MAX, H.vialHp + 2); H.vialMp = Mathf.Min(AldaraItems.VIAL_MAX, H.vialMp + 2);
             int sp = Clears(def.id) > 0 ? 1 : 2; AldaraTree.sp += sp; AldaraTree.spTotal += sp; AldaraHud.Banner("+" + sp + " Skill Point" + (sp > 1 ? "s" : "") + " (" + def.name + "): press K");
-            if (Random.value < 0.012f) { var w = AldaraItems.RollWings(lv); if (H.AddLoot(w)) AldaraHud.Banner("WINGS DROP: " + w.name + "!"); }
-            if (Random.value < 0.015f) { var a = AldaraItems.RollMythicArmor(lv); if (H.AddLoot(a)) AldaraHud.Banner("MYTHICAL ARMOR: " + a.name + "!"); }
+            if (Random.value < 0.012f) { var w = AldaraItems.RollWings(lv, 20); if (H.AddLoot(w)) AldaraHud.Banner("WINGS DROP: " + w.name + "!"); }
+            if (Random.value < 0.015f) { var a = AldaraItems.RollMythicArmor(lv); if (H.AddLoot(a)) { AldaraHud.Banner("MYTHICAL ARMOR: " + a.name + "!"); AldaraFx.Text(P.x, P.y - 110, a.name + "!", AldaraRules.Hex(AldaraItems.MythSetOf(a).glow)); } }
+            var rl = AldaraGear.MaybeDropRelic(i, lv, P.x, P.y); if (rl != null) DStat.loot.Add(rl);
             bool first = Best <= i; var ds = DunSave();
             if (!def.hidden) ds["best"] = Mathf.Max(Best, i + 1);
             ((JObject)ds["clears"])[def.id] = Clears(def.id) + 1;
@@ -374,6 +389,7 @@ namespace Aldara
             // the boss's abilities, only while you are in its room
             foreach (var m in AldaraMonsters.I.all.ToArray()) if (m.dun && m.boss && !m.dead && m.mech != null && SameRoom(m) && H.alive && !done) BossMech(m, dt, Vector2.Distance(new Vector2(P.x, P.y), new Vector2(m.x, m.y)));
             if (!H.alive) failT += dt; else failT = 0;
+            if (AldaraRaid.On) AldaraRaid.Tick(dt);
         }
         static float failT;
         public static string Status
@@ -433,7 +449,7 @@ namespace Aldara
         }
 
         // ---------- traps ----------
-        static float TrapDmg(float k) { return Mathf.Round(DunScale(idx).atk * k); }
+        static float TrapDmg(float k) { return AldaraRaid.On ? AldaraRaid.TrapDmg(k) : Mathf.Round(DunScale(idx).atk * k); }
         static float Ph(Trap t) { return ((((DM.t + t.off) % t.per) + t.per) % t.per) / t.per; }
         static bool InRot(Trap t, float x, float y, float pad) { float c = Mathf.Cos(-t.ang), s = Mathf.Sin(-t.ang), dx = x - t.x, dy = y - t.y, lx = dx * c - dy * s, ly = dx * s + dy * c; return Mathf.Abs(lx) < t.w / 2 + pad && Mathf.Abs(ly) < t.h / 2 + pad; }
         static float SegDist(float x, float y, float ax, float ay, float bx, float by) { float dx = bx - ax, dy = by - ay, l2 = dx * dx + dy * dy; if (l2 == 0) l2 = 1; float u = Mathf.Clamp01(((x - ax) * dx + (y - ay) * dy) / l2); return Mathf.Sqrt((x - ax - dx * u) * (x - ax - dx * u) + (y - ay - dy * u) * (y - ay - dy * u)); }

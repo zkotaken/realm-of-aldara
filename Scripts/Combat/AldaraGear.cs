@@ -31,6 +31,7 @@ namespace Aldara
             new Title { id = "conqueror", name = "Dungeon Conqueror", col = "#ffe07a", req = "Clear every dungeon", ok = () => new[] { "warrens", "crypt", "frozen", "forge", "void" }.All(d => DunClears(d) > 0), glow = true },
             new Title { id = "godforged", name = "Godforged", col = "#ff5ad8", req = "Own a complete Mythical armor set", ok = () => AldaraItems.OwnsFullMythSet(), glow = true },
             new Title { id = "relentless", name = "The Relentless", col = "#ff5a5a", req = "Clear dungeons 25 times in total", ok = () => DunClearsTotal() >= 25, glow = true },
+            new Title { id = "eclipsebreaker", name = "Breaker of the Eclipse", col = "#ffb04a", req = "Complete the Vault of the Eclipse raid", ok = () => AldaraRaid.Clears("eclipse") > 0, glow = true },
         };
         public static Title TitleById(string id) { foreach (var t in TITLES) if (t.id == id) return t; return null; }
         public static int UnlockedTitles() { int n = 0; foreach (var t in TITLES) if (t.ok()) n++; return n; }
@@ -46,6 +47,29 @@ namespace Aldara
         {
             if (relics == null) { relics = new Dictionary<string, RelicDef>(); var ta = Resources.Load<TextAsset>("relics"); if (ta) foreach (var r in Newtonsoft.Json.JsonConvert.DeserializeObject<RelicBook>(ta.text).relics) relics[r.id] = r; }
             if (it == null || it.type != "relic" || it.relic == null) return null; RelicDef d; return relics.TryGetValue(it.relic, out d) ? d : null;
+        }
+        static List<RelicDef> relicList;
+        static List<RelicDef> RelicList { get { if (relicList == null) { RelicDefOf(null); relicList = new List<RelicDef>(relics.Values); } return relicList; } }
+        /// every relic you hold, worn or packed: id -> best rarity + 1
+        static Dictionary<string, int> RelicsOwned()
+        {
+            var o = new Dictionary<string, int>(); System.Action<Item> add = it => { if (it != null && it.type == "relic" && it.relic != null) { int v; o.TryGetValue(it.relic, out v); o[it.relic] = Mathf.Max(v, RelicT(it) + 1); } };
+            foreach (var s in RELIC_SLOTS) add(H.Eq(s)); foreach (var it in H.inventory) add(it); return o;
+        }
+        /// dungeon bosses guard relics: the deeper the dungeon, the better the odds and the rarer the relic (relicRarity / rollRelic)
+        public static Item RollRelic(int i, int level)
+        {
+            float[] w = { 46 - i * 3, 30, 15 + i * 1.5f, 7 + i * 1.2f, 2 + i * 0.6f }; float tot = 0; foreach (var x in w) tot += x; float roll = Random.value * tot; var r = AldaraItems.RARITY[0];
+            for (int k = 0; k < 5; k++) { if (roll < w[k]) { r = AldaraItems.RARITY[k]; break; } roll -= w[k]; }
+            var owned = RelicsOwned(); var pool = RelicList.FindAll(d => !owned.ContainsKey(d.id) && !d.noDrop);
+            if (pool.Count == 0) pool = RelicList.FindAll(d => owned.ContainsKey(d.id) && owned[d.id] <= RELIC_T[r.k] && !d.noDrop);
+            if (pool.Count == 0) return null; var def = pool[Random.Range(0, pool.Count)];
+            return new Item { id = AldaraItems.itemSeq++, type = "relic", relic = def.id, name = def.name, rarity = r.k, color = r.c, lvl = level };
+        }
+        public static Item MaybeDropRelic(int i, int level, float x, float y)
+        {
+            if (Random.value >= 0.22f + i * 0.03f) return null; var it = RollRelic(i, level); if (it == null || !H.AddLoot(it)) return null;
+            AldaraFx.Text(x, y - 16 - 80, it.name + "!", it.Col); AldaraHud.Banner("RELIC FOUND: " + it.name + " (" + it.rarity + ")"); return it;
         }
         public static int RelicT(Item it) { int t; return it != null && it.rarity != null && RELIC_T.TryGetValue(it.rarity, out t) ? t : 0; }
         public static float RelicVal(Item it) { var d = RelicDefOf(it); return d == null ? 0 : d.v[RelicT(it)]; }

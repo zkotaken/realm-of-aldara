@@ -24,6 +24,8 @@ namespace Aldara
             public float lx, ly, dotT, dotTick, dotDmg, navIgnore;
             // dungeons: its section, its own speed, the boss's ability timers, line-of-sight caches
             public bool dun, enraged, summoned, slowHit, los, sees; public int room; public float spd = -1, mt, mt2, losT, seeT, spT, sp, spin; public string mech, color, bolt;
+            // raids: its kind, its tag in an encounter, shielded (immune) or exposed (+30% damage)
+            public string rk, rTag; public bool rImm, rVuln; public float immT;
         }
 
         void Awake()
@@ -348,6 +350,11 @@ namespace Aldara
             var h = new Hz { x = x, y = y, r = r, delay = delay, max = delay, dmg = dmg, col = col, slow = slow, icicle = icicle, pool = poolDur > 0, dur = poolDur, dps = dps };
             AldaraFx.Disc(x, y, r, new Color(col.r, col.g, col.b, 0.3f), delay); if (icicle) h.ic = AldaraFx.Icicle(); hazards.Add(h);
         }
+        /// a shockwave ring spreading from (x, y) (raids)
+        public void AddRing(float x, float y, float rr, float r1, float spd, float w, float dmg, Color col)
+        {
+            var h = new Hz { ring = true, x = x, y = y, rr = rr, r1 = r1, spd = spd, w = w, dmg = dmg, col = col }; h.go = AldaraFx.RingObj(col); hazards.Add(h);
+        }
         /// enemyShoot: a bolt from a dungeon boss
         public void EnemyShoot(Mon m, float ang, float dmg, Color col, float spd)
         {
@@ -418,7 +425,8 @@ namespace Aldara
         // ---- the hero hits a monster (hitMonster / monHurt / killMonster) ----
         public void HitMonster(Mon m, float dmg, Color col)
         {
-            if (m.dead) return; var H = AldaraHero.I; int g = m.lvl - H.lvl;
+            if (m.dead) return; if (AldaraRaid.Immune(m)) return; if (AldaraRaid.On && m.rVuln) dmg = Mathf.Round(dmg * 1.3f);
+            var H = AldaraHero.I; int g = m.lvl - H.lvl;
             if (g > 0 && Random.value < AldaraRules.LvMiss(g)) { m.aggroT = 6; AldaraFx.Text(m.x, m.y - m.r - 10, "Glance", new Color(0.6f, 0.6f, 0.6f)); dmg = Mathf.Max(1, Mathf.Round(dmg * 0.15f)); }
             dmg = Mathf.Max(1, Mathf.Round(dmg * AldaraRules.LvOut(g)));
             DStat.Hit(m, dmg); m.hp -= dmg; m.flash = 0.15f; m.aggroT = 6;

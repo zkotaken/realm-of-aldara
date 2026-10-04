@@ -21,7 +21,7 @@ namespace Aldara
             foreach (var t in new[] { new[] { "dun", "Dungeons" }, new[] { "raid", "Raids" } })
             { string k = t[0]; bool on = tab == k; var b = new Btn(t[1], () => { tab = k; dirty = true; }, on ? "btn_tab_on" : "btn_tab", 12, true, on ? C("#ffe2a0") : C("#b8c0d0")); tabs.Add(b); b.style.flexGrow = 1; b.style.height = 30; }
             ApplyGapLater(tabs);
-            if (tab == "raid") { T(v, "Raids are built for a party of five. They are not open in this version yet.", 11, C("#8f8a7c")); return; }
+            if (tab == "raid") { Raids(v); return; }
             T(v, "Dungeons are private runs: only you (and your party) can enter while your run lasts. Fight through every section, past traps and obstacles, and defeat the boss for big rewards. Each dungeon unlocks after you clear the one before it.", 10, C("#8f8a7c")).style.marginBottom = 8;
             bool lvlOk = H.lvl >= A.DUN_LEVEL;
             if (!lvlOk) Warn(v, "Requires level " + A.DUN_LEVEL + ". You are level " + H.lvl + ".");
@@ -44,6 +44,41 @@ namespace Aldara
         }
         static void ApplyGapLater(VisualElement e) { e.schedule.Execute(() => ApplyGap(e)); }
         static void Warn(VisualElement v, string s) { var w = T(v, s, 11, C("#ff9a7a")); w.style.marginBottom = 8; }
+        // the Raids tab
+        void Raids(VisualElement v)
+        {
+            var H = AldaraHero.I;
+            T(v, "Raids are long instances for up to 4 players (or one brave soul). Every encounter has mechanics and waves of enemies. Clearing an encounter saves a checkpoint: leave and you can continue from it later, and if the whole party falls (a wipe) everyone returns to it. Fallen players can be revived by an ally standing over them.", 10, C("#8f8a7c")).style.marginBottom = 8;
+            if (H.lvl < AldaraRaid.RAID_LVL_MIN) Warn(v, "Raids require level " + AldaraRaid.RAID_LVL_MIN + ". You are level " + H.lvl + ".");
+            if (A.Active) Warn(v, "You are in " + A.def.name + ". Leave or finish it first.");
+            foreach (var d in A.List)
+            {
+                if (!d.raid) continue; int cp = AldaraRaid.Cp(d.id), cl = AldaraRaid.Clears(d.id), best = AldaraRaid.BestTime(d.id);
+                bool can = H.lvl >= AldaraRaid.RAID_LVL_MIN && !A.Active && H.alive && A.Ready(d);
+                var c = E(v); Skin(c, "sup_row"); Pad(c, 8, 10); c.style.marginBottom = 7; if (cl > 0) { c.style.borderLeftWidth = 3; c.style.borderLeftColor = C("#e8c46a"); }
+                var hd = Row(c, 8); T(hd, d.name.ToUpper(), 13, C("#e8c46a"), true, true); var sp = E(hd); sp.style.flexGrow = 1;
+                T(hd, (cl > 0 ? "Conquered x" + cl : cp > 0 ? "In progress" : "Available").ToUpper(), 10, C("#aaaaaa"), false, false, false, 0.5f, false, false);
+                var de = T(c, d.desc, 11, C("#cccccc")); de.style.marginTop = 3;
+                var cps = new HashSet<int>(); foreach (var e in AldaraRaid.RENC) if (e.cpAfter >= 0) cps.Add(e.cpAfter);
+                var ul = E(c); ul.style.marginTop = 6; ul.style.marginBottom = 2;
+                for (int k = 0; k < d.encNames.Length; k++)
+                {
+                    var li = Row(ul, 6); li.style.paddingTop = li.style.paddingBottom = 1;
+                    var nb = T(li, (k + 1).ToString(), 12, C("#f2c46a"), false, true, false, 0, false, false); nb.style.minWidth = 18;
+                    T(li, d.encNames[k] + (cp > 0 && k < cp ? " (cleared)" : ""), 12, cp > 0 && cp == k ? C("#f7e3b0") : C("#cdbf9f"), false, false, false, 0, false, false);
+                    if (cps.Contains(k)) { var g = E(li); g.style.flexGrow = 1; T(li, "CHECKPOINT", 10.5f, C("#9a8e76"), false, false, false, 0.4f, false, false); }
+                }
+                var me = T(c, "Requires level " + AldaraRaid.RAID_LVL_MIN + " · Enemies match your level (at least " + d.rec + ") · Final boss: " + d.boss.name + (best > 0 ? " · Best time " + AldaraRaid.Fmt(best) : ""), 10, C("#88aa88")); me.style.marginTop = 2;
+                var bt = Row(c, 5, Justify.FlexEnd); bt.style.marginTop = 6; string id = d.id;
+                if (cp > 0)
+                {
+                    var b1 = B(bt, "Continue: " + d.encNames[cp], () => AldaraRaid.Enter(id, true), "btn_buy", 10); b1.Padding(4, 9); b1.Disabled = !can;
+                    var b2 = B(bt, "Start over", () => AldaraRaid.Enter(id, false), "btn", 10); b2.Padding(4, 9); b2.Disabled = !can;
+                }
+                else { var b = B(bt, "Enter raid", () => AldaraRaid.Enter(id, false), "btn_buy", 10); b.Padding(4, 9); b.Disabled = !can; }
+                ApplyGapLater(bt);
+            }
+        }
     }
 
     // The results window (dsShow): the run's damage, healing, kills, boss damage, damage taken and biggest hit, the
