@@ -137,6 +137,7 @@ namespace Aldara
             used = 0; paint.Clear(); var P = AldaraPlayer.I; float t = Ttime;
             var a = W2P(P.x, P.y); var b = W2P(P.x + 100, P.y); k = Mathf.Max(0.2f, Mathf.Abs(b.x - a.x) / 100f);
             if (!AldaraWorld.Dun) AldaraWaystones.Labels(W2P, k, (s1, sz, c1, ci, bo, x1, y1) => Lab(s1, sz, c1, ci, bo, x1, y1, 1, TextAnchor.LowerCenter, 0.15f));
+            { var wq = AldaraMapWin.wp; if (wq != null && !AldaraWorld.Dun && Mathf.Abs(wq.x - P.x) < 1920 && Mathf.Abs(wq.y - P.y) < 1080) { var gw = W2P(wq.x, wq.y); Lab((wq.name ?? "Waypoint") + "  " + Mathf.RoundToInt(Mathf.Sqrt((wq.x - P.x) * (wq.x - P.x) + (wq.y - P.y) * (wq.y - P.y)) / 60) + "m", 12, C("#bfffcf"), true, true, gw.x, gw.y - 268 * k + 6, 1, TextAnchor.LowerCenter, 0.15f); } }
             AldaraHeroFx.DrawPet(paint, W2P3, k);
             AldaraHeroFx.Draw(paint, W2P3, k);
             // a mythical pet carries its name over its head
@@ -432,14 +433,14 @@ namespace Aldara
                 g.LineTo(new Vector2(r.xMin, r.yMin + rad)); g.ArcTo(new Vector2(r.xMin, r.yMin), new Vector2(r.xMin + rad, r.yMin), rad); g.ClosePath();
             }
         }
-        // the quest marks and the waypoint on the minimap (qMinimap): 1400 px of world across the map
+        // the quest marks and the waypoint on the minimap (qMinimap): 4200 px of world across the map
         class MiniMarks : VisualElement
         {
             public MiniMarks() { pickingMode = PickingMode.Ignore; style.position = Position.Absolute; style.left = style.top = style.right = style.bottom = 0; generateVisualContent += Gen; }
             readonly List<Label> labs = new List<Label>();
             void Gen(MeshGenerationContext ctx)
             {
-                var P = AldaraPlayer.I; if (!P || AldaraFolk.I == null || AldaraWorld.Dun) { foreach (var l0 in labs) l0.style.display = DisplayStyle.None; return; } float S = contentRect.width; if (!(S > 1)) return; float s = S / 1400f, ox = P.x - 700, oy = P.y - 700;
+                var P = AldaraPlayer.I; if (!P || AldaraFolk.I == null || AldaraWorld.Dun) { foreach (var l0 in labs) l0.style.display = DisplayStyle.None; return; } float S = contentRect.width; if (!(S > 1)) return; float s = S / AldaraHudUI.MM_VIEW, ox = P.x - AldaraHudUI.MM_VIEW / 2, oy = P.y - AldaraHudUI.MM_VIEW / 2;
                 var g = ctx.painter2D; int li = 0;
                 AldaraWaystones.Minimap(g, ox, oy, s, S);
                 foreach (var kv in Q.QOBJ)

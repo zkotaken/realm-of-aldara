@@ -278,21 +278,67 @@ namespace Aldara
         /// levelColor: grey far below you, white even, yellow a bit above, orange tough, red very dangerous
         public static Color LvColor(int d) { return AldaraRules.Hex(d <= -6 ? "#8a8a8a" : d <= 2 ? "#e8e8e8" : d <= 4 ? "#ffe05a" : d <= 7 ? "#ff9a3a" : "#ff4a4a"); }
 
-        // ---------- minimap: a small top-down camera over the ground ----------
-        Camera mmCam; RenderTexture mmRT;
+        // ---------- minimap (drawMinimap): the browser's 1/40 picture of the realm, 4200 world units across ----------
+        public const float MM_VIEW = 4200f;
+        VisualElement mmImg; MiniWorld mmDots; float mmWorldW;
         void SetupMinimapCamera()
         {
-            mmRT = new RenderTexture(320, 320, 16) { name = "Minimap" };
-            var go = new GameObject("MinimapCamera"); go.transform.SetParent(transform, false); mmCam = go.AddComponent<Camera>();
-            mmCam.orthographic = true; mmCam.orthographicSize = 1400f / 2f / AldaraWorld.PX; mmCam.targetTexture = mmRT; mmCam.clearFlags = CameraClearFlags.SolidColor; mmCam.backgroundColor = new Color(0.12f, 0.3f, 0.48f);
-            mmCam.cullingMask = 1 << 0; mmCam.nearClipPlane = 1; mmCam.farClipPlane = 400; mmCam.transform.rotation = Quaternion.Euler(90, 0, 0);
-            mmView.style.backgroundImage = Background.FromRenderTexture(mmRT);
+            mmView.style.backgroundColor = new Color(5 / 255f, 5 / 255f, 10 / 255f);
+            var tex = Resources.Load<Texture2D>("map/minimap");
+            mmImg = new VisualElement { pickingMode = PickingMode.Ignore }; mmImg.style.position = Position.Absolute; if (tex) { mmImg.style.backgroundImage = Background.FromTexture2D(tex); var md = AldaraMapWin.Map; mmWorldW = Mathf.Round(md.WORLD_W / 40f) * 40f; mmImg.userData = Mathf.Round(md.WORLD / 40f) * 40f; }
+            mmView.Insert(0, mmImg); mmDots = new MiniWorld(); mmView.Insert(1, mmDots);
+            mmArrow.style.width = mmArrow.style.height = 8; mmArrow.style.left = mmArrow.style.top = StyleKeyword.Null; mmArrow.style.borderLeftWidth = mmArrow.style.borderRightWidth = mmArrow.style.borderTopWidth = mmArrow.style.borderBottomWidth = 1;
+            mmArrow.style.backgroundColor = AldaraRules.Hex("#6fc0ff");
         }
         void UpdateMinimap()
         {
-            var P = AldaraPlayer.I; if (!mmCam || !P) return;
-            var p = AldaraWorld.ToUnityFlat(P.x, P.y); mmCam.transform.position = new Vector3(p.x, 200, p.z);
-            mmArrow.style.rotate = new Rotate(new Angle(P.facing * Mathf.Rad2Deg + 90));
+            var P = AldaraPlayer.I; if (mmImg == null || !P) return; float S = mmView.contentRect.width; if (!(S > 1)) return; float s = S / MM_VIEW, ox = P.x - MM_VIEW / 2, oy = P.y - MM_VIEW / 2;
+            mmImg.style.left = -ox * s; mmImg.style.top = -oy * s; mmImg.style.width = mmWorldW * s; mmImg.style.height = (mmImg.userData is float h ? h : 0) * s;
+            mmArrow.style.left = S / 2 - 4; mmArrow.style.top = mmView.contentRect.height / 2 - 4; if (mmView.IndexOf(mmArrow) != mmView.childCount - 1) mmArrow.BringToFront();
+            mmDots.MarkDirtyRepaint();
+        }
+        // the monsters (red dots, gold when your quest wants them), bosses (diamonds, pinned to the edge when away),
+        // the way to Lorenmar when it is off the map, the screen's frame and the map waypoint
+        class MiniWorld : VisualElement
+        {
+            public MiniWorld() { pickingMode = PickingMode.Ignore; style.position = Position.Absolute; style.left = style.top = style.right = style.bottom = 0; generateVisualContent += Gen; }
+            static string qKind, qTarget; static int qZone;
+            static void CurQuest()
+            {
+                qKind = null; qTarget = null; var inst = AldaraQuests.FocusInst(); if (inst == null || AldaraQuests.IsReady(inst)) return; var d = AldaraQuests.Def(inst);
+                for (int k = 0; k < d.obj.Length; k++) if (!AldaraQuests.ObjDone(inst, k)) { var o = d.obj[k]; if (o.k == "kill" || o.k == "boss" || o.k == "collect") { qKind = "kill"; qTarget = o.t; } else if (o.k == "zone") { qKind = "zone"; qZone = o.z; } return; }
+            }
+            static bool QM(AldaraMonsters.Mon m) { return qKind == "kill" ? m.name == qTarget : qKind == "zone" && AldaraQuests.MonZone(m) == qZone; }
+            void Gen(MeshGenerationContext ctx)
+            {
+                var P = AldaraPlayer.I; var M = AldaraMonsters.I; if (!P || AldaraWorld.Dun) return; float S = contentRect.width; if (!(S > 1)) return;
+                float s = S / MM_VIEW, ox = P.x - MM_VIEW / 2, oy = P.y - MM_VIEW / 2; var g = ctx.painter2D;
+                try { CurQuest(); } catch { qKind = null; }
+                System.Func<float, float, bool> inView = (x, y) => x > ox && x < ox + MM_VIEW && y > oy && y < oy + MM_VIEW;
+                if (M != null)
+                {
+                    var red = new Color(1, 138 / 255f, 138 / 255f, 0.6f); var gold = AldaraRules.Hex("#ffe05a");
+                    foreach (var m in M.all) if (!m.dead && !m.boss && inView(m.x, m.y)) { bool q = QM(m); float r = q ? 1.5f : 1; Sq(g, (m.x - ox) * s, (m.y - oy) * s, r, q ? gold : red); }
+                    foreach (var m in M.all)
+                    {
+                        if (!m.boss) continue; float x = (m.x - ox) * s, y = (m.y - oy) * s; bool edge = !inView(m.x, m.y);
+                        if (edge) { x = Mathf.Clamp(x, 5, S - 5); y = Mathf.Clamp(y, 5, S - 5); } float r = edge ? 3.5f : 4.5f;
+                        g.BeginPath(); g.MoveTo(new Vector2(x, y - r)); g.LineTo(new Vector2(x + r, y)); g.LineTo(new Vector2(x, y + r)); g.LineTo(new Vector2(x - r, y)); g.ClosePath(); g.lineWidth = 1;
+                        if (m.dead) { g.strokeColor = AldaraRules.Hex("#777777"); g.Stroke(); } else { g.fillColor = QM(m) ? gold : AldaraRules.Hex("#ff3a3a"); g.Fill(); g.strokeColor = AldaraRules.Hex("#e0b64b"); g.Stroke(); }
+                    }
+                }
+                float tx = (AldaraWorld.CENTER.x - ox) * s, ty = (AldaraWorld.CENTER.y - oy) * s;
+                if (tx < 0 || tx > S || ty < 0 || ty > S) { g.fillColor = AldaraRules.Hex("#e0b64b"); g.BeginPath(); g.Arc(new Vector2(Mathf.Clamp(tx, 4, S - 4), Mathf.Clamp(ty, 4, S - 4)), 2.5f, 0, 360); g.Fill(); }
+                // the screen's frame: the browser's 1920 x 1080 view
+                float fw = 1920 * s, fh = 1080 * s; g.strokeColor = new Color(1, 1, 1, 0.25f); g.lineWidth = 1; g.BeginPath(); g.MoveTo(new Vector2(S / 2 - fw / 2, S / 2 - fh / 2)); g.LineTo(new Vector2(S / 2 + fw / 2, S / 2 - fh / 2)); g.LineTo(new Vector2(S / 2 + fw / 2, S / 2 + fh / 2)); g.LineTo(new Vector2(S / 2 - fw / 2, S / 2 + fh / 2)); g.ClosePath(); g.Stroke();
+                var w = AldaraMapWin.wp;
+                if (w != null)
+                {
+                    float x = (w.x - ox) * s, y = (w.y - oy) * s; bool edge = x < 6 || y < 6 || x > S - 6 || y > S - 6; x = Mathf.Clamp(x, 6, S - 6); y = Mathf.Clamp(y, 6, S - 6);
+                    var c = AldaraRules.Hex("#8ff0a0"); g.strokeColor = c; g.lineWidth = 1.5f; g.BeginPath(); g.Arc(new Vector2(x, y), edge ? 3 : 4.5f, 0, 360); g.Stroke(); if (!edge) { g.fillColor = c; g.BeginPath(); g.Arc(new Vector2(x, y), 1.5f, 0, 360); g.Fill(); }
+                }
+            }
+            static void Sq(Painter2D g, float x, float y, float r, Color c) { g.fillColor = c; g.BeginPath(); g.MoveTo(new Vector2(x - r, y - r)); g.LineTo(new Vector2(x + r, y - r)); g.LineTo(new Vector2(x + r, y + r)); g.LineTo(new Vector2(x - r, y + r)); g.ClosePath(); g.Fill(); }
         }
     }
 

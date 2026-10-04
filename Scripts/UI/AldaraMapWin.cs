@@ -93,7 +93,7 @@ namespace Aldara
             Sync();
         }
 
-        public class Marker { public string k, name, sub; public float x, y, r; public bool noWp; public Vector2 s; }
+        public class Marker { public string k, name, sub, mk; public float x, y, r; public bool noWp; public Vector2 s; }
         List<Marker> Markers()
         {
             var d = Map; var M = new List<Marker>(); var P = AldaraPlayer.I; var H = AldaraHero.I;
@@ -102,6 +102,16 @@ namespace Aldara
             var known = new HashSet<int>(); if (AldaraSave.Raw?["waystones"] is JArray ja) foreach (var v in ja) known.Add((int)v);
             foreach (var w in d.waystones) if (w.known || known.Contains(w.id)) M.Add(new Marker { k = "ws", x = w.x, y = w.y, name = w.n, sub = "Waystone. Travel here from any other waystone.", r = 8 });
             if (layers["camps"]) foreach (var c in d.camps) M.Add(new Marker { k = "camp", x = c.x, y = c.y, name = c.type + " camp", sub = "Level " + (c.lvl.HasValue ? c.lvl.Value.ToString() : "?") + " camp", r = 5 });
+            if (layers["lore"]) { var lm = AldaraLoreScenes.Mine; if (lm != null && lm.Count > 0) { AldaraLoreScenes.Load(); foreach (var v in lm) { if (v.Type != JTokenType.Integer) continue; int id = (int)v; if (id < 0 || id >= AldaraLoreScenes.ALL.Count) continue; var L = AldaraLoreScenes.ALL[id]; M.Add(new Marker { k = "lore", x = L.x, y = L.y, name = AldaraLoreScenes.MapName(L.k), sub = "A place you have explored", r = 5 }); } } }
+            try
+            {
+                if (AldaraQuests.QOBJ != null && !AldaraWorld.Dun)
+                {
+                    foreach (var kv in AldaraQuests.QOBJ) { string mk = AldaraQuests.Marker(kv.Key); if (mk == null) continue; var n = kv.Value; M.Add(new Marker { k = "quest", x = n.x, y = n.y, name = AldaraQuests.QNPC.ContainsKey(kv.Key) ? AldaraQuests.QNPC[kv.Key].name : kv.Key, sub = mk.EndsWith("low") ? "Quest giver (too low level yet)" : "Quest available", r = 8, mk = mk.Substring(0, 1) }); }
+                    var qw = AldaraQuests.Waypoint(); if (qw != null) M.Add(new Marker { k = "qwp", x = qw.x, y = qw.y, name = qw.label ?? "Quest objective", sub = "Your current quest leads here", r = 8 });
+                }
+            }
+            catch { }
             if (wp != null) M.Add(new Marker { k = "wp", x = wp.x, y = wp.y, name = wp.name ?? "Waypoint", sub = Mathf.RoundToInt(Vector2.Distance(new Vector2(wp.x, wp.y), new Vector2(P.x, P.y)) / 60) + "m from you. Click to clear.", r = 9, noWp = true });
             M.Add(new Marker { k = "me", x = P.x, y = P.y, name = H.heroName, sub = "You, level " + H.lvl, r = 9, noWp = true });
             return M;
@@ -134,7 +144,7 @@ namespace Aldara
             Label L(string text, float size, Color c, bool bold, TextAnchor a, float x, float y, float wdt)
             {
                 Label l; if (used < pool.Count) l = pool[used]; else { l = T(labels, "", 12, Color.white, true, true, false, 0, false, false); l.style.position = Position.Absolute; pool.Add(l); var sh = new TextShadow { color = new Color(0, 0, 0, 0.85f), offset = Vector2.zero, blurRadius = 3 }; l.style.textShadow = sh; }
-                used++; l.style.display = DisplayStyle.Flex; l.text = text; l.style.fontSize = size; l.style.color = c; l.style.unityFontDefinition = FontDefinition.FromFont(Font(true, bold));
+                used++; l.style.unityTextOutlineWidth = 0; l.style.display = DisplayStyle.Flex; l.text = text; l.style.fontSize = size; l.style.color = c; l.style.unityFontDefinition = FontDefinition.FromFont(Font(true, bold));
                 l.style.unityTextAlign = a; l.style.width = wdt; l.style.left = a == TextAnchor.MiddleLeft ? x : x - wdt / 2; l.style.top = y - size * 0.7f; return l;
             }
             void Frame()
@@ -157,8 +167,9 @@ namespace Aldara
                 foreach (var m in M) { m.s = w.ToScreen(m.x, m.y); if (mouse.x < 0) continue; float dd = Vector2.Distance(mouse, m.s); if (dd < Mathf.Max(10, m.r + 4) && dd < hd) { hd = dd; hover = m; } }
                 foreach (var m in M)
                 {
-                    if ((m.k == "boss" || m.k == "town" || m.k == "me" || m.k == "ws") && (z > w.fit * 1.6f || m.k == "me" || m.k == "town"))
+                    if ((m.k == "boss" || m.k == "town" || m.k == "me" || m.k == "qwp" || m.k == "ws") && (z > w.fit * 1.6f || m.k == "me" || m.k == "town"))
                         L(m.name.ToUpper(), 11, m.k == "boss" ? C("#ffb0a0") : m.k == "me" ? C("#bfe4ff") : m.k == "ws" ? C("#bfeeff") : C("#ffe8a0"), true, TextAnchor.MiddleLeft, m.s.x + 14, m.s.y, 300);
+                    if (m.k == "quest") { var ql = L(m.mk, 15, m.sub.Contains("too low") ? C("#aaaaaa") : C("#ffd35a"), true, TextAnchor.MiddleCenter, m.s.x, m.s.y, 30); ql.style.unityTextOutlineWidth = 0.3f; ql.style.unityTextOutlineColor = Color.black; }
                     if (m.k == "boss") L("B", 9, Color.white, true, TextAnchor.MiddleCenter, m.s.x, m.s.y + 0.5f, 20);
                 }
                 for (int i = used; i < pool.Count; i++) pool[i].style.display = DisplayStyle.None;
@@ -199,6 +210,8 @@ namespace Aldara
                     float x = m.s.x, y = m.s.y; if (x < -30 || x > W + 30 || y < -30 || y > H + 30) continue; bool hv = m == hover; var c = new Vector2(x, y);
                     switch (m.k)
                     {
+                        case "lore": Poly(p, new[] { c + new Vector2(-4, -4), c + new Vector2(4, -4), c + new Vector2(4, 4), c + new Vector2(-4, 4) }, C("#e8d8a0"), C("#5a4a20"), 1); break;
+                        case "qwp": { float r = 8 + Mathf.Sin(t * 4) * 1.5f; Poly(p, new[] { c + new Vector2(0, -r), c + new Vector2(r * 0.8f, 0), c + new Vector2(0, r), c + new Vector2(-r * 0.8f, 0) }, C("#ffd35a"), Color.black, 1); break; }
                         case "camp": Disc(p, c, hv ? 4.5f : 3, new Color(1, 120 / 255f, 100 / 255f, 0.75f)); Ring(p, c, hv ? 4.5f : 3, 1.5f, Color.black); break;
                         case "boss": { float r = hv ? 11 : 8; Poly(p, new[] { c + new Vector2(0, -r), c + new Vector2(r, 0), c + new Vector2(0, r), c + new Vector2(-r, 0) }, C("#ff3a3a"), C("#ffd35a"), 2); break; }
                         case "town": Ring(p, c, hv ? 14 : 11, 2, C("#ffe8a0")); Disc(p, c, 4, C("#ffe8a0")); break;
