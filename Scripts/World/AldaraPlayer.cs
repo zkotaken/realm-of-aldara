@@ -69,12 +69,12 @@ namespace Aldara
                 facing = Mathf.Atan2(dy, dx);
                 if (hero) hero.target = null;
             }
-            else if (hero && hero.Steer(dt, out float ang))
+            else if (hero && hero.Steer(dt, out float ang, out float mul))
             {
-                float sp = PSpeed();
+                float sp = PSpeed() * mul;
                 x = Mathf.Clamp(x + Mathf.Cos(ang) * sp * dt, 20, AldaraWorld.WORLD_W - 20);
                 y = Mathf.Clamp(y + Mathf.Sin(ang) * sp * dt, 20, AldaraWorld.WORLD_H - 20);
-                facing = ang;
+                if (mul >= 1) facing = ang;
             }
             CapsuleSlide(lx, ly);
             if (AldaraWorld.BlockedAt(x, y)) { var f = FreeSpotNear(x, y); x = f.x; y = f.y; }

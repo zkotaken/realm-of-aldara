@@ -21,7 +21,7 @@ namespace Aldara
             public float wanderT, wx, wy, atkCd, respawnT, flash, hurtT, engT, enrT, aggroT, slowT, stunT, strT, walkT, lift, face = Mathf.PI / 2, faceA; public int str;
             public bool dead, hasFaceA; public Act act; public float[] mcd;
             public GameObject view; public AldaraMonsterAnimator anim; public Transform model;
-            public float lx, ly, dotT, dotTick, dotDmg;
+            public float lx, ly, dotT, dotTick, dotDmg, navIgnore;
         }
 
         void Awake()

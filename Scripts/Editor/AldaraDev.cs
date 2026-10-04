@@ -52,5 +52,19 @@ namespace Aldara
             File.WriteAllBytes(AldaraImport.INBOX + "/" + file + ".png", t.EncodeToPNG()); cam.targetTexture = null; Object.Destroy(rt); Object.Destroy(rig);
             return id;
         }
+
+        /// in play mode: a pet at rest, three-quarter view, saved to the inbox
+        public static string PetShot(string id, string file, float size = 1.5f)
+        {
+            var home = new Vector3(-8200, 0, -8000); var rig = new GameObject("PetRig"); rig.transform.position = home;
+            var pf = Resources.Load<GameObject>("PetPrefabs/Pet_" + id); if (!pf) return "no prefab";
+            var g = Object.Instantiate(pf, rig.transform, false); g.transform.localRotation = Quaternion.Euler(0, 90 + (Mathf.PI / 2 + 0.6f) * Mathf.Rad2Deg, 0);
+            var cg = new GameObject("cam"); cg.transform.SetParent(rig.transform, false); var cam = cg.AddComponent<Camera>(); cam.orthographic = true; cam.clearFlags = CameraClearFlags.SolidColor; cam.backgroundColor = new Color(0.235f, 0.235f, 0.275f, 1);
+            cam.orthographicSize = size; cam.transform.localPosition = new Vector3(0, size * 0.6f, -12); cam.transform.localRotation = Quaternion.Euler(8, 0, 0); cam.nearClipPlane = 0.1f; cam.farClipPlane = 50;
+            var rt = new RenderTexture(300, 300, 24, RenderTextureFormat.ARGB32) { antiAliasing = 4 }; cam.targetTexture = rt;
+            Step(6); cam.Render(); RenderTexture.active = rt; var t = new Texture2D(300, 300, TextureFormat.RGBA32, false); t.ReadPixels(new Rect(0, 0, 300, 300), 0, 0); t.Apply(); RenderTexture.active = null;
+            File.WriteAllBytes(AldaraImport.INBOX + "/" + file + ".png", t.EncodeToPNG()); cam.targetTexture = null; Object.Destroy(rt); Object.Destroy(rig);
+            return "ok";
+        }
 }
 }

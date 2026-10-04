@@ -77,6 +77,8 @@ namespace Aldara
             if (queued == null) return false; var sk = Get(queued); queued = null;
             if (!Ready(sk)) return false; CastTarget(t, new Vector2(t.x, t.y), sk); return true;
         }
+        public void CastSelfPublic(SkillDef sk) { CastSelf(sk); }
+        public void CastTargetPublic(AldaraMonsters.Mon t, SkillDef sk) { CastTarget(t, new Vector2(t.x, t.y), sk); }
         void CastSelf(SkillDef sk)
         {
             Spend(sk); AldaraFx.Text(P.x, P.y - 42, sk.name, AldaraRules.Hex("#9fb4ff")); H.PlaySkill(sk.id);

@@ -82,6 +82,7 @@ namespace Aldara
         bool Interact()
         {
             if (AldaraLore.IsOpen) { AldaraLore.Close(); return true; }
+            { var ws = AldaraWaystones.Near(); if (ws != null) { AldaraWaystones.Open(ws); return true; } }
             var it = Interactable(); if (it == null) return false;
             if (it.lore >= 0) AldaraLore.Open(it.lore); else if (it.npc != null) AldaraQuestDlg.Open(it.npc); else if (it.node != null) Q.StartGather(it.node);
             return true;
@@ -123,6 +124,7 @@ namespace Aldara
         {
             used = 0; paint.Clear(); var P = AldaraPlayer.I; float t = Ttime;
             var a = W2P(P.x, P.y); var b = W2P(P.x + 100, P.y); k = Mathf.Max(0.2f, Mathf.Abs(b.x - a.x) / 100f);
+            AldaraWaystones.Labels(W2P, k, (s1, sz, c1, ci, bo, x1, y1) => Lab(s1, sz, c1, ci, bo, x1, y1, 1, TextAnchor.LowerCenter, 0.15f));
             AldaraHeroFx.DrawPet(paint, W2P3, k);
             AldaraHeroFx.Draw(paint, W2P3, k);
             // a mythical pet carries its name over its head
@@ -381,6 +383,7 @@ namespace Aldara
             {
                 var P = AldaraPlayer.I; if (!P || AldaraFolk.I == null) return; float S = contentRect.width; if (!(S > 1)) return; float s = S / 1400f, ox = P.x - 700, oy = P.y - 700;
                 var g = ctx.painter2D; int li = 0;
+                AldaraWaystones.Minimap(g, ox, oy, s, S);
                 foreach (var kv in Q.QOBJ)
                 {
                     string mk = Q.Marker(kv.Key); if (mk == null) continue; var p = AldaraFolk.Pos(kv.Key); if (!p.HasValue) continue;

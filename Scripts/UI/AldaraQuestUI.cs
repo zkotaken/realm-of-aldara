@@ -66,7 +66,7 @@ namespace Aldara
                     qq.RegisterCallback<MouseEnterEvent>(e => { if (!f) qq.style.backgroundImage = Background.FromTexture2D(bgHover); });
                     qq.RegisterCallback<MouseLeaveEvent>(e => { if (!f) qq.style.backgroundImage = StyleKeyword.None; });
                     string id = inst.id;
-                    qq.RegisterCallback<ClickEvent>(e => { Q.S.focus = id; AldaraHud.Banner("Following: " + Q.Def(Q.InstOf(id)).title); Q.Render(); e.StopPropagation(); });
+                    qq.RegisterCallback<ClickEvent>(e => { AldaraAuto.ClickQuest(id); e.StopPropagation(); });
                     Tx(qq, d.title.ToUpper(), 12.5f, cls == "main" ? C("#ffd24a") : cls == "side" ? C("#bcdcf8") : C("#f4c8a4"), true, true);
                     if (d.main != 0) Tx(qq, "Chapter " + d.ch, 9.5f, C("#a89a70")).style.letterSpacing = 0.5f;
                     if (ready) { var t = Q.QNPC.TryGetValue(d.turn ?? "", out Q.Npc tn) ? tn.name : "the quest giver"; Tx(qq, "Return to " + t, 11.5f, C("#9fe09f")).style.marginTop = 1; }
@@ -77,7 +77,14 @@ namespace Aldara
                             Tx(qq, s, 11.5f, dn ? C("#80b080") : C("#e8e2d0")).style.marginTop = 1;
                         }
                 }
-                if (list.Count > 0) { var s = Tx(root, "Follow the gold marker, or turn on Auto-Combat (" + AldaraKeys.Name(AldaraKeys.KeyOf("auto")) + ") and click a quest", 10, C("#999999")); s.style.marginTop = 6; s.style.width = 262; }
+                if (list.Count > 0)
+                {
+                    bool hunt = AldaraAuto.questHunt && AldaraAuto.on;
+                    string txt = hunt ? "Auto-questing. Click the quest to stop." : AldaraAuto.on ? "Click a quest to auto-quest it" : "Follow the gold marker, or turn on Auto-Combat (" + AldaraKeys.Name(AldaraKeys.KeyOf("auto")) + ") and click a quest";
+                    var s = Tx(root, txt, 10, hunt ? C("#9fe09f") : AldaraAuto.on ? C("#e0b64b") : C("#999999")); s.style.marginTop = 6; s.style.width = 262;
+                }
+                // #questBox.hunting: a green fade from the right
+                root.style.backgroundImage = AldaraAuto.questHunt && AldaraAuto.on ? new StyleBackground(Background.FromTexture2D(GradR(C("#2a5a1a", 0.33f)))) : new StyleBackground(StyleKeyword.None);
             }
         }
 

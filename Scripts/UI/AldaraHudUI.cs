@@ -184,7 +184,7 @@ namespace Aldara
                 int idx = i; s.root.RegisterCallback<ClickEvent>(e => { if (AldaraSkills.I) AldaraSkills.I.UseSlot(idx); });
                 slots.Add(s);
             }
-            var ab = Img("autobtn_off", RectR("autoBtn")); ab.pickingMode = PickingMode.Position;
+            autoBtn = Img("autobtn_off", RectR("autoBtn")); autoBtn.pickingMode = PickingMode.Position; autoBtn.RegisterCallback<ClickEvent>(e => AldaraAuto.Set(!AldaraAuto.on));
             hpVial = Img("vial_hp", RectR("hpVial")); mpVial = Img("vial_mp", RectR("mpVial"));
             var vn = L["texts"]["vial_n"]; var vr = R(vn["rect"]); var hvr = RectR("hpVial");
             hpVialN = Txt("vial_n", hpVial, hvr); mpVialN = Txt("vial_n", mpVial, hvr);
@@ -235,6 +235,7 @@ namespace Aldara
         // ---------- per frame ----------
         float bannerT; string bannerText;
         public static void ShowBanner(string s) { if (I) { I.bannerText = s; I.bannerT = 1.4f; } }
+        VisualElement autoBtn; bool autoShown;
         void Update()
         {
             if (root == null) return; var H = AldaraHero.I; var P = AldaraPlayer.I;
@@ -254,6 +255,7 @@ namespace Aldara
             xpClip.style.width = xpW * Mathf.Clamp01(H.xp / H.xpNeed); xpT.text = H.xp.ToString("N0") + " / " + H.xpNeed.ToString("N0") + " XP";
             hpVial.style.display = H.vialHp > 0 ? DisplayStyle.Flex : DisplayStyle.None; mpVial.style.display = H.vialMp > 0 ? DisplayStyle.Flex : DisplayStyle.None;
             hpVialN.text = H.vialHp.ToString(); mpVialN.text = H.vialMp.ToString();
+            if (autoBtn != null && autoShown != AldaraAuto.on) { autoShown = AldaraAuto.on; var at = Tex(autoShown ? "autobtn_on" : "autobtn_off"); if (at) autoBtn.style.backgroundImage = Background.FromTexture2D(at); }
             var S = AldaraSkills.I;
             for (int i = 0; i < slots.Count; i++)
             {

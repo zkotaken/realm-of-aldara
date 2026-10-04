@@ -16,7 +16,7 @@ namespace Aldara
         public float xp, xpNeed = 100, gold;
         public int str, agi, vit, ene; public float baseAtk, baseHp;
         public float atk, hp, maxHp, mana, maxMana, speed = 220;
-        public float atkCd, slowT, hurt, atkBuff, hasteBuff, shield, shieldT; public bool alive = true;
+        public float atkCd, slowT, hurt, atkBuff, hasteBuff, shield, shieldT; public bool alive = true, aiming;
         public AldaraMonsters.Mon target;
         int combo; float lastSwing, deadAt = -1, lastFight = -99;
         AldaraPlayer P; AldaraCharacterAnimator anim;
@@ -96,13 +96,13 @@ namespace Aldara
             Recompute(); AldaraSave.Dirty();
             AldaraHud.Banner(changed > 0 ? "Equipped best loot (" + changed + " slot" + (changed > 1 ? "s" : "") + " upgraded)" : "Already wearing the best you have");
         }
-        public bool DrinkVial(bool health)
+        public bool DrinkVial(bool health, bool auto = false)
         {
             if (!alive) return false;
-            if ((health ? vialHp : vialMp) <= 0) { AldaraFx.Text(P.x, P.y - 26, "No " + (health ? "Health" : "Mana") + " Vials", AldaraRules.Hex("#aaaabb")); return false; }
+            if ((health ? vialHp : vialMp) <= 0) { if (!auto) AldaraFx.Text(P.x, P.y - 26, "No " + (health ? "Health" : "Mana") + " Vials", AldaraRules.Hex("#aaaabb")); return false; }
             if ((health ? vialCdHp : vialCdMp) > 0) return false;
-            if (health && hp >= maxHp) { AldaraFx.Text(P.x, P.y - 26, "HP already full", AldaraRules.Hex("#aaaabb")); return false; }
-            if (!health && mana >= maxMana) { AldaraFx.Text(P.x, P.y - 26, "MP already full", AldaraRules.Hex("#aaaabb")); return false; }
+            if (health && hp >= maxHp) { if (!auto) AldaraFx.Text(P.x, P.y - 26, "HP already full", AldaraRules.Hex("#aaaabb")); return false; }
+            if (!health && mana >= maxMana) { if (!auto) AldaraFx.Text(P.x, P.y - 26, "MP already full", AldaraRules.Hex("#aaaabb")); return false; }
             if (health) { vialHp--; vialCdHp = 2; float amt = Mathf.Round(maxHp * 0.4f); hp = Mathf.Min(maxHp, hp + amt); AldaraFx.Text(P.x, P.y - 26, "+" + amt + " HP", AldaraRules.Hex("#7fe07f")); }
             else { vialMp--; vialCdMp = 2; float amt = Mathf.Round(maxMana * 0.5f); mana = Mathf.Min(maxMana, mana + amt); AldaraFx.Text(P.x, P.y - 26, "+" + amt + " MP", AldaraRules.Hex("#8aa8ff")); }
             AldaraSave.Dirty(); return true;
@@ -128,7 +128,8 @@ namespace Aldara
         {   // rollDmg: War Cry, the tree's damage bonus, and its critical strikes (x1.6)
             float b = atkBuff > 0 ? 1.3f : 1; float d = atk * mult * b * (0.8f + Random.value * 0.5f) * (1 + AldaraTree.T("dmg"));
             float cr = AldaraTree.T("crit"); if (cr > 0 && Random.value < cr) { d *= 1.6f; critFrame = Time.frameCount; }
-            return Mathf.Round(d);
+            d = Mathf.Round(d); if (AldaraAuto.on) d = Mathf.Max(1, Mathf.Round(d * AldaraAuto.DMG));   // auto-combat deals 25% less
+            return d;
         }
         float AttackRange(AldaraMonsters.Mon t) { return cls == "archer" ? 280 : cls == "mage" ? 210 : t.r + 34; }
         float AtkCdNow() { return ATK_CD[cls] * (hasteBuff > 0 ? 0.6f : 1); }
@@ -209,7 +210,7 @@ namespace Aldara
             {
                 var w = AldaraCamera.I.ScreenToWorldPx(mouse.position.ReadValue());
                 float gy = AldaraWorld.HeightPx(P.x, P.y);
-                if (AldaraQuestWorld.I && AldaraQuestWorld.I.Click(w.x, w.y)) { UpdateShots(dt); return; }
+                if (AldaraWaystones.Click(w.x, w.y) || AldaraQuestWorld.I && AldaraQuestWorld.I.Click(w.x, w.y)) { UpdateShots(dt); return; }
                 AldaraMonsters.Mon best = null; float bd = 40;
                 foreach (var m in AldaraMonsters.I.all)
                 {
@@ -225,23 +226,53 @@ namespace Aldara
             if (kb != null && kb.tabKey.wasPressedThisFrame) target = AldaraMonsters.I.FindNearest(P.x, P.y, 700);
             if (AldaraKeys.Pressed("hp")) DrinkVial(true);
             if (AldaraKeys.Pressed("mp")) DrinkVial(false);
+            if (AldaraKeys.Pressed("auto") && !AldaraHud.Typing) AldaraAuto.Set(!AldaraAuto.on);
+            AldaraAuto.Tick(dt);
+            if (target == null || target.dead) aiming = false;
             if (anim) anim.combat = (target != null && !target.dead) || Time.time - lastFight < 4f;
             UpdateShots(dt);
         }
         bool InRange(AldaraMonsters.Mon t) { return Mathf.Sqrt((t.x - P.x) * (t.x - P.x) + (t.y - P.y) * (t.y - P.y)) <= AttackRange(t); }
 
-        /// called by AldaraPlayer when no movement key is held: chase the target into range and attack it
-        public bool Steer(float dt, out float ang)
+        /// called by AldaraPlayer when no movement key is held: auto-combat picks a target; chase the target into range
+        /// (around mountains) and attack it; an archer on auto backs away from monsters that get close; auto-questing
+        /// walks toward the quest when there is nothing to fight. mul is the share of the walking speed.
+        public bool Steer(float dt, out float ang, out float mul)
         {
-            ang = 0; if (!alive || target == null) return false;
-            if (target.dead) { target = null; return false; }
-            float d = Mathf.Sqrt((target.x - P.x) * (target.x - P.x) + (target.y - P.y) * (target.y - P.y));
-            if (d > AttackRange(target)) { ang = Mathf.Atan2(target.y - P.y, target.x - P.x); return true; }
-            P.facing = Mathf.Atan2(target.y - P.y, target.x - P.x);
-            if (atkCd <= 0)
+            ang = 0; mul = 1; if (!alive) return false;
+            if (AldaraAuto.on) AldaraAuto.FindTarget(dt);
+            if (target != null && target.dead) target = null;
+            if (target != null)
             {
-                atkCd = AtkCdNow();
-                if (!(AldaraSkills.I && AldaraSkills.I.TryQueued(target))) BasicAttack(target);
+                var t = target; float d = Mathf.Sqrt((t.x - P.x) * (t.x - P.x) + (t.y - P.y) * (t.y - P.y));
+                aiming = d <= AttackRange(t);
+                if (!aiming)
+                {
+                    var na = AldaraNav.Angle(t.x, t.y);
+                    if (na == null) { t.navIgnore = Time.time + 12; target = null; return false; }
+                    ang = na.Value; return true;
+                }
+                P.facing = Mathf.Atan2(t.y - P.y, t.x - P.x);
+                bool back = AldaraAuto.on && cls == "archer" && d < 130;
+                if (atkCd <= 0)
+                {
+                    atkCd = AtkCdNow(); if (AldaraAuto.on) atkCd *= AldaraAuto.ATK;
+                    var S = AldaraSkills.I;
+                    if (!(S && S.TryQueued(t)))
+                    {
+                        SkillDef sk = null; if (AldaraAuto.on && !(AldaraAuto.skT > 0)) { sk = AldaraAuto.PickSkill(t); if (sk != null) AldaraAuto.skT = AldaraAuto.SK_GAP; }
+                        if (sk != null) { if (sk.kind == "target") S.CastTargetPublic(t, sk); else S.CastSelfPublic(sk); }
+                        else BasicAttack(t);
+                    }
+                }
+                if (back && target != null) { ang = P.facing + Mathf.PI; mul = 0.45f; return true; }
+                return false;
+            }
+            aiming = false;
+            var w = AldaraAuto.on && AldaraAuto.questHunt ? AldaraAuto.questWalk : null;
+            if (w != null)
+            {   // no quest monster alive: walk toward where they live
+                var na = AldaraNav.Angle(w.x, w.y); ang = na ?? Mathf.Atan2(w.y - P.y, w.x - P.x); return true;
             }
             return false;
         }
