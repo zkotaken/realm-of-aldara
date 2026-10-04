@@ -23,7 +23,7 @@ namespace Aldara
         static Base B(string id)
         {
             Base b; if (bases.TryGetValue(id, out b)) return b;
-            var ta = Resources.Load<TextAsset>("Gear/hero_" + id); if (!ta) { bases[id] = null; return null; }
+            var ta = Resources.Load<TextAsset>("Gear/hero_" + id + "_meta"); if (!ta) { bases[id] = null; return null; }
             b = new Base { meta = JObject.Parse(ta.text), pack = AldaraGearPack.Load("Gear/gear_" + id) };
             foreach (var kv in (JObject)b.meta["info"]["rig"]) b.rig[kv.Key] = (int)kv.Value;
             foreach (var kv in (JObject)b.meta["V"]["weapons"]) b.great.Add(kv.Key.Split('|')[0]);
@@ -32,7 +32,7 @@ namespace Aldara
         static JObject Pieces(string cls)
         {
             JObject p; if (pieces.TryGetValue(cls, out p)) return p;
-            var ta = Resources.Load<TextAsset>("Gear/pieces_" + cls); p = ta ? JObject.Parse(ta.text) : new JObject(); pieces[cls] = p; return p;
+            var ta = Resources.Load<TextAsset>("Gear/pieces_" + cls + "_meta"); p = ta ? JObject.Parse(ta.text) : new JObject(); pieces[cls] = p; return p;
         }
         static AldaraGearPack PiecePack(string cls) { return AldaraGearPack.Load("Gear/pieces_" + cls); }
         /// which body a hero needs: the knight swaps to the greatsword body for two-handed weapons
