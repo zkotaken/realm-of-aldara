@@ -91,7 +91,8 @@ namespace Aldara
             shownFacing = Mathf.LerpAngle(shownFacing * Mathf.Rad2Deg, facing * Mathf.Rad2Deg, 1 - Mathf.Exp(-turnRate * dt)) * Mathf.Deg2Rad;
             // browser facing 0 = east (+x), PI/2 = south (Unity -z). Unity yaw: 0 = +z, 90 = +x
             if (model) model.localRotation = Quaternion.Euler(0, 90 + shownFacing * Mathf.Rad2Deg, 0);
-            if (anim) anim.SetMoving(Moving, MovingBack, mv / Mathf.Max(dt, 1e-4f));
+            // with wings you fly: no running gait (the browser's _movingNow is false while hovering)
+            if (anim) anim.SetMoving(Moving && !wings, MovingBack, mv / Mathf.Max(dt, 1e-4f));
         }
 
         // ---- collision: port of the browser's capsule slide ----

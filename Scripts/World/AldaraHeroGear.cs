@@ -52,6 +52,8 @@ namespace Aldara
         class Wing { public Transform n, f; public int sd; public bool fairy; }
         readonly List<Wing> wings = new List<Wing>();
         AldaraCharacterAnimator anim;
+        /// the browser's facing (ry) for the wings' turn
+        public float ry;
 
         void Init()
         {
@@ -185,13 +187,45 @@ namespace Aldara
         void Hide(Transform t) { if (!t || !t.gameObject.activeSelf) return; t.gameObject.SetActive(false); hidden.Add(t); }
 
         // ---- cloth and wings (plSecondary) ----
-        /// the browser's facing (ry) for the wings' turn; set by whoever turns the model
-        public float ry;
+        // ---- flying with wings (updateFly, FLY_STYLE): a bobbing hover, legs trailing, wings beating ----
+        public bool flying; public float flyPh, flyM, flyH;
+        static readonly Dictionary<string, float[]> FLY_STYLE = new Dictionary<string, float[]> {   // rate, rateM, base, climb, bob, amp
+            { "knight", new[] { 2.0f, 1.6f, 13, 6, 4.2f, 0.5f } }, { "mage", new[] { 1.5f, 1.2f, 26, 5, 2.6f, 0.2f } }, { "archer", new[] { 3.3f, 2.4f, 16, 10, 4.5f, 0.36f } } };
+        float lastX, lastY; bool haveLast;
         void LateUpdate()
         {
-            if (T == null || (panels.Count == 0 && cape.Count == 0 && wings.Count == 0)) return;
-            var ax = anim ? anim.aux : new float[13]; float t = Time.time;
-            var PL = AldaraPlayer.I; if (PL && transform.parent == PL.transform) ry = Mathf.Atan2(Mathf.Cos(PL.facing), Mathf.Sin(PL.facing));
+            if (T == null) return;
+            var PL = AldaraPlayer.I; bool isPlayer = PL && transform.parent == PL.transform;
+            flying = isPlayer && wings.Count > 0;
+            if (isPlayer) ry = Mathf.Atan2(Mathf.Cos(PL.facing), Mathf.Sin(PL.facing));
+            float dt = Mathf.Min(0.05f, Time.deltaTime), t = Time.time;
+            float[] FS = null;
+            if (flying)
+            {
+                FS = FLY_STYLE.ContainsKey(cls) ? FLY_STYLE[cls] : FLY_STYLE["knight"];
+                float mv = haveLast ? Mathf.Sqrt((PL.x - lastX) * (PL.x - lastX) + (PL.y - lastY) * (PL.y - lastY)) / Mathf.Max(dt, 1e-4f) / 60f : 0; lastX = PL.x; lastY = PL.y; haveLast = true;
+                float target = Mathf.Min(1, mv / 2.6f); flyM += (target - flyM) * Mathf.Min(1, dt * (target > flyM ? 4 : 2.5f));
+                flyPh += dt * (FS[0] + FS[1] * flyM); flyH = FS[2] + flyM * FS[3] - FS[4] * Mathf.Sin(flyPh);
+                transform.localPosition = new Vector3(0, flyH / AldaraWorld.PX / AldaraView.TCP, 0);
+            }
+            else if (isPlayer && transform.localPosition.y != 0) { transform.localPosition = Vector3.zero; flyM = 0; }
+            if (panels.Count == 0 && cape.Count == 0 && wings.Count == 0) return;
+            var ax = (float[])(anim ? anim.aux : new float[13]).Clone();
+            // legs trail and the body leans into the flight (poseP3, o.hover > 0)
+            if (flying)
+            {
+                bool busy = anim && anim.Busy; float ph = flyPh, m = flyM; float add = 0, rzA = float.NaN;
+                if (cls == "knight") { if (!busy) for (int k = 0; k < 2; k++) { ax[k * 4] = 0.05f + 0.35f * m + Mathf.Sin(ph + k * 0.3f) * 0.03f; ax[k * 4 + 3] = 0.12f + 0.3f * m; ax[k * 4 + 1] = (k == 1 ? 1 : -1) * 0.02f; } add = 0.18f * m + Mathf.Sin(ph) * 0.025f; }
+                else if (cls == "mage") { if (!busy) for (int k = 0; k < 2; k++) { ax[k * 4] = -1.15f + 0.5f * m; ax[k * 4 + 3] = 1.75f - 0.4f * m; ax[k * 4 + 1] = (k == 1 ? -1 : 1) * 0.42f; } add = -0.06f + 0.2f * m + Mathf.Sin(ph * 0.5f) * 0.03f; }
+                else { if (!busy) { ax[0] = -0.55f + 0.2f * m; ax[3] = 1.25f - 0.3f * m; ax[4] = 0.3f + 0.45f * m + Mathf.Sin(ph) * 0.08f; ax[7] = 0.35f + 0.3f * m; } add = 0.42f * m + Mathf.Sin(ph) * 0.02f; rzA = Mathf.Sin(ph * 0.5f) * 0.12f * (0.4f + m); }
+                if (!busy) for (int k = 0; k < 2; k++)
+                    {
+                        var hip = Rig(9 + k * 3); var knee = Rig(10 + k * 3); var ankle = Rig(11 + k * 3);
+                        if (hip) hip.localRotation = Rot(ax[k * 4], 0, ax[k * 4 + 1]); if (knee) knee.localRotation = Rot(ax[k * 4 + 3], 0, 0); if (ankle) ankle.localRotation = Rot(0.5f, 0, 0);
+                    }
+                var body = Rig(0); if (body) { body.localRotation = Rot(add, 0, 0) * body.localRotation; if (!float.IsNaN(rzA)) body.localRotation = body.localRotation * Rot(0, 0, rzA); }
+                ax[8] += add;
+            }
             foreach (var s in panels)
             {
                 float ca = Mathf.Cos(s.a), sa = Mathf.Sin(s.a), push = 0;
@@ -206,12 +240,12 @@ namespace Aldara
             }
             if (cape.Count > 0)
             {
-                float lean = ax[8] + ax[9], sp = ax[11], flow = 0.08f + sp * 0.28f; int n = cape.Count;
+                float lean = ax[8] + ax[9], sp = ax[11], fm = flying ? flyM : 0, flow = 0.08f + sp * 0.28f + (flying ? 0.3f + 0.6f * fm : 0); int n = cape.Count;
                 for (int i = 0; i < n; i++)
                 {
                     float u = i / (float)n;
                     if (i == 0) { cape[i].localRotation = Rot(Mathf.Max(0.02f, lean + flow + ax[12]), 0, Mathf.Sin(t * 1.3f) * 0.02f); continue; }
-                    cape[i].localRotation = Rot(0.05f + Mathf.Sin(t * (2.4f + sp * 4) - i * 0.9f) * (0.045f + sp * 0.09f) * (0.5f + u) + sp * 0.04f, Mathf.Sin(t * 1.1f + i * 0.6f) * 0.02f * u, Mathf.Sin(t * 1.7f + i * 0.8f) * (0.03f + sp * 0.06f) * u);
+                    cape[i].localRotation = Rot(0.05f + Mathf.Sin(t * (2.4f + sp * 4) - i * 0.9f) * (0.045f + sp * 0.09f) * (0.5f + u) + sp * 0.04f + fm * 0.18f, Mathf.Sin(t * 1.1f + i * 0.6f) * 0.02f * u, Mathf.Sin(t * 1.7f + i * 0.8f) * (0.03f + sp * 0.06f) * u);
                 }
             }
             if (wings.Count > 0)
@@ -222,9 +256,16 @@ namespace Aldara
                 {
                     int d = wg.sd;
                     if (wg.fairy) { float fl = Mathf.Sin(t * 11); wg.n.localRotation = Rot(0, turn + d * (0.55f + fl * 0.3f), d * 0.05f * fl); continue; }
-                    float ph = t * 2.3f * fast, fl2 = Mathf.Sin(ph);
-                    wg.n.localRotation = Rot(-0.08f, turn + d * (0.42f + 0.3f * fl2), d * (0.06f + 0.12f * Mathf.Sin(ph + 0.5f)));
-                    if (wg.f) wg.f.localRotation = Rot(0, d * (0.18f + 0.22f * Mathf.Sin(ph - 0.8f)), d * (0.05f + 0.14f * Mathf.Sin(ph - 0.5f)));
+                    if (flying)
+                    {
+                        float ph = flyPh, m = flyM, fl = Mathf.Sin(ph), A = FS[5];
+                        wg.n.localRotation = Rot(-0.08f - 0.12f * m, turn + d * (0.36f + 0.16f * Mathf.Cos(ph) * A / 0.42f + 0.28f * m), d * (0.12f + A * fl + (A < 0.25f ? 0.12f : 0)));
+                        if (wg.f) wg.f.localRotation = Rot(0, d * (0.14f + 0.16f * Mathf.Sin(ph - 0.9f) + 0.1f * m), d * (0.08f + A * 0.76f * Mathf.Sin(ph - 0.75f)));
+                        continue;
+                    }
+                    float ph2 = t * 2.3f * fast, fl2 = Mathf.Sin(ph2);
+                    wg.n.localRotation = Rot(-0.08f, turn + d * (0.42f + 0.3f * fl2), d * (0.06f + 0.12f * Mathf.Sin(ph2 + 0.5f)));
+                    if (wg.f) wg.f.localRotation = Rot(0, d * (0.18f + 0.22f * Mathf.Sin(ph2 - 0.8f)), d * (0.05f + 0.14f * Mathf.Sin(ph2 - 0.5f)));
                 }
             }
         }

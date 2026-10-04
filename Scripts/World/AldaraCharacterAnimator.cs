@@ -23,6 +23,7 @@ namespace Aldara
         /// the browser's pose values the cloth follows (hips and knees, lean, flow, speed), blended like the pose
         public readonly float[] aux = new float[13]; readonly float[] auxB = new float[13];
         public bool Moving { get { return moving; } }
+        public bool Busy { get { return oneShot != null; } }
 
         void Awake() { Load(); }
         public void Load()

@@ -35,5 +35,22 @@ namespace Aldara
             foreach (var f in dir.GetFiles("*.png")) if (best == null || f.LastWriteTimeUtc > best.LastWriteTimeUtc) best = f;
             if (best == null) return "none"; File.Copy(best.FullName, AldaraImport.INBOX + "/" + name + ".png", true); return best.Name;
         }
-    }
+    
+        /// in play mode: a hero in the given outfit ("slot=Name;slot=Name", rarity Epic), front view, saved to the inbox
+        public static string Outfit(string cls, string items, string file, string rarity = "Epic")
+        {
+            var eq = new System.Collections.Generic.Dictionary<string, Item>();
+            foreach (var kv in items.Split(';')) { var p = kv.Split('='); if (p.Length == 2) eq[p[0]] = new Item { type = p[0], name = p[1], rarity = rarity, cls = cls }; }
+            Item w; eq.TryGetValue("weapon", out w); string id = AldaraHeroGear.BaseFor(cls, w);
+            var home = new Vector3(-8000, 0, -8000); var rig = new GameObject("OutfitRig"); rig.transform.position = home;
+            var hero = Object.Instantiate(AldaraHeroGear.Prefab(id), rig.transform, false); hero.transform.localRotation = Quaternion.Euler(0, 180, 0);
+            var g = hero.GetComponent<AldaraHeroGear>(); g.Apply(eq);
+            var cg = new GameObject("cam"); cg.transform.SetParent(rig.transform, false); var cam = cg.AddComponent<Camera>(); cam.orthographic = true; cam.clearFlags = CameraClearFlags.SolidColor; cam.backgroundColor = new Color(0.235f, 0.235f, 0.275f, 1);
+            cam.orthographicSize = 6 * 0.5f / 1f * 0.8125f; cam.transform.localPosition = new Vector3(0, 1.5f * 0.8125f, -12); cam.nearClipPlane = 0.1f; cam.farClipPlane = 50;
+            var rt = new RenderTexture(260, 600, 24, RenderTextureFormat.ARGB32) { antiAliasing = 4 }; cam.targetTexture = rt;
+            Step(6); cam.Render(); RenderTexture.active = rt; var t = new Texture2D(260, 600, TextureFormat.RGBA32, false); t.ReadPixels(new Rect(0, 0, 260, 600), 0, 0); t.Apply(); RenderTexture.active = null;
+            File.WriteAllBytes(AldaraImport.INBOX + "/" + file + ".png", t.EncodeToPNG()); cam.targetTexture = null; Object.Destroy(rt); Object.Destroy(rig);
+            return id;
+        }
+}
 }
