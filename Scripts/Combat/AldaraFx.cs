@@ -19,7 +19,7 @@ namespace Aldara
         static void Init()
         {
             if (discMat) return;
-            discMat = new Material(Shader.Find("Aldara/Water")); // vertex-coloured, transparent, double sided
+            discMat = new Material(Shader.Find("Aldara/Water")); discMat.SetFloat("_HQ", 0); // vertex-coloured, transparent, double sided
             discMat.SetFloat("_Glint", 0); discMat.SetFloat("_Speed", 0); discMat.renderQueue = 3100;
             orbMat = new Material(Shader.Find("Aldara/VertexLit")); orbMat.SetFloat("_Emit", 1.4f);
             disc = MakeDisc(1f, 0f, 40); ring = MakeDisc(1f, 0.86f, 48);

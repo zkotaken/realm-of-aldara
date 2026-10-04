@@ -347,7 +347,7 @@ namespace Aldara
         GameObject MakeBeacon()
         {
             var v = new GameObject("beacon"); v.transform.SetParent(transform, false);
-            if (!ringMat) { ringMat = new Material(Shader.Find("Aldara/Water")); ringMat.SetFloat("_Glint", 0); ringMat.SetFloat("_Speed", 0); ringMat.renderQueue = 3100; }
+            if (!ringMat) { ringMat = new Material(Shader.Find("Aldara/Water")); ringMat.SetFloat("_HQ", 0); ringMat.SetFloat("_Glint", 0); ringMat.SetFloat("_Speed", 0); ringMat.renderQueue = 3100; }
             var ring = new GameObject("ring", typeof(MeshFilter), typeof(MeshRenderer)); ring.transform.SetParent(v.transform, false); ring.transform.localPosition = Vector3.up * 0.1f;
             ring.GetComponent<MeshFilter>().sharedMesh = DashRing(190 / AldaraWorld.PX, 3 / AldaraWorld.PX); var mr = ring.GetComponent<MeshRenderer>(); mr.material = ringMat; mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             var col = new GameObject("column"); col.transform.SetParent(v.transform, false); var cs = col.AddComponent<SpriteRenderer>(); cs.sprite = Column(); col.transform.localScale = new Vector3(32 / 8f * 8 / AldaraWorld.PX, 320 / 64f * 8 / AldaraWorld.PX, 1);

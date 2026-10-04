@@ -7,6 +7,7 @@ Shader "Aldara/VertexLitFade"
         HLSLINCLUDE
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+        #include "AldaraLighting.hlsl"
         CBUFFER_START(UnityPerMaterial) float4 _Tint; float _Wind; float _Emit; float _Alpha; CBUFFER_END
         float3 Sway(float3 wp, float3 op){ float h = max(0, op.y); float k = _Wind * h * h * 0.01;
             wp.x += sin(_Time.y * 1.6 + wp.x * 0.3 + wp.z * 0.2) * k; wp.z += cos(_Time.y * 1.3 + wp.z * 0.3) * k * 0.7; return wp; }
@@ -21,6 +22,8 @@ Shader "Aldara/VertexLitFade"
             #pragma multi_compile_instancing
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
             #pragma multi_compile_fragment _ _SHADOWS_SOFT
+            #pragma multi_compile_fragment _ _SCREEN_SPACE_OCCLUSION
+            #pragma multi_compile _ _ADDITIONAL_LIGHTS
             #pragma multi_compile_fog
             struct A { float4 pos : POSITION; float3 n : NORMAL; float4 col : COLOR; float2 uv2 : TEXCOORD1; UNITY_VERTEX_INPUT_INSTANCE_ID };
             struct V { float4 pos : SV_POSITION; float4 col : COLOR; float3 wp : TEXCOORD0; float3 n : TEXCOORD1; float fog : TEXCOORD2; float em : TEXCOORD3; UNITY_VERTEX_INPUT_INSTANCE_ID };
@@ -31,11 +34,7 @@ Shader "Aldara/VertexLitFade"
             half4 frag(V i, bool front : SV_IsFrontFace) : SV_Target {
                 UNITY_SETUP_INSTANCE_ID(i);
                 float3 n = normalize(front ? i.n : -i.n);
-                Light L = GetMainLight(TransformWorldToShadowCoord(i.wp));
-                float nl = saturate(dot(n, L.direction)) * 0.8 + 0.2 * saturate(dot(n, L.direction) * 0.5 + 0.5);
-                float3 amb = SampleSH(n);
-                float3 c = i.col.rgb * (amb + L.color * nl * L.shadowAttenuation);
-                c += i.col.rgb * (i.em + _Emit);
+                float3 c = AldaraShade(i.col.rgb, n, i.wp, i.pos, i.em + _Emit, 0.16);
                 c = MixFog(c, i.fog);
                 return half4(c, _Alpha);
             }

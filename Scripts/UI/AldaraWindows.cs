@@ -56,6 +56,7 @@ namespace Aldara
             if (!GetComponent<AldaraFlightFx>()) gameObject.AddComponent<AldaraFlightFx>();
             if (!GetComponent<AldaraSound>()) gameObject.AddComponent<AldaraSound>();
             if (!GetComponent<AldaraMusic>()) gameObject.AddComponent<AldaraMusic>();
+            if (!GetComponent<AldaraGraphics>()) gameObject.AddComponent<AldaraGraphics>();
             if (!GetComponent<AldaraDunHud>()) gameObject.AddComponent<AldaraDunHud>();
         }
         public void Register(Win w) { wins[w.id] = w; }

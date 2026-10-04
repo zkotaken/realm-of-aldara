@@ -124,7 +124,7 @@ namespace Aldara
             for (int i = 0; i < 3; i++) { amb[i] += (A[i] - amb[i]) * ease; grade[i] += (G[i] - grade[i]) * ease; } gradeA += (ga - gradeA) * ease;
 
             // the light map
-            if (AldaraSettings.On("light")) LightMap(cam, dun, D, x0, y0, vw, vh, gh, t, night);
+            lightOn = false; if (AldaraSettings.On("light")) LightMap(cam, dun, D, x0, y0, vw, vh, gh, t, night);
             // atmosphere: haze at the top of the view, sun shafts by day
             if (!dun && AldaraSettings.On("atmos") && AldaraSettings.On("light")) Atmos(cam, x0, y0, vw, vh, gh, t, dk, dusk);
             // weather
@@ -155,6 +155,9 @@ namespace Aldara
 
         // ---------- the light map ----------
         readonly List<Lt> lights = new List<Lt>();
+        /// the lights gathered for this frame's light map, and how strongly they show (for the enhanced local lights)
+        public List<Lt> FrameLights { get { return lightOn ? lights : null; } }
+        public float FrameBoost; bool lightOn;
         void Add(float x, float y, Color c, float r, float i, float vx0, float vy0, float vx1, float vy1) { if (x + r < vx0 || x - r > vx1 || y + r < vy0 || y - r > vy1) return; lights.Add(new Lt { x = x, y = y, c = c, r = r, i = i }); }
         void LightMap(Camera cam, bool dun, AldaraDungeon.Map D, float x0, float y0, float vw, float vh, float gh, float t, float night)
         {
@@ -209,7 +212,7 @@ namespace Aldara
             if (pet && pet.Shown && pit != null) { string pg; var pc = PET_GLOW.TryGetValue(pit.name, out pg) ? AldaraRules.Hex(pg) : pit.Col; bool ph = pit.name == "Celestial Phoenix"; Add(pet.x, pet.y - 20, pc, ph ? 300 : 150, ph ? 0.8f : 0.35f, x0, y0, vx1, vy1); }
             foreach (var m in AldaraMonsters.I.all) { if (m.dead || !m.boss) continue; Add(m.x, m.y - 30, m.color != null ? AldaraRules.Hex(m.color) : AldaraRules.Hex("#ffe07a"), 240, 0.45f, x0, y0, vx1, vy1); }
 
-            float boost = dun ? 1.4f : 0.45f + night * 0.9f;
+            float boost = dun ? 1.4f : 0.45f + night * 0.9f; FrameBoost = boost; lightOn = true;
             foreach (var L in lights)
             {
                 float X = (L.x - x0) * LS, Y = (L.y - y0) * LS, R = L.r * LS, a = Mathf.Min(1, L.i * boost); if (a < 0.02f || R < 0.5f) continue;
