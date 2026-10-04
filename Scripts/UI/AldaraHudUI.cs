@@ -21,7 +21,7 @@ namespace Aldara
         VisualElement hpVial, mpVial;
         readonly List<Slot> slots = new List<Slot>();
         class Slot { public VisualElement root, bgFilled, bgEmpty, icon; public CdPie cd; public Label key; public VisualElement badge; public string skill; }
-        float ufHpW, ufMpW, tfW, xpW; Rect hpOrbR, mpOrbR;
+        float ufHpW, ufMpW, tfW, xpW; Rect hpOrbR, mpOrbR; LivingOrb orbHp, orbMp;
         string portraitCls;
 
         void Awake() { I = this; }
@@ -171,7 +171,7 @@ namespace Aldara
             // ---- bottom bar: base, orb liquid, gloss, claws, slots, vials ----
             Img("ab", ShotR("ab"));
             hpOrbR = RectR("orb_hp"); mpOrbR = RectR("orb_mp");
-            hpOrbClip = OrbClip("orb_hp_fill", hpOrbR, out hpOrbImg); mpOrbClip = OrbClip("orb_mp_fill", mpOrbR, out mpOrbImg);
+            orbHp = new LivingOrb(true); orbMp = new LivingOrb(false); Place(orbHp.Element(), LivingOrb.Grow(hpOrbR)); Place(orbMp.Element(), LivingOrb.Grow(mpOrbR));
             if (HasShot("orb_gloss")) Img("orb_gloss", ShotR("orb_gloss")); if (HasShot("orb_gloss_mp")) Img("orb_gloss_mp", ShotR("orb_gloss_mp"));
             if (HasShot("orbmount_hp")) Img("orbmount_hp", ShotR("orbmount_hp")); if (HasShot("orbmount_mp")) Img("orbmount_mp", ShotR("orbmount_mp"));
             orbHpT = Txt("orb_hpt"); orbMpT = Txt("orb_mpt");
@@ -257,7 +257,7 @@ namespace Aldara
             tfRoot.style.display = show && showTarget ? DisplayStyle.Flex : DisplayStyle.None;
             if (show) { tfName.text = (t0.boss ? "Boss: " : "") + t0.name; tfLvl.text = "Lv " + t0.lvl; tfClip.style.width = tfW * Mathf.Clamp01(t0.hp / t0.maxHp); tfHpT.text = Mathf.CeilToInt(Mathf.Max(0, t0.hp)) + " / " + t0.maxHp; tfLvl.style.color = LvColor(t0.lvl - H.lvl); }
             zone.text = AldaraWorld.ZoneName(P.x, P.y);
-            SetOrb(hpOrbClip, hpOrbImg, hpOrbR, H.hp / H.maxHp); SetOrb(mpOrbClip, mpOrbImg, mpOrbR, H.mana / H.maxMana);
+            float odt = Mathf.Min(0.05f, Time.unscaledDeltaTime); orbHp.Tick(H.maxHp > 0 ? H.hp / H.maxHp : 0, odt); orbMp.Tick(H.maxMana > 0 ? H.mana / H.maxMana : 0, odt);
             orbHpT.text = Mathf.CeilToInt(Mathf.Max(0, H.hp)).ToString(); orbMpT.text = Mathf.FloorToInt(H.mana).ToString();
             xpClip.style.width = xpW * Mathf.Clamp01(H.xp / H.xpNeed); xpT.text = H.xp.ToString("N0") + " / " + H.xpNeed.ToString("N0") + " XP";
             hpVial.style.display = H.vialHp > 0 ? DisplayStyle.Flex : DisplayStyle.None; mpVial.style.display = H.vialMp > 0 ? DisplayStyle.Flex : DisplayStyle.None;
