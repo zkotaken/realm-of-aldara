@@ -25,6 +25,12 @@ namespace Aldara
             "Elysian Expanse","The Brigand Marches","Gloomwood","The Crownlands","The Bloodmoor" };
         public static readonly Vector2 CENTER = new Vector2(3600, 7000), TOWN_SPAWN = new Vector2(3600, 7190);
         public static readonly Vector3 KINGDOM = new Vector3(25500, 18500, 3950); // x, y, radius
+        /// kdInCity: inside Valcrest's sixteen-sided outer wall
+        public static bool InCity(float x, float y)
+        {
+            const float RO = 2750; float AO = RO * Mathf.Cos(Mathf.PI / 16), dx = x - KINGDOM.x, dy = y - KINGDOM.y, r = Mathf.Sqrt(dx * dx + dy * dy);
+            float s = Mathf.PI * 2 / 16, a = Mathf.Atan2(dy, dx), k = Mathf.Round(a / s); return r < RO + 30 && r * Mathf.Cos(a - k * s) < AO + 30;
+        }
 
         public static int W, H;
         static byte[] liquid, zone, blocked, road;

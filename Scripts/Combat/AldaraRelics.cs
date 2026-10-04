@@ -42,6 +42,9 @@ namespace Aldara
         static void Hit(AldaraMonsters.Mon m, float dmg, string col) { busy++; try { AldaraMonsters.I.HitMonster(m, dmg, Hx(col)); } finally { busy--; } }
         static void Ring(float x, float y, float r, string col, float life) { AldaraVfx.Ring(x, y, r, Hx(col), life); }
 
+        public static int HasteCount { get { return haste.Count; } }
+        public static float HasteLeft { get { float m = 0; foreach (var h in haste) m = Mathf.Max(m, h); return m - t; } }
+        public static float CdLeft(string id) { float v; return cd.TryGetValue(id, out v) ? v - t : 0; }
         public static float DmgMult()
         {
             float k = 1, b = V("berserkskull"); if (b > 0) { float miss = 1 - Mathf.Max(0, H.hp) / H.maxHp; k *= 1 + b / 100 * Mathf.Min(1, miss / 0.9f); }

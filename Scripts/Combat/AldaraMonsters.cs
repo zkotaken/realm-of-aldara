@@ -28,6 +28,8 @@ namespace Aldara
             public string rk, rTag; public bool rImm, rVuln; public float immT; public bool lvs;
             /// a point on the ground standing in for a target (aimed skills with nothing targeted)
             public bool dummy;
+            /// subclass state: Death Mark time, an Ambush already spent on it
+            public float markT; public bool amb;
         }
 
         void Awake()
@@ -292,7 +294,15 @@ namespace Aldara
         public void HitMonster(Mon m, float dmg, Color col)
         {
             if (m.dummy || m.dead) return; if (AldaraRaid.Immune(m)) return; if (AldaraRaid.On && m.rVuln) dmg = Mathf.Round(dmg * 1.3f);
-            var H = AldaraHero.I; int g = m.lvl - H.lvl; bool mine = HitSrc == "player"; AldaraPlayer.lastCombat = Time.time;
+            var H = AldaraHero.I; int g = m.lvl - H.lvl; bool mine = HitSrc == "player"; AldaraPlayer.lastCombat = Time.time; string src = HitSrc;
+            if (mine && AldaraAuto.on && dmg > 0) dmg = Mathf.Max(1, Mathf.Round(dmg * AldaraAuto.DMG));   // auto combat deals 25% less
+            dmg = AldaraSubclass.PreHit(m, dmg, src); float hp0 = m.hp;
+            HitCore(m, dmg, col, g, mine);
+            AldaraSubclass.PostHit(m, Mathf.Max(0, hp0 - Mathf.Max(0, m.hp)), src);
+        }
+        void HitCore(Mon m, float dmg, Color col, int g, bool mine)
+        {
+            var H = AldaraHero.I;
             if (g > 0 && Random.value < AldaraRules.LvMiss(g)) { m.aggroT = 6; AldaraFx.Text(m.x, m.y - m.r - 10, "Glance", new Color(0.6f, 0.6f, 0.6f)); dmg = Mathf.Max(1, Mathf.Round(dmg * 0.15f)); }
             dmg = Mathf.Max(1, Mathf.Round(dmg * AldaraRules.LvOut(g)));
             if (mine && AldaraRelics.busy == 0) dmg = Mathf.Max(1, Mathf.Round(dmg * AldaraRelics.DmgMult()));
@@ -312,7 +322,7 @@ namespace Aldara
             int g = t.lvl - H.lvl; float xm = g >= 0 ? Mathf.Min(1.6f, 1 + 0.04f * g) : g >= -2 ? 1 : Mathf.Max(0.05f, 1 + 0.12f * (g + 2));
             H.GainXp(Mathf.Max(1, Mathf.Round(t.xp * xm)));
             if (AldaraLoot.I) AldaraLoot.I.OnKill(t); else H.gold += t.gold;
-            AldaraQuests.OnKill(t); AldaraRelics.OnKill(t);
+            AldaraQuests.OnKill(t); AldaraRelics.OnKill(t); AldaraSubclass.OnKill(t);
             if (t.boss) H.bossKills++;
             AldaraFx.Text(t.x, t.y - t.r - 26, "+" + t.xp + "xp", AldaraRules.Hex("#7ec8ff"));
             if (t.boss) AldaraHud.Banner(t.name + " defeated!");

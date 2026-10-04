@@ -35,6 +35,8 @@ namespace Aldara
             List<VisualElement> l; if (pieces.TryGetValue(group, out l)) l.Add(e);
         }
         void Start() { Build(); }
+        /// place a piece from outside in the browser's 1920 x 1080 frame, hanging off the nearest corner or edge
+        public VisualElement PlaceAt(VisualElement e, Rect r) { return Place(e, r); }
 
         // ---------- helpers ----------
         Font F(string css, string weight, string style)
@@ -242,7 +244,7 @@ namespace Aldara
             root.style.display = AldaraSave.Ready && H && P && !(AldaraWindows.I && AldaraWindows.I.IsOpen("map")) ? DisplayStyle.Flex : DisplayStyle.None;
             if (!AldaraSave.Ready || !H) return;
             if (portraitCls != H.cls) { portraitCls = H.cls; var t = Tex("portrait_" + H.cls); if (t) portraitEl.style.backgroundImage = Background.FromTexture2D(t); }
-            ufName.text = (H.heroName + " the " + char.ToUpper(H.cls[0]) + H.cls.Substring(1)).ToUpper(); ufLvl.text = H.lvl.ToString();
+            var Sc = AldaraSubclass.Cur; ufName.text = (H.heroName + " the " + (Sc != null ? Sc.name : char.ToUpper(H.cls[0]) + H.cls.Substring(1))).ToUpper(); ufLvl.text = H.lvl.ToString();
             ufHpClip.style.width = ufHpW * Mathf.Clamp01(H.hp / H.maxHp); ufMpClip.style.width = ufMpW * Mathf.Clamp01(H.mana / H.maxMana);
             ufHpT.text = Mathf.CeilToInt(Mathf.Max(0, H.hp)) + " / " + H.maxHp; ufMpT.text = Mathf.FloorToInt(H.mana) + " / " + H.maxMana;
             stats.text = "ATK " + H.atk + "   SPD " + Mathf.RoundToInt(H.speed) + "\nSTR " + H.str + "  AGI " + H.agi + "  VIT " + H.vit + "  ENE " + H.ene + "\nGold " + H.gold.ToString("N0");

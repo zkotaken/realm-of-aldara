@@ -40,7 +40,7 @@ namespace Aldara
         // ---- gear (recompute(), equipItem, unequipItem, autoEquipBest, addLoot, drinkVial) ----
         public readonly Dictionary<string, Item> equip = new Dictionary<string, Item>();
         public readonly List<Item> inventory = new List<Item>();
-        public int vialHp, vialMp; float vialCdHp, vialCdMp;
+        public int vialHp, vialMp; float vialCdHp, vialCdMp; public float VialCdHp { get { return vialCdHp; } }
         public string sub, title;
         public int effStr, effAgi, effVit, effEne; public int critFrame = -1; public MythicSet setBonusSet; public int setBonusCount; public float setBonusPct;
         public Item Eq(string slot) { Item i; return equip.TryGetValue(slot, out i) ? i : null; }
@@ -125,13 +125,14 @@ namespace Aldara
                 baseHp += 18; baseAtk += 3; statPoints += 10; AldaraTree.sp++; AldaraTree.spTotal++;
                 Recompute(); hp = maxHp; mana = maxMana;
                 AldaraHud.Banner("LEVEL UP! Lv." + lvl); AldaraSave.Dirty();
+                if (lvl == AldaraTree.B.SUB_LEVEL && AldaraTree.sub == null) AldaraSkills.I.Later_(1.8f, () => { AldaraHud.Banner("You can now choose a subclass: open Skills (K)"); if (AldaraWindows.I) AldaraWindows.I.Toggle("sub", true); });
             }
         }
         public float RollDmg(float mult)
         {   // rollDmg: War Cry, the tree's damage bonus, and its critical strikes (x1.6)
             float b = atkBuff > 0 ? 1.3f : 1; float d = atk * mult * b * (0.8f + Random.value * 0.5f) * (1 + AldaraTree.T("dmg"));
             float cr = AldaraTree.T("crit"); if (cr > 0 && Random.value < cr) { d *= 1.6f; critFrame = Time.frameCount; }
-            d = Mathf.Round(d); if (AldaraAuto.on) d = Mathf.Max(1, Mathf.Round(d * AldaraAuto.DMG));   // auto-combat deals 25% less
+            d = Mathf.Round(d);
             return d;
         }
         float AttackRange(AldaraMonsters.Mon t) { return cls == "archer" ? 280 : cls == "mage" ? 210 : t.r + 34; }
@@ -141,9 +142,17 @@ namespace Aldara
         public void StartSwing(float dur, bool big, int combo = -1, bool spin = false) { swing = new Swing { dur = dur, big = big, combo = combo, spin = spin }; }
         public void MarkFight() { lastFight = Time.time; }
 
+        /// the monster whose blow this is (LV_SRC), for Riposte and Thorns
+        public static AldaraMonsters.Mon LvSrc;
         public void Damage(float dmg, float ang, int srcLvl)
         {
-            if (!alive) return;
+            if (!alive) return; bool env = srcLvl < 0; AldaraPlayer.lastCombat = Time.time;
+            dmg = AldaraSubclass.PreDamage(dmg, LvSrc, env); if (dmg < 0) return;
+            float hp0 = hp; DamageCore(dmg, ang, srcLvl);
+            AldaraSubclass.PostDamage(Mathf.Max(0, hp0 - hp), LvSrc, env);
+        }
+        void DamageCore(float dmg, float ang, int srcLvl)
+        {
             // the level gap: the attacker's level, else the highest-level monster fighting you (lvThreat); environment damage (srcLvl < 0) is not scaled
             if (srcLvl == 0) { AldaraMonsters.Mon best = null; foreach (var m in AldaraMonsters.I.all) { if (m.dead || !(m.aggroT > 0 || m.act != null)) continue; float d = Mathf.Sqrt((m.x - P.x) * (m.x - P.x) + (m.y - P.y) * (m.y - P.y)); if (d < 900 && m.lvl > (best != null ? best.lvl : -1)) best = m; } if (best != null) srcLvl = best.lvl; }
             if (srcLvl > 0) dmg = Mathf.Max(1, Mathf.Round(dmg * AldaraRules.LvIn(srcLvl - lvl)));
@@ -167,9 +176,28 @@ namespace Aldara
             alive = false; hp = 0; target = null; deadAt = Time.time; deaths++; AldaraSave.Dirty();
             if (anim) anim.Play("death");
             if (AldaraRaid.On) { AldaraRaid.OnDeath(); return; }
-            AldaraHud.Banner("You have fallen...");
+            AldaraHud.Banner(AldaraDungeon.Active ? "You have fallen... the run is over" : "You have fallen...");
         }
 
+        /// kdRespawn: you wake at the nearest waystone you know, if it is nearer than Lorenmar
+        public static Vector2 Respawn(float x, float y)
+        {
+            AldaraWaystones.Ws best = null; float bd = Vector2.Distance(new Vector2(x, y), AldaraWorld.TOWN_SPAWN);
+            foreach (var w in AldaraWaystones.KnownList()) { float d = Vector2.Distance(new Vector2(x, y), new Vector2(w.x, w.y)); if (d < bd) { bd = d; best = w; } }
+            if (best == null) return AldaraWorld.TOWN_SPAWN;
+            AldaraHud.Banner("You wake at " + best.n); return AldaraPlayer.FreeSpotNear(best.x + 40, best.y + 90);
+        }
+        float kdT;
+        /// kdTick: the first time you reach Valcrest
+        void KdTick(float dt)
+        {
+            if (AldaraDungeon.Active) return; kdT -= dt; if (kdT > 0) return; kdT = 0.5f;
+            if (!AldaraWorld.InCity(P.x, P.y)) return; var raw = AldaraSave.Raw; if (raw == null) return;
+            var kd = raw["kd"] as Newtonsoft.Json.Linq.JObject; if (kd == null) { kd = new Newtonsoft.Json.Linq.JObject(); raw["kd"] = kd; }
+            if (kd["arrived"] != null) return; kd["arrived"] = 1;
+            AldaraHud.Banner("Valcrest, the Crown City of Aldara");
+            float xp = Mathf.Max(5000, Mathf.Round(xpNeed * 0.15f)); GainXp(xp); AldaraFx.Text(P.x, P.y - 86, "+" + xp + " XP  You reached Valcrest", AldaraRules.Hex("#ffd35a")); AldaraSave.Dirty();
+        }
         // ---- aiming: the cursor if it is over the game, else the way you face ----
         public float AimAngle()
         {
@@ -201,7 +229,7 @@ namespace Aldara
                 if (AldaraWorld.BlockedAt(P.x, P.y) && !AldaraWorld.BlockedAt(px, py)) { P.x = px; P.y = py; break; }
             }
         }
-        public void PlaySkill(string id) { lastFight = Time.time; if (anim) anim.Play(id); }
+        public void PlaySkill(string id) { lastFight = Time.time; if (anim) anim.Play(id); AldaraHudBar.PopAbility(id); }
 
         void Update()
         {
@@ -216,13 +244,13 @@ namespace Aldara
                 if (AldaraRaid.On) { UpdateShots(dt); return; }   // the raid decides when you rise
                 if (Time.time - deadAt > 1.8f)
                 {   // back to town, as the browser does outside dungeons
-                    if (AldaraDungeon.Active) AldaraDungeon.Exit("fail"); else { P.x = AldaraWorld.TOWN_SPAWN.x; P.y = AldaraWorld.TOWN_SPAWN.y; } alive = true; hp = maxHp; mana = maxMana; gold = Mathf.Floor(gold * 0.9f); target = null;
+                    if (AldaraDungeon.Active) AldaraDungeon.Exit("fail"); else { var rs = Respawn(P.x, P.y); P.x = rs.x; P.y = rs.y; } alive = true; hp = maxHp; mana = maxMana; gold = Mathf.Floor(gold * 0.9f); target = null;
                     if (anim) anim.Load();
                 }
                 UpdateShots(dt); return;
             }
             if (atkCd > 0) atkCd -= dt;
-            TickSwing(dt);
+            TickSwing(dt); KdTick(dt);
             if (cls == "mage" && cast > 0 && Random.value < dt * 40) { float tx = P.x + Mathf.Cos(P.facing) * 20, ty = P.y + Mathf.Sin(P.facing) * 20, aa = Random.value * Mathf.PI * 2; AldaraVfx.Mpush(new AldaraVfx.Mp { x = tx + Mathf.Cos(aa) * 20, y = ty + Mathf.Sin(aa) * 10, z = AldaraVfx.PH_Y + 10 + Mathf.Sin(aa) * 10, vx = -Mathf.Cos(aa) * 60, vy = -Mathf.Sin(aa) * 30, life = 0.3f, max = 0.3f, c = castCol, s = 2, glow = true }); }
             mana = Mathf.Min(maxMana, mana + (2 + effEne * 0.12f) * (1 + AldaraTree.T("mreg")) * dt);
             // click: the monster under the cursor (compared on screen, as the browser does with LZ); empty ground attacks there
@@ -315,7 +343,7 @@ namespace Aldara
             if (sw.t >= sw.dur) swing = null;
             if (cast > 0) cast -= dt; if (release > 0) release -= dt;
         }
-        void PlayBasic() { if (!anim) return; if (cls == "knight") anim.Play("a" + (combo + 1)); else anim.Play("basic" + (combo + 1)); }
+        void PlayBasic() { AldaraHudBar.PopAbility(cls == "knight" ? "a" + (combo + 1) : "basic"); if (!anim) return; if (cls == "knight") anim.Play("a" + (combo + 1)); else anim.Play("basic" + (combo + 1)); }
         void BasicAttack(AldaraMonsters.Mon t)
         {
             if (cls == "knight") { StartCombo(); PlayBasic(); AldaraSkillFx.KnightSlash(t.x, t.y, combo, swing.dur); AldaraMonsters.I.HitMonster(t, RollDmg(1), AldaraRules.Hex("#ffd35a")); AldaraVfx.Burst(t.x, t.y, AldaraRules.Hex("#ffe8a0"), 6, 120); }

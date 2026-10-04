@@ -51,7 +51,7 @@ namespace Aldara
             float liqK = liq == 2 ? 0.45f : liq != 0 ? 0.62f : 1f;
             float slow = AldaraHero.I && AldaraHero.I.slowT > 0 ? 0.65f : 1f;
             if (AldaraDungeon.Active) road = 1;
-            float v = road * speed * AldaraRelics.SpeedMult() * (wings ? 1.15f : 0.72f) * liqK * slow * (Rested ? 1.15f : 1);
+            float v = road * speed * AldaraRelics.SpeedMult() * AldaraSubclass.SpeedMult() * (wings ? 1.15f : 0.72f) * liqK * slow * (Rested ? 1.15f : 1);
             return OnFoot ? v * (Run ? RUNM : WALK) : v;
         }
 

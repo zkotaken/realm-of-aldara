@@ -8,6 +8,8 @@ namespace Aldara
     {
         public string cls, id, name, kind, buff, desc; public int back;
         public float price, cost, cd, mult, radius, stun, dur, heal, splash, slow, jumps, shield, count, dist, waves, extra, reach, dot, dotT;
+        // subclass skills: the signature (its subclass and the skill it grows from) or a path ability (its node and effects)
+        [System.NonSerialized] public AldaraTree.Sub sub; [System.NonSerialized] public AldaraTree.SubNode subNode; [System.NonSerialized] public Newtonsoft.Json.Linq.JArray custom; [System.NonSerialized] public string baseId;
     }
     [System.Serializable] class SkillBook { public SkillDef[] skills; }
 
@@ -33,7 +35,11 @@ namespace Aldara
             classSkills.Clear(); foreach (var s in book.skills) if (s.cls == cls) classSkills.Add(s);
             owned.Clear(); equipped.Clear(); if (classSkills.Count > 0) { owned.Add(classSkills[0].id); equipped.Add(classSkills[0].id); }
         }
-        public SkillDef Get(string id) { foreach (var s in classSkills) if (s.id == id) return s; return null; }
+        public SkillDef Get(string id) { foreach (var s in classSkills) if (s.id == id) return s; return AldaraSubclass.Find(id); }
+        public SkillDef BaseGet(string id) { foreach (var s in classSkills) if (s.id == id) return s; return null; }
+        public void SpendPublic(SkillDef s) { Spend(s); }
+        public void CastTargetRaw(AldaraMonsters.Mon t, SkillDef sk) { CastTarget(t, sk, true); }
+        public void CastSelfRaw(SkillDef sk) { CastSelf(sk, true); }
         public float Cd(string id) { float v; return cds.TryGetValue(id, out v) ? v : 0; }
         public bool Ready(SkillDef s) { return s != null && Cd(s.id) <= 0 && H.mana >= s.cost; }
         void Spend(SkillDef s) { H.mana -= Mathf.Round(s.cost * (1 - AldaraTree.T("mcost"))); cds[s.id] = s.cd * (1 - AldaraTree.T("cdr")); }
@@ -84,8 +90,9 @@ namespace Aldara
         static Color Hx(string h) { return AldaraRules.Hex(h); }
         static void Burst(float x, float y, string c, int n, float spd) { AldaraVfx.Burst(x, y, Hx(c), n, spd); }
         static readonly Dictionary<string, string> SKCOL = new Dictionary<string, string> { { "fireball", "#ff8a3a" }, { "ice_shard", "#8fdfff" }, { "chain_lightning", "#cfe0ff" }, { "meteor", "#ff6a1a" }, { "frost_nova", "#8fdfff" }, { "arcane_missiles", "#c07aff" }, { "blizzard", "#bfefff" }, { "arcane_cataclysm", "#c07aff" }, { "rejuvenate", "#7fffb0" }, { "arcane_barrier", "#8ab4ff" }, { "blink", "#b07aff" } };
-        void CastSelf(SkillDef sk)
+        void CastSelf(SkillDef sk, bool raw = false)
         {
+            if (!raw && (sk.sub != null || sk.custom != null)) { AldaraSubclass.CastSub(sk, null); return; }
             Spend(sk); AldaraFx.Text(P.x, P.y - 42, sk.name, Hx("#9fb4ff")); H.PlaySkill(sk.id);
             string sc; if (SKCOL.TryGetValue(sk.id, out sc)) H.castCol = Hx(sc);
             AldaraSkillFx.Pfx(sk.id, null, P.x, P.y, sk, "cast");
@@ -128,8 +135,9 @@ namespace Aldara
         {
             var f = AldaraVfx.Effect("explode", x, y, r, life, Color.white); f.big = big; if (c1 != null) f.c1 = Hx(c1); if (c2 != null) f.c2 = Hx(c2); if (core != null) f.core = Hx(core);
         }
-        void CastTarget(AldaraMonsters.Mon t, SkillDef sk)
+        void CastTarget(AldaraMonsters.Mon t, SkillDef sk, bool raw = false)
         {
+            if (!raw && (sk.sub != null || sk.custom != null)) { AldaraSubclass.CastSub(sk, t); return; }
             if (t.dummy && H.cls == "knight" && sk.id != "ground_slam") { var mm = H.MeleeArcTarget(70); if (mm != null) t = mm; }
             Spend(sk); AldaraRelics.OnCast();
             AldaraFx.Text(P.x, P.y - 42, sk.name, Hx("#9fb4ff")); H.PlaySkill(sk.id); H.MarkFight();

@@ -179,7 +179,7 @@ namespace Aldara
         void HurtPlayer(Mon m, MoveDef mv, float a, float mult = 1, bool roar = false)
         {
             var H = AldaraHero.I; if (!H.alive) return;
-            H.Damage(Dmg(m, mv, mult), a, m.lvl);
+            AldaraHero.LvSrc = m; try { H.Damage(Dmg(m, mv, mult), a, m.lvl); } finally { AldaraHero.LvSrc = null; }
             if (mv.slow > 0) H.slowT = Mathf.Max(H.slowT, mv.slow);
             if (mv.kb > 0 && !roar) Knock(a, mv.kb);
             var E = Elc(mv.el); var P = AldaraPlayer.I; float dm = mv.dmg > 0 ? mv.dmg : 1;

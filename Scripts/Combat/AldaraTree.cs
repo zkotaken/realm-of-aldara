@@ -70,8 +70,9 @@ namespace Aldara
             if (sub != null) { int c = SubCost(); if (H.gold < c) { AldaraHud.Banner("Changing your path costs " + c.ToString("N0") + " gold"); return; } H.gold -= c; }
             int back = sub != null ? SubRefund() : 0; if (back > 0) AldaraHud.Banner(back + " skill points refunded");
             var old = SubCur(); if (old != null) { string oid = (string)old.skill["id"]; AldaraSkills.I.equipped.Remove(oid); AldaraSkills.I.owned.Remove(oid); }
-            sub = id; subTree.Clear(); Sync(); StripSubFromBar();
+            sub = id; subTree.Clear(); AldaraSubclass.Reset(); Sync(); StripSubFromBar();
             AldaraHud.Banner("You are now a " + S.name); AldaraSave.Dirty();
+            var P = AldaraPlayer.I; AldaraVfx.Burst(P.x, P.y - 20, AldaraRules.Hex(S.col), 40, 240); AldaraVfx.Mfx(new AldaraVfx.Mf { k = "pillar", x = P.x, y = P.y, r = 30, c = AldaraRules.Hex(S.col), c2 = Color.white, H = 420, T = 1 });
         }
         public static void SubUnlock(string id)
         {
@@ -80,7 +81,7 @@ namespace Aldara
             if (!SubNodeReady(S, n)) { AldaraHud.Banner("Unlock the step before it first"); return; }
             if (sp < n.cost) { AldaraHud.Banner("Not enough skill points (" + n.cost + " needed)"); return; }
             sp -= n.cost; subTree.Add(id); subPaid[id] = n.cost; Sync(); StripSubFromBar();
-            AldaraHud.Banner("Learned " + n.n); AldaraSave.Dirty();
+            AldaraHud.Banner("Learned " + n.n); AldaraSave.Dirty(); var P = AldaraPlayer.I; AldaraVfx.Burst(P.x, P.y - 20, AldaraRules.Hex(S.col), 24, 200);
         }
         /// subclass abilities live on their own bar, never on the hotbar
         static void StripSubFromBar()

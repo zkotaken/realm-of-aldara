@@ -47,6 +47,8 @@ namespace Aldara
             if (!GetComponent<AldaraRaidView>()) gameObject.AddComponent<AldaraRaidView>();
             if (!GetComponent<AldaraVfx>()) gameObject.AddComponent<AldaraVfx>();
             if (!GetComponent<AldaraRelics>()) gameObject.AddComponent<AldaraRelics>();
+            if (!GetComponent<AldaraSubclass>()) gameObject.AddComponent<AldaraSubclass>();
+            if (!GetComponent<AldaraHudBar>()) gameObject.AddComponent<AldaraHudBar>();
             if (!GetComponent<AldaraDunHud>()) gameObject.AddComponent<AldaraDunHud>();
         }
         public void Register(Win w) { wins[w.id] = w; }
