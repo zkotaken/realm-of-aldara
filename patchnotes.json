@@ -1,6 +1,16 @@
 {
  "entries": [
   {
+   "v": "158",
+   "date": "October 6, 2026",
+   "type": "fix",
+   "title": "Back on your feet after dying",
+   "notes": [
+    "After you fall and rise again in town, your hero stands up and moves normally instead of staying stuck in the death pose.",
+    "The same fix applies when you rise at a raid checkpoint."
+   ]
+  },
+  {
    "v": "157",
    "date": "October 6, 2026",
    "type": "update",
