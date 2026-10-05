@@ -24,7 +24,7 @@ public static class AldaraObjectBuilder
             var ta = AssetDatabase.LoadAssetAtPath<TextAsset>(ROOT + "/Models/Objects/" + n + ".amesh.bytes");
             if (!ta) continue;
             var m = AldaraMeshIO.Read(ta.bytes, n);
-            if (!AldaraStructureRemaster.Skip(n)) m = AldaraStructureRemaster.Process(m, n);   // HD structures: surfaces and creases
+            if (!AldaraStructureRemaster.Skip(n)) m = AldaraStructureRemaster.Process(AldaraSculpt.Apply(m, n), n);   // HD structures: surfaces and creases
             if (ex) { EditorUtility.CopySerialized(m, ex); m = ex; } else AssetDatabase.CreateAsset(m, mp);
             meshes[i] = m;
         }

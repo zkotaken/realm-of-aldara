@@ -26,6 +26,22 @@ public static class AldaraStructureRemaster
 
     static readonly string[] WHITE = { "palace", "statue", "fountain", "cathedral", "heroes", "moonwell", "observatory", "academy", "kstatue", "hstatue", "elfspire", "chapel", "treasury", "shrine" };
 
+    /// the surface the colour guess gives each triangle of a model (0 = none), and each triangle's outward normal
+    public static int[] Surfaces(Mesh src, string name, out Vector3[] nn)
+    {
+        var P0 = src.vertices; var N0 = src.normals; var C0 = src.colors32; var E0 = src.uv2; var I0 = src.triangles;
+        int T = I0.Length / 3; nn = new Vector3[T]; var ar = new float[T]; var cen = new Vector3[T]; var col = new Color32[T]; var em = new float[T];
+        float y0 = float.MaxValue, y1 = float.MinValue; foreach (var p in P0) { y0 = Mathf.Min(y0, p.y); y1 = Mathf.Max(y1, p.y); }
+        for (int t = 0; t < T; t++)
+        {
+            int a = I0[t * 3], b = I0[t * 3 + 1], c = I0[t * 3 + 2];
+            var n = Vector3.Cross(P0[b] - P0[a], P0[c] - P0[a]); ar[t] = n.magnitude * 0.5f; n = n.sqrMagnitude > 1e-20f ? n.normalized : Vector3.up;
+            if (N0 != null && N0.Length == P0.Length && Vector3.Dot(n, N0[a] + N0[b] + N0[c]) < 0) n = -n;
+            nn[t] = n; cen[t] = (P0[a] + P0[b] + P0[c]) / 3; col[t] = C0 != null && C0.Length == P0.Length ? C0[a] : new Color32(200, 200, 200, 255);
+            em[t] = E0 != null && E0.Length == P0.Length ? E0[a].x : 0;
+        }
+        return Classify(name, T, nn, ar, cen, col, em, y0, y1);
+    }
     public static Mesh Process(Mesh src, string name)
     {
         var P0 = src.vertices; var N0 = src.normals; var C0 = src.colors32; var E0 = src.uv2; var I0 = src.triangles;
@@ -41,6 +57,11 @@ public static class AldaraStructureRemaster
             em[t] = E0 != null && E0.Length == P0.Length ? E0[a].x : 0;
         }
         var mat = Classify(name, T, nn, ar, cen, col, em, y0, y1);
+        // hand-built geometry (AldaraSculpt) names its own surfaces and its smooth, sculpted faces
+        var forced = AldaraSculpt.Forced != null && AldaraSculpt.Forced.Length == T ? AldaraSculpt.Forced : null;
+        var soft = AldaraSculpt.Soft != null && AldaraSculpt.Soft.Length == T ? AldaraSculpt.Soft : new bool[T];
+        AldaraSculpt.Forced = null; AldaraSculpt.Soft = null;
+        if (forced != null) for (int t = 0; t < T; t++) { if (forced[t] > 0) mat[t] = forced[t]; else if (forced[t] < 0) mat[t] = 0; }
 
         // creases: weld positions, find each edge's neighbour
         var key = new int[P0.Length]; var weld = new Dictionary<Vector3Int, int>();
@@ -58,9 +79,9 @@ public static class AldaraStructureRemaster
             var l = kv.Value;
             foreach (var ts in l)
             {
-                int t = ts / 3; float s = 1;   // an open edge is an outside corner
+                int t = ts / 3; float s = soft[t] ? 0 : 1;   // an open edge is an outside corner (not on smooth, sculpted or sewn-on faces)
                 int best = -1; float bd = 2;
-                foreach (var os in l) { int o = os / 3; if (o == t) continue; float d = Vector3.Dot(nn[t], nn[o]); if (d < bd) { bd = d; best = o; } if (d > 0.94f) { best = -2; break; } }
+                foreach (var os in l) { int o = os / 3; if (o == t) continue; float d = Vector3.Dot(nn[t], nn[o]); if (d < bd) { bd = d; best = o; } if (d > (soft[t] && soft[o] ? 0.5f : 0.94f)) { best = -2; break; } }
                 if (best == -2) s = 0;
                 else if (best >= 0)
                 {
@@ -165,6 +186,28 @@ public static class AldaraStructureRemaster
 
     /// remaster the meshes the world and dungeons already use, in place (no scene changes): every structure in
     /// Models/Objects/Meshes and every dungeon set piece, from the exported .amesh sources, and their materials
+    /// put a rebuilt mesh into the existing asset (so scenes keep their references) and onto the GPU
+    static void Into(Mesh m, Mesh ex)
+    {
+        string nm = ex.name; ex.Clear(); ex.indexFormat = m.indexFormat;
+        ex.vertices = m.vertices; ex.normals = m.normals; ex.colors32 = m.colors32; ex.uv2 = m.uv2;
+        var u3 = new List<Vector4>(); m.GetUVs(3, u3); ex.SetUVs(3, u3); ex.triangles = m.triangles; ex.RecalculateBounds(); ex.name = nm;
+        EditorUtility.SetDirty(ex); ex.UploadMeshData(false); Object.DestroyImmediate(m);
+    }
+    /// only the structures whose names start with one of the given prefixes (comma separated), for trying changes
+    public static string RemasterSome(string prefixes)
+    {
+        const string ROOT = "Assets/_Aldara"; int n = 0; var pre = prefixes.Split(',');
+        var names = AssetDatabase.LoadAssetAtPath<TextAsset>(ROOT + "/World/object_models.txt").text.Trim().Split('\n');
+        foreach (var raw in names)
+        {
+            string nm = raw.Trim(); bool hit = false; foreach (var p in pre) if (p.Length > 0 && nm.StartsWith(p)) hit = true; if (!hit || Skip(nm)) continue;
+            var ta = AssetDatabase.LoadAssetAtPath<TextAsset>(ROOT + "/Models/Objects/" + nm + ".amesh.bytes"); var ex = AssetDatabase.LoadAssetAtPath<Mesh>(ROOT + "/Models/Objects/Meshes/" + nm + ".asset");
+            if (!ta || !ex) continue;
+            Into(Process(AldaraSculpt.Apply(AldaraMeshIO.Read(ta.bytes, nm), nm), nm), ex); n++;
+        }
+        AssetDatabase.SaveAssets(); return "remastered " + n;
+    }
     [MenuItem("Aldara/Remaster Structures")]
     public static string RemasterAll()
     {
@@ -178,7 +221,7 @@ public static class AldaraStructureRemaster
                 EditorUtility.DisplayProgressBar("Aldara", "Structure " + nm, i / (float)names.Length);
                 var ta = AssetDatabase.LoadAssetAtPath<TextAsset>(ROOT + "/Models/Objects/" + nm + ".amesh.bytes"); var ex = AssetDatabase.LoadAssetAtPath<Mesh>(ROOT + "/Models/Objects/Meshes/" + nm + ".asset");
                 if (!ta || !ex) continue;
-                var m = Process(AldaraMeshIO.Read(ta.bytes, nm), nm); m.name = ex.name; EditorUtility.CopySerialized(m, ex); Object.DestroyImmediate(m); ex.UploadMeshData(false); n++;
+                Into(Process(AldaraSculpt.Apply(AldaraMeshIO.Read(ta.bytes, nm), nm), nm), ex); n++;
             }
             foreach (var dir in Directory.GetDirectories(ROOT + "/Resources/Dungeons"))
             {
@@ -190,7 +233,7 @@ public static class AldaraStructureRemaster
                 {
                     var ta = AssetDatabase.LoadAssetAtPath<TextAsset>(D + "/props/" + kv.Key + ".amesh.bytes"); var ex = AssetDatabase.LoadAssetAtPath<Mesh>(D + "/Meshes/" + kv.Key + ".asset");
                     if (!ta || !ex) continue;
-                    var m = Process(AldaraMeshIO.Read(ta.bytes, id + "_" + kv.Key), "dun_" + kv.Value); m.name = ex.name; EditorUtility.CopySerialized(m, ex); Object.DestroyImmediate(m); ex.UploadMeshData(false); d++;
+                    Into(Process(AldaraSculpt.Apply(AldaraMeshIO.Read(ta.bytes, id + "_" + kv.Key), "dun_" + kv.Value), "dun_" + kv.Value), ex); d++;
                 }
                 var vm = AssetDatabase.LoadAssetAtPath<Material>(ROOT + "/Materials/Dungeon_" + id + ".mat"); if (vm) { vm.shader = sh; EditorUtility.SetDirty(vm); }
                 // the floor: relief and a surface of the dungeon's kind

@@ -28,6 +28,18 @@ namespace Aldara
         }
         public static void Step(int n) { for (int i = 0; i < n; i++) EditorApplication.Step(); }
         public static string Open(string win) { if (AldaraWindows.I) AldaraWindows.I.Toggle(win, true); Step(8); return "open " + win; }
+        /// in play mode: a close look at a spot (unity position), at the game's own camera angle, saved to the inbox as JPG
+        public static string Close(string file, float x, float y, float z, float size, float time = 0.42f, int px = 1000)
+        {
+            var P = AldaraPlayer.I; if (P) { P.x = x * 32; P.y = 28672 - (z - 6) * 32; }
+            AldaraPost.SetTime(time); Step(10);
+            var main = Camera.main; var go = new GameObject("zcam"); var cam = go.AddComponent<Camera>(); cam.CopyFrom(main); cam.rect = new Rect(0, 0, 1, 1); cam.ResetWorldToCameraMatrix(); cam.ResetProjectionMatrix();
+            var tgt = new Vector3(x, y, z); cam.transform.rotation = main.transform.rotation; cam.transform.position = tgt - main.transform.forward * 80f; cam.orthographic = true; cam.orthographicSize = size;
+            var rt = new RenderTexture(px, px, 24, RenderTextureFormat.ARGB32) { antiAliasing = 4 }; cam.targetTexture = rt; cam.aspect = 1; cam.Render();
+            RenderTexture.active = rt; var tex = new Texture2D(px, px, TextureFormat.RGB24, false); tex.ReadPixels(new Rect(0, 0, px, px), 0, 0); tex.Apply(); RenderTexture.active = null;
+            File.WriteAllBytes(AldaraImport.INBOX + "/" + file + ".jpg", tex.EncodeToJPG(90));
+            cam.targetTexture = null; Object.DestroyImmediate(go); rt.Release(); Object.DestroyImmediate(tex); return file;
+        }
         /// copy the newest screenshot to the inbox so it can be fetched
         public static string Shot(string name)
         {
