@@ -140,8 +140,8 @@
   }
  ],
  "exe": "Realm of Aldara Launcher.exe",
- "exe_build": "4",
- "exe_sha256": "dcab21c9eff010e7076f65f810aaef16409886a477ec503ae09ce2a4be4f69fd",
+ "exe_build": "5",
+ "exe_sha256": "b54a481805672d0495165a64192f7c118c170b49117510d4ddfb3ce7285caf97",
  "classic": {
   "version": "152",
   "title": "Realm of Aldara",
