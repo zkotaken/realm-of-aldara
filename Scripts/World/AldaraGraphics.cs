@@ -21,7 +21,7 @@ namespace Aldara
         public static bool HQ { get { return On("hq"); } }
         Volume vol; ColorAdjustments ca; ShadowsMidtonesHighlights smh; Bloom bl; DepthOfField dof; FilmGrain fg; ChromaticAberration chr;
         ScriptableRendererFeature ssao; Light sun; Quaternion sunRot0; Color sunCol0; float sunInt0; bool sunSaved;
-        readonly List<Light> pool = new List<Light>(); float applyT; bool detailSet, detailOk;
+        readonly List<Light> pool = new List<Light>(); float applyT; bool structSet, structOk; bool detailSet, detailOk;
         void Awake() { I = this; AldaraVfx.DrawAir += DrawAir; }
         // the ambient occlusion feature is left on in the renderer asset: a build strips its shaders when it is saved off
         void OnDestroy() { AldaraVfx.DrawAir -= DrawAir; Shader.SetGlobalFloat("_AldaraHQ", 0); RestoreSun(); if (ssao) ssao.SetActive(true); }
@@ -52,6 +52,10 @@ namespace Aldara
                 if (da && dn) { Shader.SetGlobalTexture("_DetailAlb", da); Shader.SetGlobalTexture("_DetailNor", dn); detailOk = true; }
                 Shader.SetGlobalVector("_DetailSize0", new Vector4(2.7f, 3.8f, 3.6f, 2.1f)); Shader.SetGlobalVector("_DetailSize1", new Vector4(3.4f, 1.6f, 1.8f, 1.6f)); }
             Shader.SetGlobalFloat("_DetailOn", hq && detailOk && On("groundHd") ? 1 : 0);
+            // the structures' photographed surfaces (AldaraStructureRemaster)
+            if (!structSet) { structSet = true; var sa = Resources.Load<Texture2DArray>("World/StructAlb"); var sn = Resources.Load<Texture2DArray>("World/StructNra");
+                if (sa && sn) { Shader.SetGlobalTexture("_StructAlb", sa); Shader.SetGlobalTexture("_StructNra", sn); structOk = true; } }
+            Shader.SetGlobalFloat("_StructOn", hq && structOk && On("structHd") ? 1 : 0);
             if (vol.enabled != hq) vol.enabled = hq; bool ao = hq && On("ssao"); if (ssao && ssao.isActive != ao) ssao.SetActive(ao);
             bool b = On("bloom"), d = On("dofOn", false), g = On("grain", true);
             if (bl.active != b) bl.active = b; if (dof.active != d) dof.active = d; if (fg.active != g) { fg.active = g; chr.active = g; }

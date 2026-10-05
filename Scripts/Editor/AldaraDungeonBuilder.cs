@@ -44,7 +44,7 @@ public static class AldaraDungeonBuilder
             }
         // the set pieces
         var pr = new GameObject("Props"); pr.transform.SetParent(root.transform, false);
-        var vmat = AldaraMeshIO.VertexLit("Dungeon_" + id, 0);
+        var vmat = AldaraMeshIO.VertexLit("Dungeon_" + id, 0); vmat.shader = Shader.Find("Aldara/Structure"); EditorUtility.SetDirty(vmat);
         var meshes = new System.Collections.Generic.Dictionary<string, Mesh>();
         foreach (var p in M["props"])
         {
@@ -52,7 +52,7 @@ public static class AldaraDungeonBuilder
             Mesh mesh; if (!meshes.TryGetValue(m, out mesh))
             {
                 var ta = AssetDatabase.LoadAssetAtPath<TextAsset>(D + "/props/" + m + ".amesh.bytes"); if (!ta) continue;
-                mesh = AldaraMeshIO.Read(ta.bytes, id + "_" + m); string mp = D + "/Meshes/" + m + ".asset"; var ex = AssetDatabase.LoadAssetAtPath<Mesh>(mp);
+                mesh = AldaraMeshIO.Read(ta.bytes, id + "_" + m); mesh = AldaraStructureRemaster.Process(mesh, "dun_" + (string)p["type"]); string mp = D + "/Meshes/" + m + ".asset"; var ex = AssetDatabase.LoadAssetAtPath<Mesh>(mp);
                 if (ex) { EditorUtility.CopySerialized(mesh, ex); mesh = ex; } else AssetDatabase.CreateAsset(mesh, mp); meshes[m] = mesh;
             }
             float x = (float)p["x"], y = (float)p["y"], ry = (float)md["ry"];

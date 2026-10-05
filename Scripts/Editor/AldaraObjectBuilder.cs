@@ -24,12 +24,14 @@ public static class AldaraObjectBuilder
             var ta = AssetDatabase.LoadAssetAtPath<TextAsset>(ROOT + "/Models/Objects/" + n + ".amesh.bytes");
             if (!ta) continue;
             var m = AldaraMeshIO.Read(ta.bytes, n);
+            if (!AldaraStructureRemaster.Skip(n)) m = AldaraStructureRemaster.Process(m, n);   // HD structures: surfaces and creases
             if (ex) { EditorUtility.CopySerialized(m, ex); m = ex; } else AssetDatabase.CreateAsset(m, mp);
             meshes[i] = m;
         }
         var still = AldaraMeshIO.VertexLit("Objects", 0);
         var sway = AldaraMeshIO.VertexLit("Props_Sway", 0.6f);
         var propStill = AldaraMeshIO.VertexLit("Props", 0);
+        still.shader = Shader.Find("Aldara/Structure"); propStill.shader = still.shader; EditorUtility.SetDirty(still); EditorUtility.SetDirty(propStill);
 
         var old = GameObject.Find("Objects"); if (old) Object.DestroyImmediate(old);
         var root = new GameObject("Objects");

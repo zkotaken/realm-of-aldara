@@ -390,6 +390,14 @@
     },
     {
      "k": "row",
+     "t": "HD structures",
+     "hint": "Buildings, walls, camps, lairs, caves and dungeons in photographed stone, timber, tiles and thatch with rounded, worn edges.",
+     "id": "optStructHd",
+     "c": "check",
+     "v": true
+    },
+    {
+     "k": "row",
      "t": "Ambient occlusion",
      "hint": "Soft contact shadows where things meet the ground and each other",
      "id": "optSsao",
@@ -1120,7 +1128,8 @@
   "dofOn": false,
   "groundHd": true,
   "npcFx": true,
-  "foeFx": true
+  "foeFx": true,
+  "structHd": true
  },
  "PRESETS": {
   "low": {
@@ -1146,7 +1155,8 @@
    "dofOn": false,
    "groundHd": false,
    "npcFx": false,
-   "foeFx": false
+   "foeFx": false,
+   "structHd": false
   },
   "medium": {
    "hiDetail": true,
@@ -1171,7 +1181,8 @@
    "dofOn": false,
    "groundHd": true,
    "npcFx": true,
-   "foeFx": true
+   "foeFx": true,
+   "structHd": true
   },
   "high": {
    "hiDetail": true,
@@ -1196,7 +1207,8 @@
    "dofOn": false,
    "groundHd": true,
    "npcFx": true,
-   "foeFx": true
+   "foeFx": true,
+   "structHd": true
   },
   "ultra": {
    "hiDetail": true,
@@ -1221,7 +1233,8 @@
    "dofOn": false,
    "groundHd": true,
    "npcFx": true,
-   "foeFx": true
+   "foeFx": true,
+   "structHd": true
   }
  },
  "BIND": [
@@ -1460,6 +1473,10 @@
   [
    "optFoeFx",
    "foeFx"
+  ],
+  [
+   "optStructHd",
+   "structHd"
   ]
  ],
  "kb": [
