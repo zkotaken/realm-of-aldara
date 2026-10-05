@@ -50,10 +50,10 @@ type feedVersion struct {
 	Classic *feedClassic `json:"classic,omitempty"`
 }
 
-const launcherPageVersion = 5
+const launcherPageVersion = 6
 
 // the program itself: the launcher replaces itself (and so the game program it copies on Play) with newer builds
-const exeBuild = 3
+const exeBuild = 4
 
 func launcherVer(v string) int { n, _ := strconv.Atoi(strings.TrimSpace(v)); return n }
 

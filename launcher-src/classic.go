@@ -64,7 +64,7 @@ func classicDir() string { return filepath.Join(rootDir, "classic") }
 
 func exeOr(n string) string {
 	if n == "" {
-		return "Realm of Aldara Classic.exe"
+		return "Realm of Aldara.exe"
 	}
 	return filepath.Base(n)
 }
@@ -189,16 +189,48 @@ func installClassic(v feedClassic) error {
 	if err := os.MkdirAll(next, 0755); err != nil {
 		return fmt.Errorf("Could not write the game files: %v", err)
 	}
-	// which files the installed copy already has (same size and checksum)
+	// which files the installed copy already has (same size and checksum), at the same path or any other (a renamed
+	// file or folder is reused instead of downloaded again)
+	bySize := map[int64][]string{}
+	filepath.Walk(cur, func(p string, info os.FileInfo, err error) error {
+		if err == nil && !info.IsDir() {
+			bySize[info.Size()] = append(bySize[info.Size()], p)
+		}
+		return nil
+	})
+	sums := map[string]string{}
+	sumOf := func(p string) string {
+		if s, ok := sums[p]; ok {
+			return s
+		}
+		s := fileSum(p)
+		sums[p] = s
+		return s
+	}
+	type haveFile struct {
+		f   clFile
+		src string
+	}
 	var need []clFile
-	var have []clFile
+	var have []haveFile
 	for _, f := range m.Files {
 		src, ok := inside(cur, f.P)
 		if !ok {
 			return fmt.Errorf("The update list has a bad path: %s", f.P)
 		}
-		if st, err := os.Stat(src); err == nil && st.Size() == f.N && strings.EqualFold(fileSum(src), f.S) {
-			have = append(have, f)
+		found := ""
+		if st, err := os.Stat(src); err == nil && st.Size() == f.N && strings.EqualFold(sumOf(src), f.S) {
+			found = src
+		} else {
+			for _, c := range bySize[f.N] {
+				if strings.EqualFold(sumOf(c), f.S) {
+					found = c
+					break
+				}
+			}
+		}
+		if found != "" {
+			have = append(have, haveFile{f, found})
 		} else {
 			need = append(need, f)
 		}
@@ -223,9 +255,9 @@ func installClassic(v feedClassic) error {
 	cl.Lock()
 	cl.phase = "install"
 	cl.Unlock()
-	for _, f := range have {
-		src, _ := inside(cur, f.P)
-		dst, _ := inside(next, f.P)
+	for _, h := range have {
+		src := h.src
+		dst, _ := inside(next, h.f.P)
 		os.MkdirAll(filepath.Dir(dst), 0755)
 		if os.Link(src, dst) != nil {
 			if err := copyFile(src, dst); err != nil {
@@ -364,7 +396,13 @@ func handleClassicPlay(w http.ResponseWriter, r *http.Request) {
 	upd.Unlock()
 	exe := filepath.Join(classicDir(), exeOr(name))
 	if _, err := os.Stat(exe); err != nil {
-		exe = filepath.Join(classicDir(), exeOr(""))
+		// the installed copy may be older than the feed: start the game program that is there
+		for _, n := range []string{"Realm of Aldara.exe", "Realm of Aldara Classic.exe"} {
+			if _, e := os.Stat(filepath.Join(classicDir(), n)); e == nil {
+				exe = filepath.Join(classicDir(), n)
+				break
+			}
+		}
 	}
 	cmd := exec.Command(exe)
 	cmd.Dir = classicDir()
