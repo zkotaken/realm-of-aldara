@@ -17,6 +17,7 @@ namespace Aldara
 
         // live pieces
         VisualElement ufHpClip, ufMpClip, tfRoot, tfClip, xpClip, hpOrbClip, mpOrbClip, hpOrbImg, mpOrbImg, portraitEl, mmView, mmArrow, bannerWrap;
+        VisualElement zoneImg; float zoneW0, zoneL0, zoneTW0, zoneTL0; string zoneLast;
         Label ufName, ufLvl, ufHpT, ufMpT, stats, tfName, tfLvl, tfHpT, zone, orbHpT, orbMpT, xpT, banner, hpVialN, mpVialN;
         VisualElement hpVial, mpVial;
         readonly List<Slot> slots = new List<Slot>();
@@ -81,7 +82,7 @@ namespace Aldara
                 string k = kv.Key; float s = AldaraSettings.F(k == "tr" ? "mmS" : k == "bl" ? "chatS" : "hudS", 1);
                 kv.Value.style.scale = new Scale(new Vector2(s, s)); kv.Value.style.transformOrigin = new TransformOrigin(0, 0);
             }
-            root.style.opacity = AldaraSettings.F("hudA", 1);
+            root.style.opacity = AldaraSettings.F("hudA", 1); zoneLast = null;
             Show("player", AldaraSettings.On("showPlayer")); Show("minimap", AldaraSettings.On("minimap")); Show("zone", AldaraSettings.On("showZone")); Show("chat", AldaraSettings.On("showChat"));
             showTarget = AldaraSettings.On("showTarget"); Show("quest", AldaraSettings.On("showQuest"));
             // text size (--txt: the chat, the quest box, the frames' names and the zone)
@@ -193,7 +194,10 @@ namespace Aldara
             mmArrow.style.borderLeftWidth = mmArrow.style.borderRightWidth = mmArrow.style.borderTopWidth = mmArrow.style.borderBottomWidth = 2; mmArrow.style.borderLeftColor = mmArrow.style.borderRightColor = mmArrow.style.borderTopColor = mmArrow.style.borderBottomColor = Color.white;
             mmView.Add(mmArrow); mmView.pickingMode = PickingMode.Position; mmView.RegisterCallback<ClickEvent>(e => { if (AldaraWindows.I) AldaraWindows.I.Toggle("map", true); });
             Img("minimap_ring", ShotR("minimap_ring"));
-            Begin("zone"); Img("zone", ShotR("zone")); zone = Txt("zone");
+            Begin("zone"); zoneImg = Img("zone", ShotR("zone")); zone = Txt("zone");
+            // the banner grows with the name, as the browser's does (its pointed ends kept, the middle stretched)
+            zoneImg.style.unitySliceLeft = 24; zoneImg.style.unitySliceRight = 24; zoneImg.style.unitySliceTop = 0; zoneImg.style.unitySliceBottom = 0;
+            zoneW0 = zoneImg.style.width.value.value; zoneL0 = zoneImg.style.left.value.value; zoneTW0 = zone.style.width.value.value; zoneTL0 = zone.style.left.value.value;
             // ---- chat (bottom left) ----
             Begin("chat"); { var cr = ShotR("chat"); chatClip = new VisualElement { pickingMode = PickingMode.Ignore }; chatClip.style.overflow = Overflow.Hidden; Place(chatClip, cr); Img("chat", cr, chatClip, cr); } collect = null;
             // ---- bottom bar: base, orb liquid, gloss, claws, slots, vials ----
@@ -288,7 +292,14 @@ namespace Aldara
             var t0 = H.target; bool show = t0 != null && !t0.dead;
             tfRoot.style.display = show && showTarget ? DisplayStyle.Flex : DisplayStyle.None;
             if (show) { tfName.text = (t0.boss ? "Boss: " : "") + t0.name; tfLvl.text = "Lv " + t0.lvl; tfClip.style.width = tfW * Mathf.Clamp01(t0.hp / t0.maxHp); tfHpT.text = Mathf.CeilToInt(Mathf.Max(0, t0.hp)) + " / " + t0.maxHp; tfLvl.style.color = LvColor(t0.lvl - H.lvl); }
-            zone.text = AldaraWorld.ZoneName(P.x, P.y);
+            var zn = AldaraWorld.ZoneName(P.x, P.y);
+            if (zn != zoneLast)
+            {
+                zoneLast = zn; zone.text = zn; float tx = Mathf.Clamp(AldaraSettings.F("txtS", 1), 0.5f, 2);
+                float tw = zone.MeasureTextSize(zone.text, 0, VisualElement.MeasureMode.Undefined, 0, VisualElement.MeasureMode.Undefined).x * tx;
+                float w = Mathf.Max(zoneW0, tw + 46); zoneImg.style.width = w; zoneImg.style.left = zoneL0 + (zoneW0 - w) / 2;
+                float lw = Mathf.Max(zoneTW0, tw / tx + 4); zone.style.width = lw; zone.style.left = zoneTL0 + (zoneTW0 - lw) / 2;
+            }
             if (!zoneCol0Set) { zoneCol0 = zone.style.color.keyword == StyleKeyword.Undefined ? zone.style.color.value : zone.resolvedStyle.color; zoneCol0Set = true; }
             if (zonePvp != zoneShown) { zoneShown = zonePvp; zone.style.color = zonePvp ? AldaraRules.Hex("#ff8a7a") : zoneCol0; zone.style.textShadow = zonePvp ? new TextShadow { color = new Color(1, 60 / 255f, 40 / 255f, 0.7f), offset = Vector2.zero, blurRadius = 8 } : new StyleTextShadow(StyleKeyword.Null); }
             float odt = Mathf.Min(0.05f, Time.unscaledDeltaTime); orbHp.Tick(H.maxHp > 0 ? H.hp / H.maxHp : 0, odt); orbMp.Tick(H.maxMana > 0 ? H.mana / H.maxMana : 0, odt);
