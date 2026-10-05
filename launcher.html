@@ -74,10 +74,6 @@ select,input[type=text]{background:#0e0c14;border:1px solid var(--line);border-r
 .play{min-width:210px;height:54px;border-radius:12px;border:1px solid #f7d78a;background:linear-gradient(180deg,#f2c46a,#c38a22);color:#1a1206;font:700 21px Cinzel,Georgia,serif;letter-spacing:3px;cursor:pointer;box-shadow:0 0 26px rgba(242,196,106,.35),inset 0 1px 0 rgba(255,255,255,.5);transition:.15s}
 .play:hover{filter:brightness(1.08);box-shadow:0 0 34px rgba(242,196,106,.5),inset 0 1px 0 rgba(255,255,255,.5)}
 .play:disabled{filter:grayscale(.7) brightness(.7);cursor:default;box-shadow:none}
-.classic{max-width:760px;display:flex;gap:22px;align-items:center;padding:20px 24px;border:1px solid rgba(242,196,106,.55);border-radius:14px;background:linear-gradient(135deg,rgba(242,196,106,.13),rgba(20,16,28,.92) 60%);box-shadow:0 10px 40px rgba(0,0,0,.4);margin:18px 0 6px}
-.classic .ct{flex:1;min-width:0}.classic h3{font:700 22px Cinzel,Georgia,serif;color:var(--gold);margin:8px 0 4px}
-.classic p{margin:0 0 10px;color:var(--dim);line-height:1.5}.classic .cs{font-size:13.5px;color:var(--text)}.classic .cs.err{color:var(--bad)}
-.classic .cb{display:flex;flex-direction:column;gap:8px;flex:none}.classic .prog{max-width:420px}
 .btn.gold{background:linear-gradient(180deg,#f2c46a,#c38a22);color:#1a1206;border-color:#f7d78a;padding:11px 22px;font-size:14px;letter-spacing:1.5px}
 .btn:disabled{opacity:.5;cursor:default}
 .empty{color:var(--dim);padding:20px 0}
@@ -120,24 +116,30 @@ function isNew(e){ return e.v&&SEEN&&verLess(SEEN,e.v); }
 function entryHTML(e,big){ const t=e.type==='hotfix'?'hotfix':'update';
   return `<div class="${big?'feat':'card'}"><div class="meta"><span class="badge ${t}">${t==='hotfix'?'HOTFIX':'UPDATE'}</span>${isNew(e)?'<span class="badge new">NEW</span>':''}<span>${e.v?'Version '+esc(e.v):esc(e.label||'')}</span>${e.date?'<span>&middot; '+esc(e.date)+'</span>':''}</div>
     <h3>${esc(e.title)}</h3><ul class="notes">${(e.notes||[]).map(n=>'<li>'+esc(n)+'</li>').join('')}</ul></div>`; }
-function renderHome(){ const E=NOTES.entries||[], first=E[0];
-  const fresh=S.separate&&!S.installed;
-  let h=fresh?`<h1>Welcome to Aldara</h1><p class="sub">Press Install to download the game. It installs once, then updates itself whenever there is something new.</p>`:`<h1>Welcome back</h1><p class="sub">${S.installed?'Version '+esc(S.installed)+' is installed. ':''}${E.length?'Here is what is new in Aldara.':''}</p>`;
-  h+='<div id="clBox"></div>';
+// The game is the Unity edition of Realm of Aldara (the launcher's "classic" install: /api/launcher/classic/*).
+// A launcher program from before it could install that edition shows a note to reopen it (it updates itself).
+function G(){ return S.classic||null; }
+function GL(){ return (S.classic&&S.classic.latest)||(S.latest&&S.latest.classic)||null; }
+function legacy(){ return !S.classic; }
+function newer(){ const g=G(), L=GL(); return !!(g&&g.installed&&L&&verLess(g.installed,L.version)); }
+function renderHome(){ const E=NOTES.entries||[], first=E[0], g=G();
+  const fresh=!(g&&g.installed);
+  let h=fresh?`<h1>Welcome to Aldara</h1><p class="sub">Press Install to download the game. It installs once, then updates itself whenever there is something new. Characters you already have carry over.</p>`:`<h1>Welcome back</h1><p class="sub">Version ${esc(g.installed)} is installed. ${E.length?'Here is what is new in Aldara.':''}</p>`;
   if(first) h+=`<h2>Latest ${first.type==='hotfix'?'hotfix':'update'}</h2>`+entryHTML(first,true);
   const rest=E.slice(1,7); if(rest.length){ h+=`<h2>Recent changes</h2><div class="cards">`+rest.map(e=>{ const t=e.type==='hotfix'?'hotfix':'update';
     return `<div class="card small"><div class="meta"><span class="badge ${t}">${t==='hotfix'?'HOTFIX':'UPDATE'}</span>${isNew(e)?'<span class="badge new">NEW</span>':''}<span>${e.v?'Version '+esc(e.v):esc(e.label||'')}</span></div><h3>${esc(e.title)}</h3><div class="more">${(e.notes||[]).length} change${(e.notes||[]).length===1?'':'s'} &middot; see Updates &amp; Hotfixes</div></div>`; }).join('')+`</div>`; }
-  $('v-home').innerHTML=h; renderClassic(); }
+  $('v-home').innerHTML=h; }
 function renderNotes(){ const E=(NOTES.entries||[]).filter(e=>FILT==='all'||(e.type||'update')===FILT);
   $('noteList').innerHTML=E.length?E.map(e=>entryHTML(e,false)).join(''):'<div class="empty">Nothing here yet.</div>';
   const n=(NOTES.entries||[]).filter(isNew).length; const d=$('newDot'); d.textContent=n; d.classList.toggle('show',n>0); }
 async function renderSettings(){ if(!GPUS){ try{ GPUS=await api('/api/gpus'); }catch(e){ GPUS={adapters:[],current:'default'}; } }
+  const g=G(), L=GL();
   const opts=[['default','Let Windows choose'],['high','Most powerful card'],['low','Power saving card']].concat((GPUS.adapters||[]).map(a=>['luid:'+a.luid,a.name+(a.vram?' ('+Math.round(a.vram/1073741824)+' GB)':'')]));
   $('setBox').innerHTML=`
     <div class="row"><div class="t"><b>Automatic updates</b><span>Download new versions as soon as the launcher opens.</span></div><div class="tog ${S.auto?'on':''}" id="autoTog"></div></div>
-    <div class="row"><div class="t"><b>Check for updates</b><span>${S.checkErr?'Last check failed: '+esc(S.checkErr):S.latest?'Newest version online: '+esc(S.latest.version):'Not checked yet.'}</span></div><button class="btn" id="chkBtn">Check now</button></div>
+    <div class="row"><div class="t"><b>Check for updates</b><span>${S.checkErr?'Last check failed: '+esc(S.checkErr):L?'Newest version online: '+esc(L.version):'Not checked yet.'}</span></div><button class="btn" id="chkBtn">Check now</button></div>
     <div class="row"><div class="t"><b>Graphics card</b><span>Which card draws the game. Takes effect the next time you open the game.</span></div><select id="gpuSel">${opts.map(o=>`<option value="${esc(o[0])}" ${o[0]===GPUS.current?'selected':''}>${esc(o[1])}</option>`).join('')}</select></div>
-    ${S.separate?`<div class="row"><div class="t"><b>Game files</b><span>${S.installed?'Installed in '+esc(S.dir||''):'Not installed yet.'}</span></div></div>`:''}
+    <div class="row"><div class="t"><b>Game files</b><span>${g&&g.installed?'Installed in '+esc(g.dir||''):'Not installed yet.'}</span></div></div>
     <div class="row"><div class="t"><b>Your saves</b><span>Characters are stored on this computer. Updates never touch them.</span></div><button class="btn" id="saveBtn">Open folder</button></div>`;
   $('autoTog').onclick=async()=>{ S=await api('/api/launcher/settings',{auto:!S.auto}); renderSettings(); renderBar(); if(S.auto) maybeUpdate(); };
   $('chkBtn').onclick=()=>check(true);
@@ -145,75 +147,56 @@ async function renderSettings(){ if(!GPUS){ try{ GPUS=await api('/api/gpus'); }c
   $('saveBtn').onclick=()=>api('/api/launcher/saves',{}).catch(()=>{}); }
 function mb(n){ return (n/1048576).toFixed(1)+' MB'; }
 function renderBar(){ const l=$('stLine'), p=$('prog'), pi=$('progI'), play=$('play'); l.className='l';
-  const newer=S.latest&&(verLess(S.installed,S.latest.version)||S.missing>0), inst=!!S.installed||!S.separate;
-  if(S.busy&&!inst){ const f=S.tot>0?S.got/S.tot:0; l.textContent='Installing Realm of Aldara '+(S.latest?S.latest.version:'')+'...  '+(S.tot>0?Math.round(f*100)+'%  ('+mb(S.got)+' of '+mb(S.tot)+')':mb(S.got)); p.classList.add('show'); pi.style.width=(f*100).toFixed(1)+'%'; play.disabled=true; play.textContent='INSTALLING'; }
-  else if(!inst){ p.classList.remove('show'); play.disabled=false; play.textContent='INSTALL';
-    if(S.err){ l.textContent=S.err; l.className='l err'; }
-    else if(S.latest) l.textContent='Realm of Aldara is not installed yet. Version '+S.latest.version+(S.latest.size?' ('+mb(S.latest.size)+')':'')+' is ready to install.';
+  const g=G(), L=GL(); p.classList.remove('show'); delete play.dataset.upd;
+  if(legacy()){ play.disabled=true; play.textContent='PLAY';
+    l.textContent=S.exeUpdated?'The launcher has updated itself. Close it and open it again to install the new Realm of Aldara.':(S.checked?'The launcher is updating itself. Close it and open it again in a moment.':'Checking for updates...'); }
+  else if(g.busy){ const f=g.tot>0?g.got/g.tot:0, ph=g.phase;
+    l.textContent=ph==='check'?'Checking the game files...':ph==='install'?'Installing...':(g.installed?'Updating to version ':'Installing Realm of Aldara ')+(L?esc(L.version):'')+'...  '+(g.tot>0?Math.round(f*100)+'%  ('+mb(g.got)+' of '+mb(g.tot)+')':mb(g.got));
+    p.classList.add('show'); pi.style.width=(ph==='install'?100:f*100).toFixed(1)+'%'; play.disabled=true; play.textContent=g.installed?'UPDATING':'INSTALLING'; }
+  else if(!g.installed){ play.disabled=!L; play.textContent='INSTALL';
+    if(g.err){ l.textContent=g.err; l.className='l err'; }
+    else if(L) l.textContent='Realm of Aldara is not installed yet. Version '+L.version+(L.size?' ('+mb(L.size)+')':'')+' is ready to install.';
     else if(S.checkErr){ l.textContent='Could not reach the update server to install the game: '+S.checkErr; l.className='l err'; }
     else l.textContent='Looking for the newest version to install...'; }
-  else if(S.busy){ const f=S.tot>0?S.got/S.tot:0; l.textContent='Downloading version '+(S.latest?S.latest.version:'')+'...  '+(S.tot>0?Math.round(f*100)+'%  ('+mb(S.got)+' of '+mb(S.tot)+')':mb(S.got)); p.classList.add('show'); pi.style.width=(f*100).toFixed(1)+'%'; play.disabled=true; play.textContent='UPDATING'; }
-  else { p.classList.remove('show'); play.disabled=false;
-    if(S.err){ l.textContent=S.err; l.className='l err'; play.textContent='PLAY'; }
-    else if(newer){ l.textContent=verLess(S.installed,S.latest.version)?'Version '+S.latest.version+' is available.':'New game files (music) are ready to download.'; play.textContent=S.auto?'PLAY':'UPDATE'; if(!S.auto){ play.dataset.upd='1'; } }
-    else if(!S.checked){ l.textContent='Checking for updates...'; play.textContent='PLAY'; }
-    else if(S.checkErr){ l.textContent='Could not reach the update server. You can still play version '+S.installed+'.'; l.className='l err'; play.textContent='PLAY'; }
-    else { l.textContent='Up to date.'; l.className='l ok'; play.textContent='PLAY'; }
-    if(!(newer&&!S.auto)) delete play.dataset.upd; }
-  $('verBox').innerHTML=(S.installed?'Installed <b>'+esc(S.installed)+'</b>':'<b>Not installed</b>')+(S.latest?'<br>Newest '+esc(S.latest.version):'');
-  $('sideFoot').innerHTML=(S.installed?'Version <b>'+esc(S.installed)+'</b>':'Game not installed')+'<br>Saves stay on this computer.'; }
+  else { play.disabled=false; play.textContent='PLAY';
+    if(g.err){ l.textContent=g.err; l.className='l err'; }
+    else if(newer()){ l.textContent='Version '+L.version+' is available.'; if(!S.auto){ play.textContent='UPDATE'; play.dataset.upd='1'; } }
+    else if(!S.checked) l.textContent='Checking for updates...';
+    else if(S.checkErr){ l.textContent='Could not reach the update server. You can still play version '+g.installed+'.'; l.className='l err'; }
+    else { l.textContent='Up to date.'; l.className='l ok'; } }
+  const inst=g&&g.installed;
+  $('verBox').innerHTML=(inst?'Installed <b>'+esc(g.installed)+'</b>':'<b>Not installed</b>')+(L?'<br>Newest '+esc(L.version):'');
+  $('sideFoot').innerHTML=(inst?'Version <b>'+esc(g.installed)+'</b>':'Game not installed')+'<br>Saves stay on this computer.'; }
 async function loadNotes(){ try{ NOTES=await api('/api/launcher/notes'); }catch(e){ NOTES={entries:[]}; } if(!SEEN&&NOTES.entries&&NOTES.entries[0]) { SEEN=NOTES.entries[0].v||''; try{ localStorage.setItem('aldara_seen_notes',SEEN); }catch(e){} } renderHome(); renderNotes(); }
-async function poll(){ clearTimeout(POLL); try{ S=await api('/api/launcher/state'); }catch(e){} renderBar(); if(!(S.classic&&S.classic.busy)) renderClassic();
-  if(S.busy) POLL=setTimeout(poll,250); else if(WAS_BUSY){ WAS_BUSY=false; if(!S.err){ renderHome(); toast(INSTALLING?'Realm of Aldara '+S.installed+' is installed. Press Play to start.':'Updated to version '+S.installed); INSTALLING=false; await loadNotes(); if(LAUNCH){ LAUNCH=false; launchGame(); return; } } else { LAUNCH=false; UPD_FAIL=true; } } }
-async function maybeUpdate(){ if(S.separate&&!S.installed) return; if(S.latest&&(verLess(S.installed,S.latest.version)||S.missing>0)&&!S.busy){ S=await api('/api/launcher/update'); WAS_BUSY=true; renderBar(); poll(); } }
-async function check(manual){ try{ S=await api('/api/launcher/check'); }catch(e){} renderBar(); if($('v-settings').classList.contains('on')) renderSettings(); await loadNotes(); renderClassic(); clAuto();
-  if(S.auto) maybeUpdate(); else if(manual) toast(S.latest&&verLess(S.installed,S.latest.version)?'Version '+S.latest.version+' is available':'You have the newest version'); }
+let LAUNCH=false, INSTALLING=false;
+async function poll(){ clearTimeout(POLL); try{ S=await api('/api/launcher/state'); }catch(e){} renderBar();
+  const g=G(); if(g&&g.busy){ POLL=setTimeout(poll,400); return; }
+  if(WAS_BUSY){ WAS_BUSY=false; renderHome();
+    if(g&&!g.err&&g.installed){ toast(INSTALLING?'Realm of Aldara '+g.installed+' is installed. Press Play to start.':'Updated to version '+g.installed); INSTALLING=false; if(LAUNCH){ LAUNCH=false; launchGame(); } }
+    else { LAUNCH=false; INSTALLING=false; } } }
+async function startUpdate(){ try{ S=await api('/api/launcher/classic/update',{}); }catch(e){ toast(String(e.message||e)); } WAS_BUSY=true; renderBar(); poll(); }
+async function maybeUpdate(){ const g=G(); if(S.auto&&g&&g.installed&&!g.busy&&!g.err&&newer()) startUpdate(); }
+async function check(manual){ try{ S=await api('/api/launcher/check'); }catch(e){} renderBar(); if($('v-settings').classList.contains('on')) renderSettings(); await loadNotes();
+  maybeUpdate(); if(manual&&!S.auto) toast(newer()?'Version '+GL().version+' is available':'You have the newest version'); }
 function show(v){ document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v)); document.querySelectorAll('.view').forEach(x=>x.classList.toggle('on',x.id==='v-'+v));
   if(v==='settings') renderSettings();
   if(v==='notes'&&NOTES.entries&&NOTES.entries[0]&&NOTES.entries[0].v){ setTimeout(()=>{ SEEN=NOTES.entries[0].v; try{ localStorage.setItem('aldara_seen_notes',SEEN); }catch(e){} $('newDot').classList.remove('show'); },1500); } }
 document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>show(b.dataset.v));
 $('chips').onclick=e=>{ const b=e.target.closest('button'); if(!b) return; FILT=b.dataset.f; $('chips').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); renderNotes(); };
-
-// ---------- Realm of Aldara Classic (the Unity edition), installed beside the browser edition ----------
-let CL_POLL=null, CL_WAS=false;
-function clLatest(){ return (S.classic&&S.classic.latest)||(S.latest&&S.latest.classic)||null; }
-function renderClassic(){ const box=$('clBox'); if(!box) return; const L=clLatest(); if(!L){ box.innerHTML=''; return; }
-  const c=S.classic; let st='', cls='cs', btn='', prog='';
-  if(!c){ st=S.exeUpdated?'The launcher has updated itself. Close it and open it again to install Classic.':'The launcher is updating itself so it can install Classic. Close it and open it again in a moment.'; }
-  else if(c.busy){ const f=c.tot>0?c.got/c.tot:0; st=c.phase==='check'?'Checking the game files...':c.phase==='install'?'Installing...':'Downloading Realm of Aldara Classic '+esc(L.version)+'...  '+(c.tot>0?Math.round(f*100)+'%  ('+mb(c.got)+' of '+mb(c.tot)+')':mb(c.got));
-    prog=`<div class="prog show"><i style="width:${c.phase==='install'?100:(f*100).toFixed(1)}%"></i></div>`; btn='<button class="btn gold" disabled>'+(c.installed?'UPDATING':'INSTALLING')+'</button>'; }
-  else if(!c.installed){ if(c.err){ st=esc(c.err); cls='cs err'; } else st='Not installed yet. Version '+esc(L.version)+(L.size?', '+mb(L.size):'')+'.'; btn='<button class="btn gold" id="clInst">INSTALL</button>'; }
-  else if(verLess(c.installed,L.version)){ if(c.err){ st=esc(c.err); cls='cs err'; } else st='Version '+esc(L.version)+' is available (you have '+esc(c.installed)+').'; btn='<button class="btn gold" id="clUpd">UPDATE</button><button class="btn" id="clPlay">PLAY CLASSIC</button>'; }
-  else { if(c.err){ st=esc(c.err); cls='cs err'; } else st='Version '+esc(c.installed)+' is installed and up to date.'; btn='<button class="btn gold" id="clPlay">PLAY CLASSIC</button>'; }
-  box.innerHTML=`<div class="classic"><div class="ct"><span class="badge new">NEW</span><h3>Realm of Aldara Classic</h3><p>${esc(L.title||'The whole game rebuilt in Unity, with richer lighting, water, lava and grass. Your characters carry over.')}</p><div class="${cls}">${st}</div>${prog}</div><div class="cb">${btn}</div></div>`;
-  const i=$('clInst'), u=$('clUpd'), pl=$('clPlay'); if(i) i.onclick=clUpdate; if(u) u.onclick=clUpdate; if(pl) pl.onclick=clPlay; }
-async function clUpdate(){ try{ S=await api('/api/launcher/classic/update',{}); }catch(e){ toast(String(e.message||e)); } CL_WAS=true; renderClassic(); clPoll(); }
-async function clPoll(){ clearTimeout(CL_POLL); try{ S=await api('/api/launcher/state'); }catch(e){} renderClassic();
-  if(S.classic&&S.classic.busy) CL_POLL=setTimeout(clPoll,400);
-  else if(CL_WAS){ CL_WAS=false; if(S.classic&&!S.classic.err&&S.classic.installed) toast('Realm of Aldara Classic '+S.classic.installed+' is installed. Press Play Classic to start.'); } }
-async function clPlay(){ const pl=$('clPlay'); if(pl){ pl.disabled=true; pl.textContent='STARTING'; }
-  try{ await api('/api/launcher/classic/play',{}); setTimeout(()=>{ try{ if(window.aldaraQuit) window.aldaraQuit(); }catch(e){} },500); }
-  catch(e){ toast(String(e.message||e)); renderClassic(); } }
-function clAuto(){ const c=S.classic, L=clLatest(); if(S.auto&&c&&c.installed&&L&&!c.busy&&!c.err&&verLess(c.installed,L.version)) clUpdate(); }
-let LAUNCH=false, UPD_FAIL=false, INSTALLING=false;
-// a launcher program from before the game became its own program opens the game in this window instead
 async function launchGame(){ const p=$('play'); p.disabled=true; p.textContent='STARTING';
-  if(!S.separate){ try{ if(window.aldaraTitle) window.aldaraTitle('Realm of Aldara'); }catch(e){} location.href='/'; return; }
   $('stLine').textContent='Starting Realm of Aldara...'; $('stLine').className='l';
-  try{ await api('/api/launcher/play',{}); setTimeout(()=>{ try{ if(window.aldaraQuit) window.aldaraQuit(); }catch(e){} },500); }
+  try{ await api('/api/launcher/classic/play',{}); setTimeout(()=>{ try{ if(window.aldaraQuit) window.aldaraQuit(); }catch(e){} },500); }
   catch(e){ p.disabled=false; p.textContent='PLAY'; $('stLine').textContent=String(e.message||e); $('stLine').className='l err'; } }
 async function install(){ const p=$('play'); p.disabled=true; p.textContent='INSTALLING';
-  if(!S.latest){ try{ S=await api('/api/launcher/check'); }catch(e){} }
-  if(!S.latest){ renderBar(); toast('Could not reach the update server. Check your connection and try again.'); return; }
-  INSTALLING=true; S=await api('/api/launcher/update'); WAS_BUSY=true; renderBar(); poll(); }
-$('play').onclick=async()=>{ const p=$('play'); if(p.disabled) return;
-  if(S.separate&&!S.installed){ install(); return; }
+  if(!GL()){ try{ S=await api('/api/launcher/check'); }catch(e){} }
+  if(!GL()){ renderBar(); toast('Could not reach the update server. Check your connection and try again.'); return; }
+  INSTALLING=true; startUpdate(); }
+$('play').onclick=async()=>{ const p=$('play'); if(p.disabled) return; if(legacy()) return;
+  const g=G(); if(!g.installed){ install(); return; }
   p.disabled=true; p.textContent='CHECKING'; $('stLine').textContent='Making sure you have the newest version...';
-  if(UPD_FAIL){ launchGame(); return; }
   try{ S=await api('/api/launcher/check'); }catch(e){}
-  if(S.latest&&(verLess(S.installed,S.latest.version)||S.missing>0)){ LAUNCH=true; S=await api('/api/launcher/update'); WAS_BUSY=true; renderBar(); poll(); return; }
+  if(newer()&&!G().err){ LAUNCH=true; startUpdate(); return; }
   launchGame(); };
-
 addEventListener('keydown',e=>{ if(e.key==='Enter'&&document.activeElement.tagName!=='INPUT') $('play').click(); });
-(async()=>{ try{ if(window.aldaraTitle) window.aldaraTitle('Realm of Aldara Launcher'); }catch(e){} try{ S=await api('/api/launcher/state'); }catch(e){} renderBar(); await loadNotes(); check(false); setInterval(()=>{ fetch('/api/ping').catch(()=>{}); },5000); setInterval(()=>{ if(!S.busy) check(false); },180000); fetch('/api/ping').catch(()=>{}); })();
+(async()=>{ try{ if(window.aldaraTitle) window.aldaraTitle('Realm of Aldara Launcher'); }catch(e){} try{ S=await api('/api/launcher/state'); }catch(e){} renderBar(); await loadNotes(); check(false); if(G()&&G().busy){ WAS_BUSY=true; poll(); } setInterval(()=>{ fetch('/api/ping').catch(()=>{}); },5000); setInterval(()=>{ if(!(G()&&G().busy)) check(false); },180000); fetch('/api/ping').catch(()=>{}); })();
 </script></body></html>

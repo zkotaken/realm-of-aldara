@@ -1,6 +1,19 @@
 {
  "entries": [
   {
+   "v": "150",
+   "date": "October 5, 2026",
+   "type": "update",
+   "title": "Realm of Aldara, rebuilt",
+   "notes": [
+    "The Unity edition is now the game. Press Play in the launcher and Realm of Aldara starts in its new engine, with the characters you already have.",
+    "High-resolution ground: grass, dirt paths, rock faces, sand, snow, ash and swamp mud now have sharp, detailed surfaces that catch the light, instead of the soft painted map.",
+    "Depth of field is now off by default and no longer part of any quality preset, so the world stays sharp. Turn it on in Settings, Graphics, if you want it.",
+    "New Graphics option: High-resolution ground (on for Medium and up).",
+    "If the launcher asks you to, close it and open it again once so it can finish updating itself."
+   ]
+  },
+  {
    "v": "149.1",
    "date": "October 5, 2026",
    "type": "update",
