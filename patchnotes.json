@@ -1,6 +1,15 @@
 {
  "entries": [
   {
+   "v": "154",
+   "date": "October 6, 2026",
+   "type": "fix",
+   "title": "Orb frames fixed",
+   "notes": [
+    "The health and mana orbs are no longer cut off at the bottom: their gold rings and claw mounts are drawn whole."
+   ]
+  },
+  {
    "v": "153",
    "date": "October 6, 2026",
    "type": "update",
