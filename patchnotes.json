@@ -1,6 +1,19 @@
 {
  "entries": [
   {
+   "v": "152",
+   "date": "October 5, 2026",
+   "type": "update",
+   "title": "Menacing monsters",
+   "notes": [
+    "Every monster is reworked: a darker, harsher hide with glowing veins crawling slowly over it, lit from below by a pool of its land's colour and edged with a burning aura.",
+    "Each land has its own colour: sickly green in the fields and the fen, frost blue on the peaks, ember orange in the waste, violet in the void and Gloomwood, blood red on the Bloodmoor. Higher-tier monsters glow stronger.",
+    "Monsters flare up when they fight you, and their ground glow brightens.",
+    "Bosses stand on a slowly turning ring of jagged runes, with embers rising off them and a light of their colour on them at night.",
+    "New Graphics option: Menacing monsters (on for Medium and up)."
+   ]
+  },
+  {
    "v": "151",
    "date": "October 5, 2026",
    "type": "update",
