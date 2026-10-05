@@ -1,6 +1,24 @@
 {
  "entries": [
   {
+   "v": "159",
+   "date": "October 6, 2026",
+   "type": "update",
+   "title": "The knight, reforged in light",
+   "notes": [
+    "Every knight attack has new 3D effects: each swing of the three-hit combo leaves a sweeping sword trail with a white-hot edge in your weapon's colour, the overhead chop cracks the ground with a shockwave, and every blow lands with a star flare and sparks.",
+    "Power Strike carves a great golden crescent and bursts on impact. Cleave sweeps a huge arc trailing wind. Shield Bash throws a glowing ward forward.",
+    "Ground Slam and Leap Strike tear glowing cracks in the earth, send out a shockwave and dust wall, and throw rock shards. Leap Strike also leaves a light trail and a golden sigil where you land.",
+    "Judgement draws a turning holy sigil, then a great sword of light falls from the sky and a pillar of light erupts where it strikes.",
+    "Whirlwind spins blade trails and wind round you. Battle Roar and War Cry wreathe you in flame with sound waves rolling out. Second Wind spirals green light up round you. Iron Skin raises a golden hex ward.",
+    "Path skills for knights (strikes, novas, slams, hammers, buffs and dashes) use the new effects too. Big hits briefly light up the ground around them.",
+    "Quick attacks no longer pile their trails into a ball of light: each new swing fades the last.",
+    "These need Enhanced rendering and Enhanced effects in Graphics; with them off you get the original effects.",
+    "Chat fixed: what you type no longer runs over the 'Press Enter to chat' hint, the hint hides while you type, and typed text matches the box.",
+    "Chat text now grows with the Text size setting while staying inside the chat box, the newest message always stays in view, and turning off Show chat now hides the whole chat."
+   ]
+  },
+  {
    "v": "158",
    "date": "October 6, 2026",
    "type": "fix",
