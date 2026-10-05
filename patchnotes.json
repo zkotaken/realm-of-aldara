@@ -1,6 +1,20 @@
 {
  "entries": [
   {
+   "v": "153",
+   "date": "October 6, 2026",
+   "type": "update",
+   "title": "Rebuilt structures",
+   "notes": [
+    "Caves are rebuilt: a craggy, layered rock outcrop with a real tunnel running back into the dark, a rocky lip around the mouth, timber props and a lintel, torches on iron brackets, rock teeth over the entrance, rubble at the foot and a faint firelight deep inside.",
+    "Monster camps are rebuilt: hide tents stretched over A-frame poles and a ridge pole, sagging between them, with sewn seams and patches, door flaps tied back on a dark inside, guy ropes pegged to stakes and a fur at the door.",
+    "Campfires are a ring of fire-blackened stones around glowing embers, with logs leaning together and real tongues of flame.",
+    "Lair pillars are rough-hewn stone blocks stacked on a stepped plinth under a capstone, chipped and worn, carved with glowing runes, with rubble at the foot and a living flame in the fire bowls.",
+    "Boulders, stone circles, ruins, graves, wells and the dungeons' columns, pillars, obelisks and stalagmites are sculpted: craggy rock, chipped and broken masonry, ruined columns with jagged broken tops.",
+    "Houses and halls get ridge tiles along their roofs, stone sills under the lit windows and timber lintels over them."
+   ]
+  },
+  {
    "v": "152",
    "date": "October 5, 2026",
    "type": "update",
