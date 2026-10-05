@@ -10,7 +10,7 @@ namespace Aldara
     // Nothing grows in water, lava, on roads, in towns or dungeons.
     public class AldaraGrass : MonoBehaviour
     {
-        const float CELL = 4f, SP = 0.40f; const int PER = 1023;
+        const float CELL = 4f, SP = 0.30f; const int PER = 1023;
         class Cell { public Matrix4x4[] m; public float y; public int tile; public float used; }
         readonly Dictionary<long, Cell> cells = new Dictionary<long, Cell>();
         readonly Dictionary<int, List<Matrix4x4>> byTile = new Dictionary<int, List<Matrix4x4>>();
@@ -19,19 +19,23 @@ namespace Aldara
         readonly Matrix4x4[] buf = new Matrix4x4[PER];
         Mesh tuft; Material mat; static readonly int HeroId = Shader.PropertyToID("_Hero");
         int builtThisFrame;
+        /// tufts drawn last frame (for the release check)
+        public static int Drawn; public static string Why = "";
 
         void Start()
         {
-            var sh = Shader.Find("Aldara/Grass"); if (sh) mat = new Material(sh) { enableInstancing = true, name = "Grass" };
+            // a material asset, so the build keeps the shader's instancing variant (a material made at runtime would lose it)
+            mat = Resources.Load<Material>("Shaders/AldaraGrass");
+            if (!mat) { var sh = Shader.Find("Aldara/Grass"); if (sh) mat = new Material(sh) { enableInstancing = true, name = "Grass" }; }
             tuft = MakeTuft();
         }
         static Mesh MakeTuft()
         {
             var v = new List<Vector3>(); var c = new List<Color>(); var t = new List<int>(); var rnd = new System.Random(7);
             System.Func<float> R = () => (float)rnd.NextDouble();
-            for (int b = 0; b < 9; b++)
+            for (int b = 0; b < 12; b++)
             {
-                float a = R() * Mathf.PI * 2, r = R() * 0.13f, h = 0.20f + R() * 0.17f, w = 0.028f + R() * 0.014f;
+                float a = R() * Mathf.PI * 2, r = R() * 0.13f, h = 0.30f + R() * 0.26f, w = 0.030f + R() * 0.016f;
                 var root = new Vector3(Mathf.Cos(a) * r, 0, Mathf.Sin(a) * r * 0.6f);
                 float face = R() * Mathf.PI; var side = new Vector3(Mathf.Cos(face), 0, Mathf.Sin(face)) * w;
                 var lean = new Vector3(Mathf.Cos(a), 0, Mathf.Sin(a)) * (0.03f + R() * 0.06f);
@@ -92,12 +96,13 @@ namespace Aldara
                     if (!byTile.TryGetValue(c.tile, out var lst)) { lst = new List<Matrix4x4>(); byTile[c.tile] = lst; }
                     lst.AddRange(c.m);
                 }
+            Drawn = 0;
             foreach (var kv in byTile)
             {
-                var lst = kv.Value; if (lst.Count == 0) continue; int ti = kv.Key % 100, tj = kv.Key / 100; var tex = TileTex(ti, tj); if (!tex) continue;
+                var lst = kv.Value; if (lst.Count == 0) continue; int ti = kv.Key % 100, tj = kv.Key / 100; var tex = TileTex(ti, tj); if (!tex) { Why = "no ground texture for tile " + ti + "," + tj; continue; }
                 if (!blocks.TryGetValue(kv.Key, out var mpb)) { mpb = new MaterialPropertyBlock(); mpb.SetTexture("_BaseMap", tex); mpb.SetVector("_TileO", new Vector4(ti * 128f, tj * 128f, 0, 0)); blocks[kv.Key] = mpb; }
                 var rp = new RenderParams(mat) { matProps = mpb, shadowCastingMode = ShadowCastingMode.Off, receiveShadows = true, worldBounds = new Bounds(f, new Vector3(hw * 2 + 8, 80, hh * 2 + 40)) };
-                for (int s = 0; s < lst.Count; s += PER) { int n = Mathf.Min(PER, lst.Count - s); lst.CopyTo(s, buf, 0, n); Graphics.RenderMeshInstanced(rp, tuft, 0, buf, n); }
+                for (int s = 0; s < lst.Count; s += PER) { int n = Mathf.Min(PER, lst.Count - s); lst.CopyTo(s, buf, 0, n); Graphics.RenderMeshInstanced(rp, tuft, 0, buf, n); Drawn += n; }
             }
             // forget cells long off screen
             if (cells.Count > 900) { var drop = new List<long>(); foreach (var kv in cells) if (now - kv.Value.used > 20) drop.Add(kv.Key); foreach (var k in drop) cells.Remove(k); }

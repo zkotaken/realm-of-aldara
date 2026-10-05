@@ -60,7 +60,7 @@ Shader "Aldara/Grass"
                 Light L = GetMainLight(TransformWorldToShadowCoord(i.wp));
                 float h = i.hv.x;
                 // root matches the ground paint, the tips catch more sun and turn a touch yellow
-                float3 c = i.g * lerp(0.80, 1.22, h) * i.hv.y + float3(0.035, 0.03, -0.01) * h;
+                float3 c = i.g * lerp(0.62, 1.38, h) * i.hv.y + float3(0.05, 0.045, -0.01) * h * h;
                 float aoD = 1, aoI = 1;
                 #if defined(_SCREEN_SPACE_OCCLUSION)
                 AmbientOcclusionFactor ao = GetScreenSpaceAmbientOcclusion(GetNormalizedScreenSpaceUV(i.pos)); aoI = ao.indirectAmbientOcclusion; aoD = ao.directAmbientOcclusion;

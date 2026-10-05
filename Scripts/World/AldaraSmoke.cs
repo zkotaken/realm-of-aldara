@@ -29,11 +29,12 @@ namespace Aldara
             try { AldaraSave.Load(slot); Report("loaded slot " + slot + " " + (AldaraHero.I ? AldaraHero.I.heroName + " lv " + AldaraHero.I.lvl : "no hero")); } catch (System.Exception e) { Report("load failed: " + e.Message); }
             yield return new WaitForSeconds(12);
             float t = 0; int n = 0; float t0 = Time.realtimeSinceStartup; while (Time.realtimeSinceStartup - t0 < 5) { n++; t += Time.unscaledDeltaTime; yield return null; }
-            Report("fps " + (n / 5f).ToString("0.0"));
+            Report("fps " + (n / 5f).ToString("0.0") + " grass tufts " + AldaraGrass.Drawn + " " + AldaraGrass.Why + " ground detail " + Shader.GetGlobalFloat("_DetailOn"));
             ScreenCapture.CaptureScreenshot(System.IO.Path.Combine(dir, "smoke_town.png"));
             yield return new WaitForSeconds(1);
             if (AldaraPlayer.I) { AldaraPlayer.I.x = 4400; AldaraPlayer.I.y = 5600; }
             yield return new WaitForSeconds(8);
+            Report("field grass tufts " + AldaraGrass.Drawn + " " + AldaraGrass.Why);
             ScreenCapture.CaptureScreenshot(System.IO.Path.Combine(dir, "smoke_field.png"));
             yield return new WaitForSeconds(2);
             Report("done"); Application.Quit();
