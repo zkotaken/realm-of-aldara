@@ -1,6 +1,22 @@
 {
  "entries": [
   {
+   "v": "160",
+   "date": "October 6, 2026",
+   "type": "update",
+   "title": "Arcane fire, real shadows and weapons put away",
+   "notes": [
+    "Every mage spell has new 3D effects. Bolts, fireballs, ice shards and arcane missiles fly as glowing shots with trails: fire sheds embers and smoke, ice is a spinning crystal, arcane missiles wrap a turning rune, and each bursts in a flare that lights up the ground.",
+    "Fireball blooms into a fiery blast that leaves burning cracks. Ice Shard and Frost Nova burst ice crystals out of the ground. Chain Lightning forks and re-strikes between its targets.",
+    "Meteor falls burning out of the sky onto a fiery sigil and cracks the earth. Blizzard rains ice over a frost sigil. Arcane Cataclysm gathers over a turning violet sigil and erupts in a pillar of light.",
+    "Rejuvenate spirals green light up round you, Arcane Barrier raises a blue hex ward, and Blink leaves a streak of violet light behind you.",
+    "Heroes, townsfolk and monsters now cast solid shadows on the ground instead of faint slivers.",
+    "Out of combat your hero puts their weapon away: a sword and shield go on the back, a staff or bow across it. They come back to hand the moment you fight or cast.",
+    "More gaps in the town walls are closed, including where the walls meet the gate towers of Lorenmar and Valcrest.",
+    "The mage effects need Enhanced rendering and Enhanced effects in Graphics, like the knight's."
+   ]
+  },
+  {
    "v": "159",
    "date": "October 6, 2026",
    "type": "update",
