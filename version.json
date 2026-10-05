@@ -4,7 +4,7 @@
  "sha256": "2ca36332c90f21234c21aec1ab1760b1dcab59205e03b2eed23444a438b94f91",
  "file": "game.html",
  "date": "October 5, 2026",
- "title": "Realm of Aldara, rebuilt",
+ "title": "Clear water and mystical townsfolk",
  "launcher": "6",
  "launcher_sha256": "450cbc0cd6d23a68f1b6e8f3b455f4ea291374150382cdb4ab1b986a05ebb832",
  "assets": [
@@ -141,14 +141,14 @@
  ],
  "exe": "Realm of Aldara Launcher.exe",
  "exe_build": "4",
- "exe_sha256": "980c632de29075242e466e9a70134e3c259e0f5e99d8dec8efdece801e59f879",
+ "exe_sha256": "cd8c40a0892a5e60667206d8195e8857f80a0826f5726da5f8751ed8e93709ae",
  "classic": {
-  "version": "150",
+  "version": "151",
   "title": "Realm of Aldara",
   "exe": "Realm of Aldara.exe",
   "base": "https://raw.githubusercontent.com/zkotaken/realm-of-aldara/classic-builds/",
-  "manifest": "manifests/150.json",
-  "manifest_sha": "807c58e03496c99a443803e849627e918ec40fc0b83328d7882135309d7e7216",
-  "size": 745702777
+  "manifest": "manifests/151.json",
+  "manifest_sha": "cee7e0b928f1f3d2917413cc570fceef6e956e47fa505697a0ebd7eca9be5e1b",
+  "size": 745709084
  }
 }

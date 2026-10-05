@@ -1,6 +1,18 @@
 {
  "entries": [
   {
+   "v": "151",
+   "date": "October 5, 2026",
+   "type": "update",
+   "title": "Clear water and mystical townsfolk",
+   "notes": [
+    "Water is rebuilt: you see the lake bed through the surface, bent by the waves, fading into deep blue as it gets deeper, with the sky and sun reflected on top, light dancing on the shallows and foam breaking along the shore.",
+    "The people of Aldara shine: quest givers stand on slowly turning golden sigils with motes of light rising around them and a warm glow at night, priests in holy blue, merchants, innkeepers and smiths with an amber light.",
+    "Every townsperson gets richer cloth, gilded trim that catches the light, grounded feet and a soft aura at the edges.",
+    "New Graphics option: Mystical townsfolk (on for Medium and up)."
+   ]
+  },
+  {
    "v": "150",
    "date": "October 5, 2026",
    "type": "update",
