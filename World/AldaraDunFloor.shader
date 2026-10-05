@@ -24,6 +24,7 @@ Shader "Aldara/DunFloor"
             #pragma fragment frag
             #pragma target 4.5
             #pragma multi_compile _ _ADDITIONAL_LIGHTS
+            #pragma multi_compile_fragment _ _ADDITIONAL_LIGHT_SHADOWS
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
             TEXTURE2D(_MainTex); SAMPLER(sampler_MainTex); float4 _MainTex_TexelSize;
@@ -65,7 +66,7 @@ Shader "Aldara/DunFloor"
                 uint cnt = GetAdditionalLightsCount();
                 for (uint li = 0; li < cnt; li++)
                 {
-                    Light Lt = GetAdditionalLight(li, i.wp);
+                    Light Lt = GetAdditionalLight(li, i.wp, half4(1, 1, 1, 1)); Lt.distanceAttenuation *= lerp(0.12, 1, Lt.shadowAttenuation);
                     float an = saturate(dot(n, Lt.direction));
                     float3 V = normalize(GetCameraPositionWS() - i.wp);
                     c += base.rgb * Lt.color * Lt.distanceAttenuation * an * 0.8;

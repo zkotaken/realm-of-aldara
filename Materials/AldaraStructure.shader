@@ -32,6 +32,7 @@ Shader "Aldara/Structure"
             #pragma multi_compile_fragment _ _SHADOWS_SOFT
             #pragma multi_compile_fragment _ _SCREEN_SPACE_OCCLUSION
             #pragma multi_compile _ _ADDITIONAL_LIGHTS
+            #pragma multi_compile_fragment _ _ADDITIONAL_LIGHT_SHADOWS
             #pragma multi_compile_fog
             TEXTURE2D_ARRAY(_StructAlb); SAMPLER(sampler_StructAlb);
             TEXTURE2D_ARRAY(_StructNra); SAMPLER(sampler_StructNra);

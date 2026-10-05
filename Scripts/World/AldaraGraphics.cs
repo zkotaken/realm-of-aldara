@@ -56,6 +56,9 @@ namespace Aldara
             if (!structSet) { structSet = true; var sa = Resources.Load<Texture2DArray>("World/StructAlb"); var sn = Resources.Load<Texture2DArray>("World/StructNra");
                 if (sa && sn) { Shader.SetGlobalTexture("_StructAlb", sa); Shader.SetGlobalTexture("_StructNra", sn); structOk = true; } }
             Shader.SetGlobalFloat("_StructOn", hq && structOk && On("structHd") ? 1 : 0);
+            // the sun's shadow map fitted to what the camera sees (sharper realtime shadows), one cascade for the flat view
+            var urp = UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline as UniversalRenderPipelineAsset;
+            if (urp) { float sd = hq ? 125 : 180; int cc = hq ? 1 : 2; if (urp.shadowDistance != sd) urp.shadowDistance = sd; if (urp.shadowCascadeCount != cc) urp.shadowCascadeCount = cc; }
             if (vol.enabled != hq) vol.enabled = hq; bool ao = hq && On("ssao"); if (ssao && ssao.isActive != ao) ssao.SetActive(ao);
             bool b = On("bloom"), d = On("dofOn", false), g = On("grain", true);
             if (bl.active != b) bl.active = b; if (dof.active != d) dof.active = d; if (fg.active != g) { fg.active = g; chr.active = g; }
@@ -110,6 +113,9 @@ namespace Aldara
                 var l = pool[i]; if (i >= pick.Count) { if (l.enabled) l.enabled = false; continue; }
                 var L = pick[i]; float a = Mathf.Min(1, L.i * boost) * (AldaraWorld.Dun ? 1 : Mathf.Lerp(0.12f, 1, AldaraPost.Night)); if (a < 0.05f) { l.enabled = false; continue; }
                 l.enabled = true; l.color = L.c; l.range = L.r / AldaraWorld.PX * 0.9f; l.intensity = a * 2.4f;
+                // the three strongest near the hero throw realtime shadows (torches, lamps, campfires, braziers)
+                var want = i < 3 && On("shadows") ? LightShadows.Soft : LightShadows.None;
+                if (l.shadows != want) { l.shadows = want; l.shadowStrength = 0.9f; l.shadowNearPlane = 0.2f; l.shadowBias = 0.04f; l.shadowNormalBias = 0.3f; l.shadowResolution = UnityEngine.Rendering.LightShadowResolution.High; }
                 l.transform.position = AldaraWorld.ToUnity(L.x, L.y + 40) + Vector3.up * (60 / AldaraWorld.PX);
             }
         }

@@ -25,7 +25,8 @@ namespace Aldara
         public static Material FadeOf(Material m)
         {
             if (m == null) return null; Material f; if (fades.TryGetValue(m, out f) && f) return f;
-            f = new Material(Shader.Find("Aldara/VertexLitFade")) { renderQueue = 2991 };
+            bool fol = m.shader && m.shader.name == "Aldara/Foliage";
+            f = new Material(Shader.Find(fol ? "Aldara/FoliageFade" : "Aldara/VertexLitFade")) { renderQueue = 2991 }; if (fol && m.HasProperty("_LeafTex")) f.SetTexture("_LeafTex", m.GetTexture("_LeafTex"));
             foreach (var p in new[] { "_Tint", "_Wind", "_Emit" }) if (m.HasProperty(p)) { if (p == "_Tint") f.SetColor(p, m.GetColor(p)); else f.SetFloat(p, m.GetFloat(p)); }
             f.SetFloat("_Alpha", 0.45f); f.enableInstancing = true; fades[m] = f; return f;
         }

@@ -35,10 +35,10 @@ float3 AldaraShade(float3 albedo, float3 n, float3 wp, float4 posCS, float em, f
     uint cnt = GetAdditionalLightsCount();
     for (uint li = 0; li < cnt; li++)
     {
-        Light A = GetAdditionalLight(li, wp);
-        float an = saturate(dot(n, A.direction) * 0.75 + 0.25);
+        Light A = GetAdditionalLight(li, wp, half4(1, 1, 1, 1));   // with its realtime shadow, when the light casts one
+        float an = saturate(dot(n, A.direction) * 0.75 + 0.25) * lerp(0.15, 1, A.shadowAttenuation);
         c += albedo * A.color * A.distanceAttenuation * an;
-        c += A.color * A.distanceAttenuation * pow(saturate(dot(n, normalize(A.direction + V))), 24) * specK * 0.6;
+        c += A.color * A.distanceAttenuation * A.shadowAttenuation * pow(saturate(dot(n, normalize(A.direction + V))), 24) * specK * 0.6;
     }
     #endif
     return c + albedo * em;

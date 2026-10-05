@@ -26,6 +26,7 @@ Shader "Aldara/Ground"
             #pragma multi_compile_fragment _ _SHADOWS_SOFT
             #pragma multi_compile_fragment _ _SCREEN_SPACE_OCCLUSION
             #pragma multi_compile _ _ADDITIONAL_LIGHTS
+            #pragma multi_compile_fragment _ _ADDITIONAL_LIGHT_SHADOWS
             struct A { float4 pos : POSITION; float3 n : NORMAL; float2 uv : TEXCOORD0; };
             struct V { float4 pos : SV_POSITION; float2 uv : TEXCOORD0; float3 wp : TEXCOORD1; float3 n : TEXCOORD2; };
             V vert(A i){ V o; o.wp = TransformObjectToWorld(i.pos.xyz); o.pos = TransformWorldToHClip(o.wp); o.uv = i.uv; o.n = TransformObjectToWorldNormal(i.n); return o; }
@@ -116,7 +117,7 @@ Shader "Aldara/Ground"
                 float3 col = c * grain * lerp(0.55, 1.0, sh) * (0.62 + 0.38 * nl / max(flat, 0.35)) * 1.08 * shadeTint * lerp(1, aoI, 0.85);
                 #if defined(_ADDITIONAL_LIGHTS)
                 uint cnt = GetAdditionalLightsCount();
-                for (uint li = 0; li < cnt; li++) { Light A2 = GetAdditionalLight(li, i.wp); col += c * A2.color * A2.distanceAttenuation * saturate(dot(n, A2.direction) * 0.6 + 0.4) * 0.8; }
+                for (uint li = 0; li < cnt; li++) { Light A2 = GetAdditionalLight(li, i.wp, half4(1, 1, 1, 1)); col += c * A2.color * A2.distanceAttenuation * saturate(dot(n, A2.direction) * 0.6 + 0.4) * 0.8 * lerp(0.12, 1, A2.shadowAttenuation); }
                 #endif
                 return half4(col, 1);
             }

@@ -49,26 +49,30 @@ namespace Aldara
         /// burst: square sparks flying out
         public static void Burst(float x, float y, Color col, int n, float speed)
         {
+            AldaraVfxPlus.OnBurst(x, y, col, n, speed);
             var P = V.particles;
             for (int i = 0; i < n && P.Count < MAX_PARTICLES; i++) { float a = R() * Mathf.PI * 2, v = speed * (0.3f + R() * 0.7f); P.Add(new Part { x = x, y = y, vx = Mathf.Cos(a) * v, vy = Mathf.Sin(a) * v, life = 0.35f + R() * 0.25f, c = col, size = 2 + R() * 2 }); }
         }
         public static void Particle(float x, float y, float vx, float vy, float life, Color col, float size) { if (V.particles.Count < MAX_PARTICLES) V.particles.Add(new Part { x = x, y = y, vx = vx, vy = vy, life = life, c = col, size = size }); }
-        public static Fx Effect(string kind, float x, float y, float r, float life, Color col) { var f = new Fx { kind = kind, x = x, y = y, r = r, life = life, max = life, color = col }; V.effects.Add(f); return f; }
+        public static Fx Effect(string kind, float x, float y, float r, float life, Color col) { var f = new Fx { kind = kind, x = x, y = y, r = r, life = life, max = life, color = col }; V.effects.Add(f); AldaraVfxPlus.OnEffect(f); return f; }
         public static void Ring(float x, float y, float r, Color col, float life, Color? fill = null) { var f = Effect("ring", x, y, r, life, col); if (fill.HasValue) { f.hasFill = true; f.fill = fill.Value; } }
         public static void Zap(float x, float y, float x2, float y2, Color col, float life, bool straight) { var f = Effect("zap", x, y, 0, life, col); f.x2 = x2; f.y2 = y2; f.straight = straight; }
         public static void Shake(float amp, float life) { var f = new Fx { kind = "shake", amp = amp, life = life, max = life }; V.effects.Add(f); }
-        public static Mf Mfx(Mf f) { f.t = -f.dl; if (V.mfx.Count < 220) V.mfx.Add(f); return f; }
+        public static Mf Mfx(Mf f) { f.t = -f.dl; if (V.mfx.Count < 220) V.mfx.Add(f); AldaraVfxPlus.OnMfx(f); return f; }
         public static void Mpush(Mp p) { if (V.mp.Count < Mathf.Max(120, MAX_PARTICLES * 1.6f)) V.mp.Add(p); }
         public static void Debris(float x, float y, int n, Color col, string el = null)
         {
+            AldaraVfxPlus.OnDebris(x, y, n, el);
             for (int k = 0; k < n; k++) { float a = R() * Mathf.PI * 2, v = 60 + R() * 170; Mpush(new Mp { x = x, y = y, z = 4, vx = Mathf.Cos(a) * v, vy = Mathf.Sin(a) * v, vz = 180 + R() * 260, g = 900, life = 1.1f, max = 1.1f, c = col, s = 2.5f + R() * 3.5f, rock = true, rot = R() * 6, hasRot = true, vr = (R() - 0.5f) * 14, ember = el == "fire" }); }
         }
         public static void Sparks(float x, float y, float h, float a0, int n, Color col, float spd = 220, float spread = Mathf.PI * 2)
         {
+            AldaraVfxPlus.OnSparks(x, y, h, n, col, spd);
             for (int k = 0; k < n; k++) { float a = a0 + (R() - 0.5f) * spread, v = spd * (0.5f + R() * 0.7f); Mpush(new Mp { x = x, y = y, z = h, vx = Mathf.Cos(a) * v, vy = Mathf.Sin(a) * v, vz = 60 + R() * 160, g = 650, life = 0.45f, max = 0.45f, c = col, s = 1.8f, glow = true }); }
         }
         public static void Motes(float x, float y, float r, int n, Color col, float up = 60)
         {
+            AldaraVfxPlus.OnMotes(x, y, r, n, col);
             for (int k = 0; k < n; k++) { float a = R() * Mathf.PI * 2, d = Mathf.Sqrt(R()) * r; Mpush(new Mp { x = x + Mathf.Cos(a) * d, y = y + Mathf.Sin(a) * d * 0.6f, z = R() * 10, vz = up * (0.5f + R()), life = 0.9f + R() * 0.5f, max = 1.4f, c = col, s = 2 + R() * 1.5f, glow = true }); }
         }
         public static void QuakeFx(float x, float y, float Rr, Color c1, Color c2, float shake, bool scorch)
