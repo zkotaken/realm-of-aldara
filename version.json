@@ -4,7 +4,7 @@
  "sha256": "2ca36332c90f21234c21aec1ab1760b1dcab59205e03b2eed23444a438b94f91",
  "file": "game.html",
  "date": "October 6, 2026",
- "title": "Mist over the Shadowfen",
+ "title": "Living forests, real shadows and new effects",
  "launcher": "6",
  "launcher_sha256": "450cbc0cd6d23a68f1b6e8f3b455f4ea291374150382cdb4ab1b986a05ebb832",
  "assets": [
@@ -141,14 +141,14 @@
  ],
  "exe": "Realm of Aldara Launcher.exe",
  "exe_build": "5",
- "exe_sha256": "4f5649b1f622e9ef7044b8bb72ad7b1c67d3ff903119fffad351b24ec1a67f5b",
+ "exe_sha256": "12906b60c795237a5013e889a54326d3692138c3872888735a6326f7425b64f8",
  "classic": {
-  "version": "156",
+  "version": "157",
   "title": "Realm of Aldara",
   "exe": "Realm of Aldara.exe",
   "base": "https://raw.githubusercontent.com/zkotaken/realm-of-aldara/classic-builds/",
-  "manifest": "manifests/156.json",
-  "manifest_sha": "3831782627af5a427af64a1278d4815942edad44d92edd145d09a55bf838e672",
-  "size": 839359831
+  "manifest": "manifests/157.json",
+  "manifest_sha": "1c9fed3a9b37cc28ae05c56625359e63a823ea771e40f5e75d5edb16d5a4719d",
+  "size": 720489600
  }
 }

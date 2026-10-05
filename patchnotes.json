@@ -1,6 +1,19 @@
 {
  "entries": [
   {
+   "v": "157",
+   "date": "October 6, 2026",
+   "type": "update",
+   "title": "Living forests, real shadows and new effects",
+   "notes": [
+    "Town and castle walls are joined up: the gaps where wall sections met towers, gates and corners are closed.",
+    "Every tree and bush has been rebuilt with full leafy crowns made of thousands of real leaves: broadleaf, pine needles, hanging willow and blossom. Leaves sway in the wind, catch the light at their edges, and each tree has its own slightly different colour.",
+    "Realtime shadows: torches, braziers and campfires now cast soft shadows of the people, walls and trees around them, and sun shadows near you are sharper.",
+    "Enhanced effects: spells, hits, explosions and impacts throw 3D sparks, glowing embers, smoke, dust and flying shards, and big blasts briefly light up the ground and buildings around them. Fires give off drifting embers and smoke.",
+    "New Enhanced effects option in Graphics. It is on by default and off on the Low preset, and needs Enhanced rendering."
+   ]
+  },
+  {
    "v": "156",
    "date": "October 6, 2026",
    "type": "update",
