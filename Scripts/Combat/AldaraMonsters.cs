@@ -396,7 +396,7 @@ namespace Aldara
             bool fo = m.flash > 0; if (fo != m.flashOn)
             {
                 m.flashOn = fo; if (m.rends == null) m.rends = m.view.GetComponentsInChildren<Renderer>();
-                foreach (var r in m.rends) { if (!r) continue; if (fo) { var mp = new MaterialPropertyBlock(); r.GetPropertyBlock(mp); var mat = r.sharedMaterial; mp.SetFloat("_Emit", (mat && mat.HasProperty("_Emit") ? mat.GetFloat("_Emit") : 0) + 0.55f); r.SetPropertyBlock(mp); } else r.SetPropertyBlock(null); }
+                foreach (var r in m.rends) { if (!r) continue; if (fo) { var mp = new MaterialPropertyBlock(); r.GetPropertyBlock(mp); var mat = r.sharedMaterial; mp.SetFloat("_Emit", (mat && mat.HasProperty("_Emit") ? mat.GetFloat("_Emit") : 0) + 0.55f); r.SetPropertyBlock(mp); } else { var mp = new MaterialPropertyBlock(); r.GetPropertyBlock(mp); var mat = r.sharedMaterial; mp.SetFloat("_Emit", mat && mat.HasProperty("_Emit") ? mat.GetFloat("_Emit") : 0); r.SetPropertyBlock(mp); } }
             }
             if (m.sculpt) m.sculpt.Tick(mvd && m.act == null, dt);
             if (m.anim)

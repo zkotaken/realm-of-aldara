@@ -446,6 +446,14 @@
     },
     {
      "k": "row",
+     "t": "Menacing monsters",
+     "hint": "Monsters glow in the colour of their land; bosses stand on runes with embers rising off them.",
+     "id": "optFoeFx",
+     "c": "check",
+     "v": true
+    },
+    {
+     "k": "row",
      "t": "Living air",
      "hint": "Fireflies on summer nights, embers, motes, pollen and ash drifting in the air",
      "id": "optAmbFx",
@@ -1111,7 +1119,8 @@
   "grass": true,
   "dofOn": false,
   "groundHd": true,
-  "npcFx": true
+  "npcFx": true,
+  "foeFx": true
  },
  "PRESETS": {
   "low": {
@@ -1136,7 +1145,8 @@
    "grass": false,
    "dofOn": false,
    "groundHd": false,
-   "npcFx": false
+   "npcFx": false,
+   "foeFx": false
   },
   "medium": {
    "hiDetail": true,
@@ -1160,7 +1170,8 @@
    "grass": false,
    "dofOn": false,
    "groundHd": true,
-   "npcFx": true
+   "npcFx": true,
+   "foeFx": true
   },
   "high": {
    "hiDetail": true,
@@ -1184,7 +1195,8 @@
    "grass": true,
    "dofOn": false,
    "groundHd": true,
-   "npcFx": true
+   "npcFx": true,
+   "foeFx": true
   },
   "ultra": {
    "hiDetail": true,
@@ -1208,7 +1220,8 @@
    "grass": true,
    "dofOn": false,
    "groundHd": true,
-   "npcFx": true
+   "npcFx": true,
+   "foeFx": true
   }
  },
  "BIND": [
@@ -1443,6 +1456,10 @@
   [
    "optNpcFx",
    "npcFx"
+  ],
+  [
+   "optFoeFx",
+   "foeFx"
   ]
  ],
  "kb": [

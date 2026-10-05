@@ -61,6 +61,7 @@ namespace Aldara
             if (cd) { var want = hq ? AntialiasingMode.SubpixelMorphologicalAntiAliasing : AntialiasingMode.None; if (cd.antialiasing != want) { cd.antialiasing = want; cd.antialiasingQuality = AntialiasingQuality.High; } }
             if (!GetComponent<AldaraGrass>()) gameObject.AddComponent<AldaraGrass>();
             if (!GetComponent<AldaraNpcFx>()) gameObject.AddComponent<AldaraNpcFx>();
+            if (!GetComponent<AldaraFoeFx>()) gameObject.AddComponent<AldaraFoeFx>();
         }
         void Update()
         {
