@@ -57,8 +57,10 @@ namespace Aldara
             if (bl.active != b) bl.active = b; if (dof.active != d) dof.active = d; if (fg.active != g) { fg.active = g; chr.active = g; }
             // edge smoothing on top of the multisampling: SMAA catches shader edges (rock fissures, lava seams, glints)
             var cam = Camera.main; var cd = cam ? cam.GetComponent<UniversalAdditionalCameraData>() : null;
+            if (cd && cd.requiresColorTexture != hq) cd.requiresColorTexture = hq;   // the water looks through to the bed
             if (cd) { var want = hq ? AntialiasingMode.SubpixelMorphologicalAntiAliasing : AntialiasingMode.None; if (cd.antialiasing != want) { cd.antialiasing = want; cd.antialiasingQuality = AntialiasingQuality.High; } }
             if (!GetComponent<AldaraGrass>()) gameObject.AddComponent<AldaraGrass>();
+            if (!GetComponent<AldaraNpcFx>()) gameObject.AddComponent<AldaraNpcFx>();
         }
         void Update()
         {

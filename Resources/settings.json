@@ -438,6 +438,14 @@
     },
     {
      "k": "row",
+     "t": "Mystical townsfolk",
+     "hint": "Quest givers on glowing sigils, auras and gilded trim on the people of Aldara.",
+     "id": "optNpcFx",
+     "c": "check",
+     "v": true
+    },
+    {
+     "k": "row",
      "t": "Living air",
      "hint": "Fireflies on summer nights, embers, motes, pollen and ash drifting in the air",
      "id": "optAmbFx",
@@ -1102,7 +1110,8 @@
   "uiAll": "1",
   "grass": true,
   "dofOn": false,
-  "groundHd": true
+  "groundHd": true,
+  "npcFx": true
  },
  "PRESETS": {
   "low": {
@@ -1126,7 +1135,8 @@
    "ambFx": false,
    "grass": false,
    "dofOn": false,
-   "groundHd": false
+   "groundHd": false,
+   "npcFx": false
   },
   "medium": {
    "hiDetail": true,
@@ -1149,7 +1159,8 @@
    "ambFx": true,
    "grass": false,
    "dofOn": false,
-   "groundHd": true
+   "groundHd": true,
+   "npcFx": true
   },
   "high": {
    "hiDetail": true,
@@ -1172,7 +1183,8 @@
    "ambFx": true,
    "grass": true,
    "dofOn": false,
-   "groundHd": true
+   "groundHd": true,
+   "npcFx": true
   },
   "ultra": {
    "hiDetail": true,
@@ -1195,7 +1207,8 @@
    "ambFx": true,
    "grass": true,
    "dofOn": false,
-   "groundHd": true
+   "groundHd": true,
+   "npcFx": true
   }
  },
  "BIND": [
@@ -1426,6 +1439,10 @@
   [
    "optGroundHd",
    "groundHd"
+  ],
+  [
+   "optNpcFx",
+   "npcFx"
   ]
  ],
  "kb": [

@@ -1,6 +1,6 @@
 Shader "Aldara/VertexLit"
 {
-    Properties { _Tint("Tint", Color) = (1,1,1,1) _Wind("Wind sway", Float) = 0 _Emit("Emission boost", Float) = 0 }
+    Properties { _Tint("Tint", Color) = (1,1,1,1) _Wind("Wind sway", Float) = 0 _Emit("Emission boost", Float) = 0 _NpcRim("NPC aura (rgb, strength)", Color) = (0,0,0,0) }
     SubShader
     {
         Tags { "RenderType"="Opaque" "RenderPipeline"="UniversalPipeline" "Queue"="Geometry" }
@@ -8,7 +8,7 @@ Shader "Aldara/VertexLit"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
         #include "AldaraLighting.hlsl"
-        CBUFFER_START(UnityPerMaterial) float4 _Tint; float _Wind; float _Emit; CBUFFER_END
+        CBUFFER_START(UnityPerMaterial) float4 _Tint; float _Wind; float _Emit; float4 _NpcRim; CBUFFER_END
         float3 Sway(float3 wp, float3 op){ float h = max(0, op.y); float k = _Wind * h * h * 0.01;
             wp.x += sin(_Time.y * 1.6 + wp.x * 0.3 + wp.z * 0.2) * k; wp.z += cos(_Time.y * 1.3 + wp.z * 0.3) * k * 0.7; return wp; }
         ENDHLSL
@@ -34,7 +34,25 @@ Shader "Aldara/VertexLit"
             half4 frag(V i, bool front : SV_IsFrontFace) : SV_Target {
                 UNITY_SETUP_INSTANCE_ID(i);
                 float3 n = normalize(front ? i.n : -i.n);
-                float3 c = AldaraShade(i.col.rgb, n, i.wp, i.pos, i.em + _Emit, 0.16);
+                float3 alb = i.col.rgb; float em = i.em + _Emit;
+                if (_AldaraHQ > 0.5 && _NpcRim.a > 0)
+                {   // the people of Aldara (AldaraNpcFx): richer cloth, gilded trim that glows, grounded feet and a soft aura
+                    float hgt = i.wp.y - UNITY_MATRIX_M._m13;
+                    float mx = max(alb.r, max(alb.g, alb.b)), mn = min(alb.r, min(alb.g, alb.b)); float sat = (mx - mn) / max(mx, 1e-3);
+                    alb = lerp(dot(alb, float3(0.3, 0.59, 0.11)).xxx, alb, 1.12) * (0.97 + 0.06 * sin(i.wp.y * 38 + i.wp.x * 9));
+                    float gold = saturate((alb.r - alb.b) * 3 - 0.6) * saturate((alb.g - alb.b) * 3 - 0.3) * saturate(sat * 2 - 0.6);
+                    em += gold * 0.35 * _NpcRim.a;
+                    alb *= lerp(0.62, 1, saturate(hgt / 0.45));
+                }
+                float3 c = AldaraShade(alb, n, i.wp, i.pos, em, 0.16 + 0.2 * saturate(_NpcRim.a));
+                if (_AldaraHQ > 0.5 && _NpcRim.a > 0)
+                {
+                    float3 V = GetWorldSpaceNormalizeViewDir(i.wp);
+                    float fr = pow(1 - saturate(abs(dot(n, V))), 2.6);
+                    float pulse = 0.75 + 0.25 * sin(_Time.y * 1.7 + i.wp.x * 0.7 + i.wp.z * 0.5);
+                    float3 tint = lerp(_NpcRim.rgb, _NpcRim.rgb.gbr, 0.18 * (0.5 + 0.5 * sin(_Time.y * 0.6 + i.wp.y * 3)));
+                    c += tint * fr * _NpcRim.a * pulse;
+                }
                 c = MixFog(c, i.fog);
                 return half4(c, 1);
             }

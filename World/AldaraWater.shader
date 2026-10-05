@@ -17,8 +17,9 @@ Shader "Aldara/Water"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareOpaqueTexture.hlsl"
             #include "../Materials/AldaraNoise.hlsl"
-            float _Glint, _Speed, _HQ; float _AldaraHQ;
+            float _Glint, _Speed, _HQ; float _AldaraHQ; float _WaterRefract;
             struct A { float4 pos : POSITION; float4 col : COLOR; };
             struct V { float4 pos : SV_POSITION; float4 col : COLOR; float3 wp : TEXCOORD0; float4 sp : TEXCOORD1; };
             V vert(A i){ V o; float3 wp = TransformObjectToWorld(i.pos.xyz);
@@ -84,19 +85,49 @@ Shader "Aldara/Water"
                     lc = lerp(lc, float3(0.12, 0.04, 0.03), smoothstep(0.88, 1.0, shore) * 0.7);
                     return half4(lc, 1);
                 }
-                // water: turquoise in the shallows deepening to blue, light dancing on the bottom, a softer sparkle
-                float3 shallowC = i.col.rgb * float3(0.82, 1.08, 1.04) + float3(0.02, 0.05, 0.05);
-                float3 deep = lerp(shallowC, i.col.rgb * float3(0.62, 0.72, 0.86), saturate(thick / 3.2));
-                float2 c1 = AVoronoi(q * 1.25 + float2(t * 0.9, t * 0.55)), c2 = AVoronoi(q * 1.6 - float2(t * 0.6, t * 0.8));
-                float caust = (1 - smoothstep(0.0, 0.07, c1.y - c1.x)) * (1 - smoothstep(0.0, 0.12, c2.y - c2.x));
-                caust *= saturate(1 - thick / 0.8) * (1 - lava) * dayL;
-                gl *= 0.3;
-                float3 sky = SampleSH(float3(0, 1, 0));
-                float3 hc = deep * (0.78 + 0.30 * n) * (0.6 + 0.5 * L.color);
-                hc += sp * L.color * 0.9 + fres * 0.30 * sky + gl * L.color * 0.5 + caust * L.color * 0.16;
-                hc = lerp(hc, float3(0.92, 0.96, 1.0) * (0.75 + 0.25 * L.color), foam * 0.85);
-                float a = saturate(i.col.a + fres * 0.22 + gl * 0.3 + sp * 0.4 + foam * 0.6 + caust * 0.1) * saturate(thick / 0.12 + 0.35);
-                return half4(hc, a);
+                // water, enhanced: the bed seen through the surface (bent by the waves, fading into deep colour with depth),
+                // the sky and sun reflected off gradient-noise waves, light patterns on the shallow bed, and foam that
+                // breaks along the shore in moving lines
+                float tw = _Time.y;
+                float2 wq = q;
+                // three wave scales drifting in different directions; normal from finite differences
+                #define WH(p) (AGrad2((p) * 0.45 + float2(tw * 0.05, tw * 0.035)) * 0.55 + AGrad2((p) * 1.15 - float2(tw * 0.09, -tw * 0.06)) * 0.30 + AGrad2((p) * 2.9 + float2(-tw * 0.17, tw * 0.13)) * 0.15)
+                float ee = 0.05;
+                float h0 = WH(wq), hxw = (WH(wq + float2(ee, 0)) - h0) / ee, hzw = (WH(wq + float2(0, ee)) - h0) / ee;
+                float3 wnn = normalize(float3(-hxw * 0.28, 1, -hzw * 0.28));
+                float3 Hw = normalize(L.direction + V);
+                float ndv = saturate(dot(wnn, V));
+                float fresW = 0.04 + 0.96 * pow(1 - ndv, 5);
+                // the bed through the water
+                float depthK = saturate(thick / 2.5);
+                float2 ruv = suv + wnn.xz * 0.018 * saturate(thick * 2);
+                float rz = EyeDepth(SampleSceneDepth(ruv));
+                if (rz < waterZ) ruv = suv;           // never pull in things standing in front of the water
+                float3 bed = SampleSceneColor(ruv);
+                float thickR = max(0, EyeDepth(SampleSceneDepth(ruv)) - waterZ);
+                // light patterns on the shallow bed
+                float2 c1 = AVoronoi(wq * 1.1 + float2(tw * 0.35, tw * 0.22) + wnn.xz * 2), c2 = AVoronoi(wq * 1.45 - float2(tw * 0.26, tw * 0.31));
+                float caust = (1 - smoothstep(0.0, 0.10, c1.y - c1.x)) * (1 - smoothstep(0.0, 0.16, c2.y - c2.x));
+                caust *= saturate(1 - thickR / 1.2) * dayL;
+                bed *= 1 + caust * 0.55;
+                // absorption: red goes first, then green; the lake's own colour fills the depth
+                float3 absorb = exp(-thickR * float3(1.9, 0.75, 0.45));
+                float3 deepCol = i.col.rgb * float3(0.55, 0.74, 0.92) * (0.55 + 0.45 * L.color);
+                float3 under = lerp(deepCol, bed * float3(0.86, 0.98, 1.0), absorb);
+                // reflection: the sky's colour, brighter toward the horizon, and the sun
+                float3 skyUp = SampleSH(float3(0, 1, 0)), skyH = SampleSH(normalize(float3(0, 0.25, 1)));
+                float3 refl = lerp(skyUp, skyH, 0.5) * 1.15 + float3(0.04, 0.06, 0.08);
+                float3 wc = lerp(under, refl, saturate(fresW * 1.8 + 0.06));
+                float spec = pow(saturate(dot(wnn, Hw)), 420) * 5.0 * lerp(0.15, 1, dayL) + pow(saturate(dot(wnn, Hw)), 60) * 0.18 * dayL;
+                wc += spec * L.color;
+                // foam: moving lines that break up as they reach the shore, plus a soft wet edge
+                float shoreW = 1 - saturate(thick / 0.6);
+                float fN = AFbm2(wq * 2.2 + float2(tw * 0.25, -tw * 0.18), 3) + 0.5;
+                float lines = smoothstep(0.55, 0.85, frac(thick * 2.6 - tw * 0.35 + fN * 0.6)) * shoreW;
+                float foamW = saturate(lines * 1.2 + smoothstep(0.75, 1.0, shoreW) * 0.9 - fN * 0.55) * (1 - lava);
+                wc = lerp(wc, float3(0.94, 0.97, 1.0) * (0.7 + 0.3 * L.color), foamW * 0.9);
+                float aW = saturate(thick / 0.07);
+                return half4(wc, aW);
             }
             ENDHLSL
         }
