@@ -66,6 +66,7 @@ namespace Aldara
             if (!GetComponent<AldaraGrass>()) gameObject.AddComponent<AldaraGrass>();
             if (!GetComponent<AldaraNpcFx>()) gameObject.AddComponent<AldaraNpcFx>();
             if (!GetComponent<AldaraFoeFx>()) gameObject.AddComponent<AldaraFoeFx>();
+            if (!GetComponent<AldaraSwampFog>()) gameObject.AddComponent<AldaraSwampFog>();
         }
         void Update()
         {

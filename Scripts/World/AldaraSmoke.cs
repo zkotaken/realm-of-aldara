@@ -9,7 +9,7 @@ namespace Aldara
     // screenshots and a short report into the folder, and quits. Players never pass these arguments.
     public class AldaraSmoke : MonoBehaviour
     {
-        string dir; int slot = 9;
+        string dir; int slot = 9; Vector2 field = new Vector2(4400, 5600);
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void Boot()
         {
@@ -17,6 +17,7 @@ namespace Aldara
             for (int i = 0; i < a.Length - 1; i++) { if (a[i] == "-aldaraSmoke") d = a[i + 1]; if (a[i] == "-aldaraSlot") int.TryParse(a[i + 1], out s); }
             if (string.IsNullOrEmpty(d)) return;
             var go = new GameObject("AldaraSmoke"); DontDestroyOnLoad(go); var k = go.AddComponent<AldaraSmoke>(); k.dir = d; k.slot = s;
+            for (int i = 0; i < a.Length - 1; i++) if (a[i] == "-aldaraAt") { var q = a[i + 1].Split(','); float fx, fy; if (q.Length == 2 && float.TryParse(q[0], out fx) && float.TryParse(q[1], out fy)) k.field = new Vector2(fx, fy); }
         }
         void Report(string s) { try { System.IO.File.AppendAllText(System.IO.Path.Combine(dir, "smoke.txt"), System.DateTime.Now.ToString("HH:mm:ss") + " " + s + "\n"); } catch { } }
         IEnumerator Start()
@@ -32,7 +33,7 @@ namespace Aldara
             Report("fps " + (n / 5f).ToString("0.0") + " grass tufts " + AldaraGrass.Drawn + " " + AldaraGrass.Why + " ground detail " + Shader.GetGlobalFloat("_DetailOn"));
             ScreenCapture.CaptureScreenshot(System.IO.Path.Combine(dir, "smoke_town.png"));
             yield return new WaitForSeconds(1);
-            if (AldaraPlayer.I) { AldaraPlayer.I.x = 4400; AldaraPlayer.I.y = 5600; }
+            if (AldaraPlayer.I) { AldaraPlayer.I.x = field.x; AldaraPlayer.I.y = field.y; }
             yield return new WaitForSeconds(8);
             Report("field grass tufts " + AldaraGrass.Drawn + " " + AldaraGrass.Why);
             ScreenCapture.CaptureScreenshot(System.IO.Path.Combine(dir, "smoke_field.png"));
