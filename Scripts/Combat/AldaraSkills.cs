@@ -166,7 +166,8 @@ namespace Aldara
                     {
                         float a = Mathf.Atan2(t.y - P.y, t.x - P.x), d = Mathf.Max(0, Mathf.Sqrt((t.x - P.x) * (t.x - P.x) + (t.y - P.y) * (t.y - P.y)) - 30);
                         AldaraSkillFx.Pfx("leap_strike", null, P.x, P.y, sk, "cast"); float lx0 = P.x, ly0 = P.y; Burst(P.x, P.y, "#c9a36a", 10, 120); H.DashTo(a, Mathf.Min(d, 420));
-                        AldaraVfx.Mfx(new AldaraVfx.Mf { k = "streak", x = lx0, y = ly0, h = 30, a = a, len = Mathf.Sqrt((P.x - lx0) * (P.x - lx0) + (P.y - ly0) * (P.y - ly0)), c = AldaraSkillFx.TrailC, c2 = Color.white, w = 14, T = 0.3f });
+                        if (AldaraKnightFx.On) AldaraKnightFx.Dash(AldaraKnightFx.G(lx0, ly0), AldaraKnightFx.G(P.x, P.y), AldaraSkillFx.TrailC);
+                        else AldaraVfx.Mfx(new AldaraVfx.Mf { k = "streak", x = lx0, y = ly0, h = 30, a = a, len = Mathf.Sqrt((P.x - lx0) * (P.x - lx0) + (P.y - ly0) * (P.y - ly0)), c = AldaraSkillFx.TrailC, c2 = Color.white, w = 14, T = 0.3f });
                         H.StartSwing(0.35f, true); AldaraSkillFx.Pfx("leap_strike", null, P.x, P.y, sk, "land");
                         foreach (var m in Nearby(P.x, P.y, sk.radius)) Hit(m, sk.mult, "#ffe07a"); break;
                     }

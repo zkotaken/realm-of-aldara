@@ -83,7 +83,7 @@ namespace Aldara
                 kv.Value.style.scale = new Scale(new Vector2(s, s)); kv.Value.style.transformOrigin = new TransformOrigin(0, 0);
             }
             root.style.opacity = AldaraSettings.F("hudA", 1); zoneLast = null;
-            Show("player", AldaraSettings.On("showPlayer")); Show("minimap", AldaraSettings.On("minimap")); Show("zone", AldaraSettings.On("showZone")); Show("chat", AldaraSettings.On("showChat"));
+            Show("player", AldaraSettings.On("showPlayer")); Show("minimap", AldaraSettings.On("minimap")); Show("zone", AldaraSettings.On("showZone")); Show("chat", AldaraSettings.On("showChat")); Show("chatbox", AldaraSettings.On("showChat"));
             showTarget = AldaraSettings.On("showTarget"); Show("quest", AldaraSettings.On("showQuest"));
             // text size (--txt: the chat, the quest box, the frames' names and the zone)
             float tx = Mathf.Clamp(AldaraSettings.F("txtS", 1), 0.5f, 2);

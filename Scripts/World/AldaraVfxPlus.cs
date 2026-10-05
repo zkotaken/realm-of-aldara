@@ -113,6 +113,7 @@ namespace Aldara
             bool on = On && cam && AldaraWorld.Loaded;
             if (!on) { parts.Clear(); flashes.Clear(); pendingFx.Clear(); foreach (var l in lights) if (l.enabled) l.enabled = false; return; }
             for (int i = 0; i < pendingFx.Count; i++) DoEffect(pendingFx[i]); pendingFx.Clear();
+            if (AldaraKnightFx.On) AldaraKnightFx.Ensure();   // paint its atlas before the first swing
             Ambient(dt);
             for (int i = parts.Count - 1; i >= 0; i--)
             {

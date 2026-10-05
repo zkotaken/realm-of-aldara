@@ -29,12 +29,14 @@ namespace Aldara
         public static void PfxHit(AldaraMonsters.Mon m, Color c)
         {
             if (m == null) return; if (pfxF != Time.frameCount) { pfxF = Time.frameCount; pfxN = 0; } if (pfxN++ > 6) return;
+            if (AldaraKnightFx.On) { AldaraKnightFx.Hit(m, c); return; }
             var P = AldaraPlayer.I; float h = AldaraMonsters.Chest(m), a0 = Mathf.Atan2(m.y - P.y, m.x - P.x);
             M(new AldaraVfx.Mf { k = "impact", x = m.x, y = m.y, h = h, a = a0, c = c, c2 = Color.white, T = 0.2f });
             for (int k = 0; k < 6; k++) { float a = a0 + (R() - 0.5f) * 1.6f, v = 150 + R() * 220; AldaraVfx.Mpush(new AldaraVfx.Mp { x = m.x, y = m.y, z = h, vx = Mathf.Cos(a) * v, vy = Mathf.Sin(a) * v, vz = 40 + R() * 140, g = 600, life = 0.35f, max = 0.35f, c = c, s = 1.8f, glow = true }); }
         }
         public static void KnightSlash(float tx, float ty, int cb, float dur)
         {
+            if (AldaraKnightFx.On) { AldaraKnightFx.Combo(tx, ty, cb, dur, TrailC); return; }
             var P = AldaraPlayer.I; var col = TrailC; float a = P.facing, reach = Mathf.Max(44, Mathf.Min(90, Mathf.Sqrt((tx - P.x) * (tx - P.x) + (ty - P.y) * (ty - P.y)) + 18)), dl = dur * 0.38f;
             if (cb == 2)
             {
@@ -66,6 +68,7 @@ namespace Aldara
         {
             var P = AldaraPlayer.I; float a = P.facing, th = t != null ? AldaraMonsters.Chest(t) : 18, rad = sk != null ? sk.radius : 0;
             if (t == null && tx == 0 && ty == 0) { tx = P.x; ty = P.y; }
+            if (AldaraKnightFx.On && AldaraKnightFx.Skill(id, t, tx, ty, sk, ph)) return;
             switch (id)
             {
                 // knight

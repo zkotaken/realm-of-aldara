@@ -235,6 +235,7 @@ namespace Aldara
         {
             float dt = Mathf.Min(Time.deltaTime, 0.1f);
             if (!AldaraSave.Ready) return;
+            if (cls == "knight" && !AldaraKnightFx.I && AldaraKnightFx.On) AldaraKnightFx.Ensure();   // paint the knight's effects before the first swing
             if (!anim) anim = GetComponentInChildren<AldaraCharacterAnimator>();
             if (hurt > 0) hurt -= dt; if (slowT > 0) slowT -= dt; if (atkBuff > 0) atkBuff -= dt; if (hasteBuff > 0) hasteBuff -= dt;
             if (shieldT > 0) { shieldT -= dt; if (shieldT <= 0) shield = 0; }

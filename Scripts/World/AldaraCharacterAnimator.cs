@@ -28,7 +28,9 @@ namespace Aldara
         void Awake() { Load(); }
         public void Load()
         {
-            if (data == null) return; clips.Clear();
+            if (data == null) return;
+            oneShot = null; oneT = 0; oneFadeIn = 0; oneFadeOut = 0; prevBase = null; baseClip = null; baseFade = 1;   // rising again: drop the death pose
+            clips.Clear();
             using (var r = new BinaryReader(new MemoryStream(data.bytes)))
             {
                 bool v2 = new string(r.ReadChars(4)) == "ACH2"; N = r.ReadInt32(); for (int i = 0; i < N; i++) r.ReadInt32();

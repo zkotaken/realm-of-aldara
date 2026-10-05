@@ -111,7 +111,7 @@ namespace Aldara
         static void Later(float t, System.Action fn) { AldaraSkills.I.Later_(t, fn); }
         static void RunFx(JArray fx, AldaraMonsters.Mon t, SkillDef sk)
         {
-            var S = AldaraTree.SubCur(); string col0 = S != null ? S.col : "#ffffff";
+            var S = AldaraTree.SubCur(); string col0 = S != null ? S.col : "#ffffff"; bool KF = AldaraKnightFx.On; const float UPX = AldaraWorld.PX;
             foreach (JObject o in fx)
             {
                 string cs = (string)o["col"] ?? col0; var col = Hx(cs); var oo = (JObject)o.DeepClone(); oo["col"] = cs;
@@ -120,14 +120,20 @@ namespace Aldara
                     case "strike":
                         {
                             var m = t != null && !t.dummy ? t : (H.target != null && !H.target.dead ? H.target : NearestTo(P.x, P.y, 220)); if (m == null) break; H.StartSwing(0.35f, true);
-                            AldaraVfx.Mfx(new AldaraVfx.Mf { k = "impact", x = m.x, y = m.y, h = AldaraMonsters.Chest(m), a = Mathf.Atan2(m.y - P.y, m.x - P.x), c = col, c2 = Color.white, T = 0.3f, big = true });
-                            AldaraVfx.Mfx(new AldaraVfx.Mf { k = "flash", x = m.x, y = m.y, h = AldaraMonsters.Chest(m), r = 40, c = col, c2 = Color.white, T = 0.25f });
+                            if (KF) AldaraKnightFx.SubStrike(m, col);
+                            else
+                            {
+                                AldaraVfx.Mfx(new AldaraVfx.Mf { k = "impact", x = m.x, y = m.y, h = AldaraMonsters.Chest(m), a = Mathf.Atan2(m.y - P.y, m.x - P.x), c = col, c2 = Color.white, T = 0.3f, big = true });
+                                AldaraVfx.Mfx(new AldaraVfx.Mf { k = "flash", x = m.x, y = m.y, h = AldaraMonsters.Chest(m), r = 40, c = col, c2 = Color.white, T = 0.25f });
+                            }
                             AldaraVfx.Burst(m.x, m.y, col, 18, 220); SubHit(m, F(o, "mult"), oo); if (o["exec"] != null && m.dead) AldaraFx.Text(m.x, m.y - m.r - 30, "Executed", Hx("#ff6a4a")); break;
                         }
                     case "nova":
                         {
-                            float r = F(o, "r"); AldaraVfx.Mfx(new AldaraVfx.Mf { k = "shock", x = P.x, y = P.y, r = r, c = col, c2 = Color.white, T = 0.5f }); AldaraVfx.Mfx(new AldaraVfx.Mf { k = "ringA", x = P.x, y = P.y, h = 8, r = r * 0.8f, c = col, c2 = Color.white, T = 0.45f });
-                            AldaraVfx.Ring(P.x, P.y, r, col, 0.5f); AldaraVfx.Shake(3, 0.25f);
+                            float r = F(o, "r");
+                            if (KF) AldaraKnightFx.SubNova(AldaraKnightFx.G(P.x, P.y), r / UPX, col);
+                            else { AldaraVfx.Mfx(new AldaraVfx.Mf { k = "shock", x = P.x, y = P.y, r = r, c = col, c2 = Color.white, T = 0.5f }); AldaraVfx.Mfx(new AldaraVfx.Mf { k = "ringA", x = P.x, y = P.y, h = 8, r = r * 0.8f, c = col, c2 = Color.white, T = 0.45f }); AldaraVfx.Ring(P.x, P.y, r, col, 0.5f); }
+                            AldaraVfx.Shake(3, 0.25f);
                             foreach (var m in Nearby(P.x, P.y, r)) SubHit(m, F(o, "mult"), oo); break;
                         }
                     case "area":
@@ -137,13 +143,14 @@ namespace Aldara
                             for (int w = 0; w < waves; w++) Later(delay + w * gap, () =>
                             {
                                 var c = self ? new Vector2(P.x, P.y) : at;
-                                AldaraVfx.Mfx(new AldaraVfx.Mf { k = "shock", x = c.x, y = c.y, r = r, c = col, c2 = Color.white, T = 0.4f }); if (delay > 0) AldaraVfx.QuakeFx(c.x, c.y, r * 0.8f, col, Color.white, 4, o["burn"] != null);
-                                AldaraVfx.Ring(c.x, c.y, r, col, 0.4f); foreach (var m in Nearby(c.x, c.y, r)) SubHit(m, F(o, "mult"), oo);
+                                if (KF) { AldaraKnightFx.SubSlam(AldaraKnightFx.G(c.x, c.y), r / UPX, col, delay > 0); if (delay > 0) AldaraVfx.Shake(4, 0.35f); }
+                                else { AldaraVfx.Mfx(new AldaraVfx.Mf { k = "shock", x = c.x, y = c.y, r = r, c = col, c2 = Color.white, T = 0.4f }); if (delay > 0) AldaraVfx.QuakeFx(c.x, c.y, r * 0.8f, col, Color.white, 4, o["burn"] != null); AldaraVfx.Ring(c.x, c.y, r, col, 0.4f); }
+                                foreach (var m in Nearby(c.x, c.y, r)) SubHit(m, F(o, "mult"), oo);
                             });
-                            if (delay > 0) AldaraVfx.Rune(at.x, at.y, r * 0.5f, col, delay, false, 1.5f, true);
+                            if (delay > 0) { if (KF) AldaraKnightFx.SubMark(AldaraKnightFx.G(at.x, at.y), r * 0.5f / UPX, col, delay); else AldaraVfx.Rune(at.x, at.y, r * 0.5f, col, delay, false, 1.5f, true); }
                             break;
                         }
-                    case "buff": SUBB[(string)o["key"]] = new SubBuffT { v = F(o, "v"), t = F(o, "dur"), max = F(o, "dur"), name = sk.name, col = cs }; AldaraVfx.Burst(P.x, P.y - 20, col, 20, 160); AldaraVfx.Mfx(new AldaraVfx.Mf { k = "ringA", x = P.x, y = P.y, h = 10, r = 44, c = col, c2 = Color.white, T = 0.5f }); break;
+                    case "buff": SUBB[(string)o["key"]] = new SubBuffT { v = F(o, "v"), t = F(o, "dur"), max = F(o, "dur"), name = sk.name, col = cs }; AldaraVfx.Burst(P.x, P.y - 20, col, 20, 160); if (KF) AldaraKnightFx.SubBuff(col); else AldaraVfx.Mfx(new AldaraVfx.Mf { k = "ringA", x = P.x, y = P.y, h = 10, r = 44, c = col, c2 = Color.white, T = 0.5f }); break;
                     case "haste": H.hasteBuff = Mathf.Max(H.hasteBuff, F(o, "dur")); break;
                     case "heal": { float a = Mathf.Round(H.maxHp * F(o, "v")); H.hp = Mathf.Min(H.maxHp, H.hp + a); AldaraFx.Text(P.x, P.y - 58, "+" + a + " HP", Hx("#7fe07f")); break; }
                     case "shield": H.shield = Mathf.Max(H.shield, Mathf.Round(H.maxHp * F(o, "v"))); H.shieldT = Mathf.Max(H.shieldT, F(o, "dur")); H.shieldName = sk.name; break;
@@ -154,6 +161,7 @@ namespace Aldara
                             var m = t != null && !t.dummy ? t : H.target; if (m == null || m.dead) break; float a = Mathf.Atan2(P.y - m.y, P.x - m.x), d = m.r + 26;
                             AldaraVfx.Mfx(new AldaraVfx.Mf { k = "blink", x = P.x, y = P.y, h = AldaraVfx.PH_Y, c = col, c2 = Color.white, T = 0.35f });
                             float nx = m.x + Mathf.Cos(a) * d, ny = m.y + Mathf.Sin(a) * d; if (AldaraWorld.BlockedAt(nx, ny)) { var f = AldaraPlayer.FreeSpotNear(nx, ny); nx = f.x; ny = f.y; }
+                            if (KF) AldaraKnightFx.Dash(AldaraKnightFx.G(P.x, P.y), AldaraKnightFx.G(nx, ny), col);
                             P.x = nx; P.y = ny; P.facing = Mathf.Atan2(m.y - ny, m.x - nx); break;
                         }
                     case "blinkback":
@@ -167,12 +175,17 @@ namespace Aldara
                         {
                             var m = t != null && !t.dummy ? t : (H.target != null && !H.target.dead ? H.target : NearestTo(P.x, P.y, 260)); if (m == null) break; H.StartSwing(0.35f, true);
                             var hm = new Hammer { m = m, x = m.x, y = m.y, side = m.x >= P.x ? 1 : -1, c = col, T = 1.3f }; hammers.Add(hm);
-                            AldaraVfx.Rune(m.x, m.y, m.r + 34, col, 0.65f, false, 2, true); AldaraVfx.Burst(m.x, m.y - 160, col, 16, 120);
+                            if (KF) AldaraKnightFx.SubMark(AldaraKnightFx.G(m.x, m.y), (m.r + 34) / UPX, col, 0.65f); else AldaraVfx.Rune(m.x, m.y, m.r + 34, col, 0.65f, false, 2, true); AldaraVfx.Burst(m.x, m.y - 160, col, 16, 120);
                             float mult = F(o, "mult"), splash = F(o, "splash");
                             Later(0.64f, () =>
                             {
-                                float x = hm.x, y = hm.y; AldaraVfx.QuakeFx(x, y, 120, col, Color.white, 8, true);
-                                AldaraVfx.Mfx(new AldaraVfx.Mf { k = "pillar", x = x, y = y, r = 46, c = col, c2 = Color.white, H = 260, T = 0.6f }); AldaraVfx.Mfx(new AldaraVfx.Mf { k = "flash", x = x, y = y, h = 20, r = 90, c = col, c2 = Color.white, T = 0.35f }); AldaraVfx.Mfx(new AldaraVfx.Mf { k = "shock", x = x, y = y, r = 150, c = col, c2 = Color.white, T = 0.5f });
+                                float x = hm.x, y = hm.y;
+                                if (KF) AldaraKnightFx.SubSlam(AldaraKnightFx.G(x, y), 130 / UPX, col, true);
+                                else
+                                {
+                                    AldaraVfx.QuakeFx(x, y, 120, col, Color.white, 8, true);
+                                    AldaraVfx.Mfx(new AldaraVfx.Mf { k = "pillar", x = x, y = y, r = 46, c = col, c2 = Color.white, H = 260, T = 0.6f }); AldaraVfx.Mfx(new AldaraVfx.Mf { k = "flash", x = x, y = y, h = 20, r = 90, c = col, c2 = Color.white, T = 0.35f }); AldaraVfx.Mfx(new AldaraVfx.Mf { k = "shock", x = x, y = y, r = 150, c = col, c2 = Color.white, T = 0.5f });
+                                }
                                 AldaraVfx.Shake(9, 0.4f); AldaraVfx.Burst(x, y, col, 40, 300); AldaraVfx.Burst(x, y, Color.white, 18, 220);
                                 if (!m.dead && Mathf.Sqrt((m.x - x) * (m.x - x) + (m.y - y) * (m.y - y)) < 90 + m.r) SubHit(m, mult, oo);
                                 if (splash > 0) foreach (var q in Nearby(x, y, 130, m)) SubHit(q, splash, new JObject { ["col"] = cs });
