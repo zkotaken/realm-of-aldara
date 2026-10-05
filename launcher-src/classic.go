@@ -185,19 +185,29 @@ func installClassic(v feedClassic) error {
 		return err
 	}
 	cur, next := classicDir(), classicDir()+".new"
-	os.RemoveAll(next)
+	// files left from an attempt that could not finish are reused too
+	keep := classicDir() + ".keep"
+	if _, err := os.Stat(next); err == nil {
+		os.RemoveAll(keep)
+		if os.Rename(next, keep) != nil {
+			os.RemoveAll(next)
+		}
+	}
+	defer os.RemoveAll(keep)
 	if err := os.MkdirAll(next, 0755); err != nil {
 		return fmt.Errorf("Could not write the game files: %v", err)
 	}
 	// which files the installed copy already has (same size and checksum), at the same path or any other (a renamed
 	// file or folder is reused instead of downloaded again)
 	bySize := map[int64][]string{}
-	filepath.Walk(cur, func(p string, info os.FileInfo, err error) error {
-		if err == nil && !info.IsDir() {
-			bySize[info.Size()] = append(bySize[info.Size()], p)
-		}
-		return nil
-	})
+	for _, d := range []string{cur, keep} {
+		filepath.Walk(d, func(p string, info os.FileInfo, err error) error {
+			if err == nil && !info.IsDir() && !strings.HasSuffix(p, ".download") {
+				bySize[info.Size()] = append(bySize[info.Size()], p)
+			}
+			return nil
+		})
+	}
 	sums := map[string]string{}
 	sumOf := func(p string) string {
 		if s, ok := sums[p]; ok {
@@ -274,17 +284,29 @@ func installClassic(v feedClassic) error {
 	old := cur + ".old"
 	os.RemoveAll(old)
 	if _, err := os.Stat(cur); err == nil {
-		if err := os.Rename(cur, old); err != nil {
-			os.RemoveAll(next)
-			return fmt.Errorf("Close Realm of Aldara Classic and try again.")
+		if err := renameRetry(cur, old); err != nil {
+			return fmt.Errorf("Close Realm of Aldara and press Update again.")
 		}
 	}
-	if err := os.Rename(next, cur); err != nil {
-		os.Rename(old, cur)
-		return fmt.Errorf("Could not install the game: %v", err)
+	if err := renameRetry(next, cur); err != nil {
+		renameRetry(old, cur)
+		return fmt.Errorf("Windows is still busy with the new game files (often the virus scanner checking them). Wait a minute and press Update again; nothing has to be downloaded twice. (%v)", err)
 	}
 	os.RemoveAll(old)
 	return nil
+}
+
+// Windows refuses to move a folder while anything holds a file inside it open; the virus scanner and the search
+// indexer open freshly written files for a few seconds, so keep trying for up to 45 seconds.
+func renameRetry(a, b string) error {
+	var err error
+	for i := 0; i < 90; i++ {
+		if err = os.Rename(a, b); err == nil {
+			return nil
+		}
+		time.Sleep(500 * time.Millisecond)
+	}
+	return err
 }
 
 // one file: its gzip parts in order, each verified, unpacked into place, then the whole file verified

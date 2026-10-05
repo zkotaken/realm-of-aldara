@@ -53,7 +53,7 @@ type feedVersion struct {
 const launcherPageVersion = 6
 
 // the program itself: the launcher replaces itself (and so the game program it copies on Play) with newer builds
-const exeBuild = 4
+const exeBuild = 5
 
 func launcherVer(v string) int { n, _ := strconv.Atoi(strings.TrimSpace(v)); return n }
 
