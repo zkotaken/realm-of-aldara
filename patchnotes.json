@@ -1,6 +1,17 @@
 {
  "entries": [
   {
+   "v": "156",
+   "date": "October 6, 2026",
+   "type": "update",
+   "title": "Mist over the Shadowfen",
+   "notes": [
+    "The Shadowfen is wrapped in distance fog: a grey-green mist that stays thin around you and closes into a wall further off, drifting in slow banks and lying low over the water and reeds so the trees rise out of it.",
+    "The mist turns a cold blue-grey by night and fades in and out as you cross the swamp's border.",
+    "It follows the Atmosphere setting in Graphics."
+   ]
+  },
+  {
    "v": "155",
    "date": "October 6, 2026",
    "type": "fix",
