@@ -141,6 +141,8 @@ namespace Aldara
         public void Release(float t) { release = releaseMax = t; }
         public void StartSwing(float dur, bool big, int combo = -1, bool spin = false) { swing = new Swing { dur = dur, big = big, combo = combo, spin = spin }; }
         public void MarkFight() { lastFight = Time.time; }
+        /// in a fight: a living target, or fighting in the last few seconds (out of it the weapon is put away)
+        public bool InFight { get { return (target != null && !target.dead) || Time.time - lastFight < 6f || swing != null || cast > 0; } }
 
         /// the monster whose blow this is (LV_SRC), for Riposte and Thorns
         public static AldaraMonsters.Mon LvSrc;
@@ -235,7 +237,7 @@ namespace Aldara
         {
             float dt = Mathf.Min(Time.deltaTime, 0.1f);
             if (!AldaraSave.Ready) return;
-            if (cls == "knight" && !AldaraKnightFx.I && AldaraKnightFx.On) AldaraKnightFx.Ensure();   // paint the knight's effects before the first swing
+            if ((cls == "knight" || cls == "mage") && !AldaraKnightFx.I && AldaraKnightFx.Live) AldaraKnightFx.Ensure();   // paint the knight's effects before the first swing
             if (!anim) anim = GetComponentInChildren<AldaraCharacterAnimator>();
             if (hurt > 0) hurt -= dt; if (slowT > 0) slowT -= dt; if (atkBuff > 0) atkBuff -= dt; if (hasteBuff > 0) hasteBuff -= dt;
             if (shieldT > 0) { shieldT -= dt; if (shieldT <= 0) shield = 0; }
@@ -352,7 +354,7 @@ namespace Aldara
             else if (cls == "mage")
             {
                 StartCombo(); PlayBasic(); Cast(0.25f); castCol = AldaraRules.Hex("#8ab4ff");
-                Fire("bolt", t, m => { AldaraMonsters.I.HitMonster(m, RollDmg(1), AldaraRules.Hex("#9fc0ff")); AldaraVfx.Burst(m.x, m.y, AldaraRules.Hex("#8ab4ff"), 8, 140); var f = AldaraVfx.Effect("explode", m.x, m.y, 30, 0.3f, Color.white); f.c1 = AldaraRules.Hex("#8ab4ff"); f.c2 = AldaraRules.Hex("#4a5aff"); f.core = Color.white; AldaraSkillFx.Pfx("bolt_hit", m, m.x, m.y, null, null, "#8ab4ff"); });
+                Fire("bolt", t, m => { AldaraMonsters.I.HitMonster(m, RollDmg(1), AldaraRules.Hex("#9fc0ff")); AldaraVfx.Burst(m.x, m.y, AldaraRules.Hex("#8ab4ff"), 8, 140); if (!AldaraMageFx.On) { var f = AldaraVfx.Effect("explode", m.x, m.y, 30, 0.3f, Color.white); f.c1 = AldaraRules.Hex("#8ab4ff"); f.c2 = AldaraRules.Hex("#4a5aff"); f.core = Color.white; } AldaraSkillFx.Pfx("bolt_hit", m, m.x, m.y, null, null, "#8ab4ff"); });
             }
             else
             {
@@ -379,13 +381,15 @@ namespace Aldara
         }
 
         // ---- hero projectiles (fire / updateFx / PROJ3): home in on the target while it lives; aimed at the ground they hit the first monster they pass ----
-        public class HProj { public string kind; public float x, y, tx, ty, spd, ang, d0 = -1, wob; public AldaraMonsters.Mon t; public System.Action<AldaraMonsters.Mon> fn; public string glow, color; public List<Vector2> trail = new List<Vector2>(); }
+        public class HProj { public string kind; public float x, y, tx, ty, spd, ang, d0 = -1, wob; public AldaraMonsters.Mon t; public System.Action<AldaraMonsters.Mon> fn; public string glow, color; public List<Vector2> trail = new List<Vector2>(); public AldaraKnightFx.Fx fx; }
         public readonly List<HProj> projectiles = new List<HProj>();
         public void Fire(string kind, AldaraMonsters.Mon t, System.Action<AldaraMonsters.Mon> fn, string glow = null, string color = null, float spd = 0)
         {
             float tx = P.x + Mathf.Cos(P.facing) * 24, ty = P.y + Mathf.Sin(P.facing) * 24;
             if (spd <= 0) spd = kind == "arrow" ? 780 : kind == "fireball" ? 430 : 540;
-            projectiles.Add(new HProj { kind = kind, x = tx, y = ty, t = t, tx = t.x, ty = t.y, spd = spd, fn = fn, ang = P.facing, glow = glow, color = color });
+            var np = new HProj { kind = kind, x = tx, y = ty, t = t, tx = t.x, ty = t.y, spd = spd, fn = fn, ang = P.facing, glow = glow, color = color };
+            if (kind != "arrow" && AldaraMageFx.On) np.fx = AldaraMageFx.Proj(kind, color);   // the enhanced 3D shot
+            projectiles.Add(np);
         }
         void UpdateShots(float dt)
         {
@@ -398,12 +402,18 @@ namespace Aldara
                 {
                     AldaraMonsters.Mon hit = null;
                     foreach (var m in AldaraMonsters.I.all) { if (m.dead || !AldaraDungeon.Reachable(m) || Mathf.Abs(m.x - pr.x) > 80 || Mathf.Abs(m.y - pr.y) > 80) continue; if (Mathf.Sqrt((m.x - pr.x) * (m.x - pr.x) + (m.y - pr.y) * (m.y - pr.y)) < m.r + 6) { hit = m; break; } }
-                    if (hit != null) { projectiles.RemoveAt(i); pr.fn(hit); continue; }
+                    if (hit != null) { projectiles.RemoveAt(i); AldaraMageFx.End(pr.fx); pr.fn(hit); continue; }
                 }
                 float dx = pr.tx - pr.x, dy = pr.ty - pr.y, d = Mathf.Sqrt(dx * dx + dy * dy); pr.ang = Mathf.Atan2(dy, dx);
                 float step = pr.spd * dt;
-                if (d <= step + (pr.t.dead ? 4 : pr.t.r * 0.6f)) { projectiles.RemoveAt(i); if (!pr.t.dead) pr.fn(pr.t); continue; }
+                if (d <= step + (pr.t.dead ? 4 : pr.t.r * 0.6f)) { projectiles.RemoveAt(i); AldaraMageFx.End(pr.fx); if (!pr.t.dead) pr.fn(pr.t); continue; }
                 pr.x += dx / d * step; pr.y += dy / d * step;
+                if (pr.fx != null)
+                {   // the 3D shot follows, arcing like the browser's arcane missiles
+                    if (pr.d0 < 0) { pr.d0 = Mathf.Max(1, d); pr.wob = (Random.value < 0.5f ? -1 : 1) * (40 + Random.value * 50); }
+                    float prog = Mathf.Clamp01(1 - d / pr.d0), off = pr.color != null && pr.kind == "bolt" ? Mathf.Sin(prog * Mathf.PI) * pr.wob : 0;
+                    AldaraMageFx.Move(pr.fx, pr.x - Mathf.Sin(pr.ang) * off, pr.y + Mathf.Cos(pr.ang) * off); continue;
+                }
                 if (pr.kind == "fireball" && Random.value < 0.8f) AldaraVfx.Particle(pr.x, pr.y, (Random.value - 0.5f) * 40, (Random.value - 0.5f) * 40, 0.3f, AldaraRules.Hex(Random.value < 0.5f ? "#ff8a3a" : "#ffd35a"), 3);
                 if (pr.kind == "bolt" && Random.value < 0.5f) AldaraVfx.Particle(pr.x, pr.y, 0, 0, 0.2f, AldaraRules.Hex("#8ab4ff"), 2);
             }
@@ -416,6 +426,7 @@ namespace Aldara
             var aN = V.AirN; var aA = V.AirA; float LIFT = AldaraVfx.LIFT;
             foreach (var pr in projectiles)
             {
+                if (pr.fx != null) continue;   // drawn in 3D
                 float bz = AldaraVfx.LZ(pr.x, pr.y);
                 switch (pr.kind)
                 {

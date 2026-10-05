@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
@@ -39,6 +40,27 @@ namespace Aldara
             RenderTexture.active = rt; var tex = new Texture2D(px, px, TextureFormat.RGB24, false); tex.ReadPixels(new Rect(0, 0, px, px), 0, 0); tex.Apply(); RenderTexture.active = null;
             File.WriteAllBytes(AldaraImport.INBOX + "/" + file + ".jpg", tex.EncodeToJPG(90));
             cam.targetTexture = null; Object.DestroyImmediate(go); rt.Release(); Object.DestroyImmediate(tex); return file;
+        }
+        /// in play mode: the hero up close at several facings (wings and pet hidden for the shot only), out of a fight and in one
+        public static string HeroShots(string prefix, float size = 1.3f)
+        {
+            var P = AldaraPlayer.I; var H = AldaraHero.I; if (!P || !H) return "no hero"; H.target = null;
+            var off = new List<Renderer>();
+            foreach (var r in P.GetComponentsInChildren<Renderer>()) { var t = r.transform; bool wing = false; while (t != null && t != P.transform) { if (t.name.StartsWith("wing")) wing = true; t = t.parent; } if (wing && r.enabled) { r.enabled = false; off.Add(r); } }
+            var pet = GameObject.Find("Pet"); if (pet) foreach (var r in pet.GetComponentsInChildren<Renderer>()) if (r.enabled) { r.enabled = false; off.Add(r); }
+            var lf = typeof(AldaraHero).GetField("lastFight", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            System.Action<string> Shot = file =>
+            {
+                Step(3); var main = Camera.main; var go = new GameObject("zcam"); var cam = go.AddComponent<Camera>(); cam.CopyFrom(main); cam.rect = new Rect(0, 0, 1, 1); cam.ResetWorldToCameraMatrix(); cam.ResetProjectionMatrix();
+                var tgt = P.transform.position + Vector3.up * 0.8f; cam.transform.rotation = main.transform.rotation; cam.transform.position = tgt - main.transform.forward * 80f; cam.orthographic = true; cam.orthographicSize = size;
+                var rt = new RenderTexture(600, 600, 24, RenderTextureFormat.ARGB32) { antiAliasing = 4 }; cam.targetTexture = rt; cam.aspect = 1; cam.Render();
+                RenderTexture.active = rt; var tex = new Texture2D(600, 600, TextureFormat.RGB24, false); tex.ReadPixels(new Rect(0, 0, 600, 600), 0, 0); tex.Apply(); RenderTexture.active = null;
+                File.WriteAllBytes(AldaraImport.INBOX + "/" + file + ".jpg", tex.EncodeToJPG(90)); cam.targetTexture = null; Object.DestroyImmediate(go); rt.Release(); Object.DestroyImmediate(tex);
+            };
+            lf.SetValue(H, -99f); string[] nm = { "n", "s", "e", "w" }; float[] fa = { -1.57f, 1.57f, 0, 3.14f };
+            for (int i = 0; i < 4; i++) { P.facing = fa[i]; Shot(prefix + "_" + nm[i]); }
+            H.MarkFight(); P.facing = 1.57f; Shot(prefix + "_fight"); lf.SetValue(H, -99f);
+            foreach (var r in off) r.enabled = true; return "ok";
         }
         /// copy the newest screenshot to the inbox so it can be fetched
         public static string Shot(string name)

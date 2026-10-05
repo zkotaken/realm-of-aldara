@@ -102,20 +102,20 @@ namespace Aldara
                 case "heal":
                     {
                         float amt = Mathf.Round(H.maxHp * sk.heal), hb = H.hp; H.hp = Mathf.Min(H.maxHp, H.hp + amt); DStat.Heal(H.hp - hb); AldaraFx.Text(P.x, P.y - 58, "+" + amt + " HP", Hx("#7fe07f"));
-                        Burst(P.x, P.y - 10, "#9fffa0", 22, 150); var f = AldaraVfx.Effect("heal", P.x, P.y, 0, 1.1f, Color.white); f.hasCol = true; f.col = Hx(H.cls == "mage" ? "#7fffb0" : "#7fe07f");
+                        Burst(P.x, P.y - 10, "#9fffa0", 22, 150); if (!AldaraMageFx.On && !AldaraKnightFx.On) { var f = AldaraVfx.Effect("heal", P.x, P.y, 0, 1.1f, Color.white); f.hasCol = true; f.col = Hx(H.cls == "mage" ? "#7fffb0" : "#7fe07f"); }
                         if (H.cls == "mage") H.Cast(0.5f); break;
                     }
                 case "buff": if (sk.buff == "atk") H.atkBuff = sk.dur; else H.hasteBuff = sk.dur; Burst(P.x, P.y, sk.buff == "atk" ? "#ff6a4a" : "#7fe07f", 14, 160); break;
                 case "shield":
                     {
                         H.shield = Mathf.Round(H.maxHp * sk.shield); H.shieldT = sk.dur; H.shieldName = null; string bc = H.cls == "mage" ? "#8ab4ff" : "#ffd35a";
-                        var f = AldaraVfx.Effect("pulse", P.x, P.y, 34, 0.5f, Color.white); f.col = Hx(bc); Burst(P.x, P.y - 10, bc, 16, 140); if (H.cls == "mage") H.Cast(0.4f); break;
+                        if (!AldaraMageFx.On && !AldaraKnightFx.On) { var f = AldaraVfx.Effect("pulse", P.x, P.y, 34, 0.5f, Color.white); f.col = Hx(bc); } Burst(P.x, P.y - 10, bc, 16, 140); if (H.cls == "mage") H.Cast(0.4f); break;
                     }
                 case "self_aoe":
                     {
                         string col = sk.id == "frost_nova" ? "#8fdfff" : sk.id == "battle_roar" ? "#ff9a3a" : "#ffe07a";
                         if (H.cls == "knight") H.StartSwing(0.4f, true, -1, sk.id == "whirlwind"); else H.Cast(0.4f);
-                        if (sk.id == "frost_nova") { var f = AldaraVfx.Effect("frost", P.x, P.y + 14, sk.radius, 1.0f, Color.white); f.ring = true; f.n = 20; AldaraVfx.Shake(2.5f, 0.2f); }
+                        if (sk.id == "frost_nova") { if (!AldaraMageFx.On) { var f = AldaraVfx.Effect("frost", P.x, P.y + 14, sk.radius, 1.0f, Color.white); f.ring = true; f.n = 20; } AldaraVfx.Shake(2.5f, 0.2f); }
                         Burst(P.x, P.y, col, 20, sk.radius * 1.4f);
                         foreach (var m in Nearby(P.x, P.y, sk.radius)) { Hit(m, sk.mult, col); Burst(m.x, m.y, col, 5, 120); if (!m.dead) { if (sk.stun > 0) m.stunT = sk.stun; if (sk.slow > 0) m.slowT = sk.slow; } }
                         break;
@@ -125,7 +125,7 @@ namespace Aldara
                         float a = H.AimAngle(); if (sk.back != 0) a += Mathf.PI; string bc = H.cls == "mage" ? "#b07aff" : "#d8c8a0";
                         Burst(P.x, P.y, bc, 14, 160); float bx1 = P.x, by1 = P.y;
                         H.DashTo(a, sk.dist); AldaraSkillFx.Pfx(sk.id, null, P.x, P.y, sk, "land");
-                        if (H.cls == "mage") { var f = AldaraVfx.Effect("blink", P.x, P.y, 0, 0.5f, Color.white); f.x1 = bx1; f.y1 = by1; f.x2 = P.x; f.y2 = P.y; }
+                        if (H.cls == "mage" && !AldaraMageFx.On) { var f = AldaraVfx.Effect("blink", P.x, P.y, 0, 0.5f, Color.white); f.x1 = bx1; f.y1 = by1; f.x2 = P.x; f.y2 = P.y; }
                         Burst(P.x, P.y, bc, 14, 160); H.target = null; queued = null; break;
                     }
             }
@@ -180,7 +180,7 @@ namespace Aldara
                     H.Cast(0.4f);
                     Fire("fireball", t, m =>
                     {
-                        Explode(m.x, m.y, sk.radius * 0.75f, 0.6f); AldaraVfx.Shake(2.5f, 0.18f); AldaraSkillFx.Pfx("fireball", m, m.x, m.y, sk);
+                        if (!AldaraMageFx.On) { Explode(m.x, m.y, sk.radius * 0.75f, 0.6f); AldaraVfx.Shake(2.5f, 0.18f); } AldaraSkillFx.Pfx("fireball", m, m.x, m.y, sk);
                         Burst(m.x, m.y - 16, "#ffb14a", 26, 260); Burst(m.x, m.y - 16, "#ff5a2a", 14, 160);
                         var sp = Nearby(m.x, m.y, sk.radius, m); Hit(m, sk.mult, "#ffb14a"); foreach (var o in sp) Hit(o, sk.splash, "#ffb14a");
                     }); break;
@@ -189,7 +189,7 @@ namespace Aldara
                     Fire("ice", t, m =>
                     {
                         Hit(m, sk.mult, "#bfefff"); Burst(m.x, m.y - 16, "#dff6ff", 14, 160); if (!m.dead) m.slowT = sk.slow;
-                        var f = AldaraVfx.Effect("frost", m.x, m.y + 8, Mathf.Max(56, m.r * 2.4f), 0.8f, Color.white); f.n = 7; AldaraSkillFx.Pfx("ice_shard", m, m.x, m.y, sk);
+                        if (!AldaraMageFx.On) { var f = AldaraVfx.Effect("frost", m.x, m.y + 8, Mathf.Max(56, m.r * 2.4f), 0.8f, Color.white); f.n = 7; } AldaraSkillFx.Pfx("ice_shard", m, m.x, m.y, sk);
                     }); break;
                 case "chain_lightning":
                     {
@@ -200,8 +200,8 @@ namespace Aldara
                             foreach (var m in Nearby(cur.x, cur.y, 190)) { if (chain.Contains(m)) continue; float d = (m.x - cur.x) * (m.x - cur.x) + (m.y - cur.y) * (m.y - cur.y); if (d < bd) { bd = d; next = m; } }
                             if (next == null) break; chain.Add(next); cur = next;
                         }
-                        var lf = AldaraVfx.Effect("lightning", P.x, P.y, 0, 0.4f, Color.white); lf.hasCol = true; lf.col = Hx("#8ab4ff");
-                        lf.pts = new List<Vector2> { new Vector2(P.x + Mathf.Cos(P.facing) * 24, P.y + Mathf.Sin(P.facing) * 24) }; foreach (var m in chain) lf.pts.Add(new Vector2(m.x, m.y));
+                        var lpts = new List<Vector2> { new Vector2(P.x + Mathf.Cos(P.facing) * 24, P.y + Mathf.Sin(P.facing) * 24) }; foreach (var m in chain) lpts.Add(new Vector2(m.x, m.y));
+                        if (AldaraMageFx.On) AldaraMageFx.Chain(lpts); else { var lf = AldaraVfx.Effect("lightning", P.x, P.y, 0, 0.4f, Color.white); lf.hasCol = true; lf.col = Hx("#8ab4ff"); lf.pts = lpts; }
                         AldaraVfx.Shake(1.5f, 0.15f);
                         foreach (var m in chain) { AldaraSkillFx.Pfx("chain_node", m, m.x, m.y, sk); Hit(m, sk.mult, "#cfe0ff"); Burst(m.x, m.y, "#cfe0ff", 6, 120); }
                         break;
@@ -209,11 +209,11 @@ namespace Aldara
                 case "meteor":
                     {
                         H.Cast(0.5f); float ix = t.x, iy = t.y; var tt = t;
-                        AldaraVfx.Effect("meteor3", ix, iy, sk.radius, 0.6f, Color.white); AldaraSkillFx.Pfx("meteor_mark", null, ix, iy, sk);
+                        if (!AldaraMageFx.On) AldaraVfx.Effect("meteor3", ix, iy, sk.radius, 0.6f, Color.white); AldaraSkillFx.Pfx("meteor_mark", null, ix, iy, sk);
                         Later_(0.6f, () =>
                         {
-                            Explode(ix, iy, sk.radius, 0.8f, true);
-                            AldaraVfx.Mfx(new AldaraVfx.Mf { k = "crack", x = ix, y = iy, a = Random.value * 6, len = sk.radius * 0.9f, c = Hx("#ff7a2a"), T = 2.2f, n = 7, r = sk.radius * 0.9f }); AldaraVfx.Mfx(new AldaraVfx.Mf { k = "shock", x = ix, y = iy, r = sk.radius, c = Hx("#ff7a2a"), c2 = Color.white, T = 0.45f });
+                            if (!AldaraMageFx.On) { Explode(ix, iy, sk.radius, 0.8f, true);
+                            AldaraVfx.Mfx(new AldaraVfx.Mf { k = "crack", x = ix, y = iy, a = Random.value * 6, len = sk.radius * 0.9f, c = Hx("#ff7a2a"), T = 2.2f, n = 7, r = sk.radius * 0.9f }); AldaraVfx.Mfx(new AldaraVfx.Mf { k = "shock", x = ix, y = iy, r = sk.radius, c = Hx("#ff7a2a"), c2 = Color.white, T = 0.45f }); }
                             AldaraVfx.Shake(7, 0.35f); AldaraSkillFx.Pfx("meteor", null, ix, iy, sk);
                             Burst(ix, iy - 16, "#ffb14a", 36, 340); Burst(ix, iy - 16, "#ff5a2a", 22, 240); Burst(ix, iy, "#3a2a20", 12, 160);
                             foreach (var m in Nearby(ix, iy, sk.radius)) Hit(m, m == tt ? sk.mult : sk.splash, "#ffb14a");
@@ -227,17 +227,17 @@ namespace Aldara
                         var t0 = t; Later_(k * 0.12f, () =>
                         {
                             var tt = t0; if (tt.dead) tt = NearestTo(tt.x, tt.y, 250) ?? tt;
-                            Fire("bolt", tt, m => { Hit(m, sk.mult, "#d0a0ff"); Burst(m.x, m.y - 16, "#c07aff", 8, 140); Explode(m.x, m.y, 30, 0.35f, false, "#c07aff", "#7a2aff", "#ffffff"); AldaraSkillFx.Pfx("bolt_hit", m, m.x, m.y, null, null, "#c07aff"); }, null, "#c07aff");
+                            Fire("bolt", tt, m => { Hit(m, sk.mult, "#d0a0ff"); Burst(m.x, m.y - 16, "#c07aff", 8, 140); if (!AldaraMageFx.On) Explode(m.x, m.y, 30, 0.35f, false, "#c07aff", "#7a2aff", "#ffffff"); AldaraSkillFx.Pfx("bolt_hit", m, m.x, m.y, null, null, "#c07aff"); }, null, "#c07aff");
                         });
                     }
                     break;
                 case "blizzard":
                     {
                         H.Cast(0.6f); float ix = t.x, iy = t.y;
-                        AldaraVfx.Effect("blizzard", ix, iy, sk.radius, 0.4f + sk.waves * 0.45f, Color.white);
+                        if (AldaraMageFx.On) AldaraMageFx.Blizzard(ix, iy, sk.radius, 0.4f + sk.waves * 0.45f); else AldaraVfx.Effect("blizzard", ix, iy, sk.radius, 0.4f + sk.waves * 0.45f, Color.white);
                         for (int w = 0; w < sk.waves; w++) Later_(0.15f + w * 0.45f, () =>
                         {
-                            var f = AldaraVfx.Effect("frost", ix, iy, sk.radius * 0.85f, 0.6f, Color.white); f.n = 8; AldaraSkillFx.Pfx("blizzard_wave", null, ix, iy, sk);
+                            if (!AldaraMageFx.On) { var f = AldaraVfx.Effect("frost", ix, iy, sk.radius * 0.85f, 0.6f, Color.white); f.n = 8; } AldaraSkillFx.Pfx("blizzard_wave", null, ix, iy, sk);
                             foreach (var m in Nearby(ix, iy, sk.radius)) { Hit(m, sk.mult, "#cfefff"); if (!m.dead) m.slowT = sk.slow; }
                         });
                         break;
@@ -245,12 +245,12 @@ namespace Aldara
                 case "arcane_cataclysm":
                     {
                         H.Cast(0.7f); float ix = t.x, iy = t.y; var tt = t;
-                        AldaraVfx.Effect("cataCharge", ix, iy, sk.radius, 0.6f, Color.white); AldaraSkillFx.Pfx("cata_charge", null, ix, iy, sk);
+                        if (!AldaraMageFx.On) AldaraVfx.Effect("cataCharge", ix, iy, sk.radius, 0.6f, Color.white); AldaraSkillFx.Pfx("cata_charge", null, ix, iy, sk);
                         Later_(0.55f, () =>
                         {
-                            AldaraVfx.Effect("cataBoom", ix, iy, sk.radius, 0.9f, Color.white); AldaraSkillFx.Pfx("cataclysm", null, ix, iy, sk);
-                            Explode(ix, iy, sk.radius * 0.9f, 0.8f, true, "#c07aff", "#6a1aff", "#ffffff");
-                            AldaraVfx.Mfx(new AldaraVfx.Mf { k = "crack", x = ix, y = iy, a = Random.value * 6, len = sk.radius, c = Hx("#c07aff"), T = 2.4f, n = 8, r = sk.radius }); AldaraVfx.Mfx(new AldaraVfx.Mf { k = "shock", x = ix, y = iy, r = sk.radius * 1.1f, c = Hx("#c07aff"), c2 = Color.white, T = 0.45f });
+                            if (!AldaraMageFx.On) { AldaraVfx.Effect("cataBoom", ix, iy, sk.radius, 0.9f, Color.white); Explode(ix, iy, sk.radius * 0.9f, 0.8f, true, "#c07aff", "#6a1aff", "#ffffff");
+                            AldaraVfx.Mfx(new AldaraVfx.Mf { k = "crack", x = ix, y = iy, a = Random.value * 6, len = sk.radius, c = Hx("#c07aff"), T = 2.4f, n = 8, r = sk.radius }); AldaraVfx.Mfx(new AldaraVfx.Mf { k = "shock", x = ix, y = iy, r = sk.radius * 1.1f, c = Hx("#c07aff"), c2 = Color.white, T = 0.45f }); }
+                            AldaraSkillFx.Pfx("cataclysm", null, ix, iy, sk);
                             AldaraVfx.Shake(8, 0.4f); Burst(ix, iy - 16, "#c07aff", 40, 360); Burst(ix, iy - 16, "#ffffff", 16, 220);
                             foreach (var m in Nearby(ix, iy, sk.radius)) Hit(m, m == tt ? sk.mult : sk.splash, "#d0a0ff");
                         });

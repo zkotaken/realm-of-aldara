@@ -12,16 +12,19 @@ namespace Aldara
     {
         public static AldaraKnightFx I;
         public static bool On { get { var H = AldaraHero.I; return H && H.cls == "knight" && AldaraVfxPlus.On && AldaraWorld.Loaded; } }
+        /// the enhanced effects are running at all (any class)
+        public static bool Live { get { return AldaraHero.I && AldaraVfxPlus.On && AldaraWorld.Loaded; } }
         static AldaraKnightFx V { get { if (!I) { var go = new GameObject("AldaraKnightFx"); I = go.AddComponent<AldaraKnightFx>(); } return I; } }
         public static void Ensure() { if (!I) { var v = V; } }
 
         // atlas cells
-        const int C_SLASH = 0, C_RING = 1, C_CRACK = 2, C_RUNE = 3, C_FLARE = 4, C_BEAM = 5, C_SWORD = 6, C_HEX = 7, C_FLAME = 8, C_DOT = 9, C_BAND = 10, C_WIND = 11;
-        public enum K { Slash, Ring, Wall, Decal, Flare, Beam, Sword, Dome, Flame, Helix, Spin, Line, Plate }
+        public const int C_SLASH = 0, C_RING = 1, C_CRACK = 2, C_RUNE = 3, C_FLARE = 4, C_BEAM = 5, C_SWORD = 6, C_HEX = 7, C_FLAME = 8, C_DOT = 9, C_BAND = 10, C_WIND = 11, C_SHARD = 12;
+        public enum K { Slash, Ring, Wall, Decal, Flare, Beam, Sword, Dome, Flame, Helix, Spin, Line, Plate, Orb, Bolt, Shard, Fall }
         public class Fx
         {
             public K k; public float t, life, delay, r, r1, w, span, tilt, dir = 1, h, ph, spin, bright = 1, sweep = 0.11f, size, hot = 1, alpha = 1;
-            public bool follow, vert, sparked, based, combo; public Vector3 at, fwd, p1, e1, e2; public Color c, c2; public int cell, n;
+            public bool follow, vert, sparked, based, combo, ended; public Vector3 at, fwd, p1, e1, e2; public Color c, c2; public int cell, n;
+            public List<Vector3> pts; public System.Action done;
         }
         readonly List<Fx> fx = new List<Fx>();
         static Fx Add(Fx f) { var v = V; if (v.fx.Count < 200) v.fx.Add(f); return f; }
@@ -51,7 +54,24 @@ namespace Aldara
         public static Fx Decal(Vector3 at, int cell, float size, Color c, Color hot, float life, float spin = 0, float delay = 0, float bright = 1.5f, bool follow = false)
         { return Add(new Fx { k = K.Decal, at = at, cell = cell, size = size, c = c, c2 = hot, life = life, spin = spin, delay = delay, bright = bright, ph = R() * 6.283f, follow = follow }); }
         public static Fx Flare(Vector3 at, float size, Color c, float life = 0.18f, float delay = 0, float bright = 2f)
-        { return Add(new Fx { k = K.Flare, at = at, size = size, c = c, life = life, delay = delay, bright = bright, ph = (R() - 0.5f) * 0.6f }); }
+        { return Add(new Fx { k = K.Flare, at = at, size = size, c = c, life = life, delay = delay, bright = bright, ph = (R() - 0.5f) * 0.6f, cell = C_FLARE }); }
+        /// a soft round flash (a fireball's burst)
+        public static Fx Glow(Vector3 at, float size, Color c, float life = 0.3f, float delay = 0, float bright = 1.6f)
+        { return Add(new Fx { k = K.Flare, at = at, size = size, c = c, life = life, delay = delay, bright = bright, cell = C_DOT }); }
+        /// a glowing shot in flight: n 0 spark, 1 fire, 2 ice, 3 arcane; moved by its owner with Move, finished with End
+        public static Fx Orb(Vector3 at, float size, Color c, int n)
+        { return Add(new Fx { k = K.Orb, at = at, size = size, c = c, c2 = Hot(c, 0.75f), n = n, life = 999, bright = 1.8f, w = size * 1.1f, pts = new List<Vector3> { at }, ph = R() * 6.28f }); }
+        public static void Move(Fx f, Vector3 p) { if (f == null || f.ended) return; if (f.pts.Count == 0 || (f.pts[f.pts.Count - 1] - p).sqrMagnitude > 0.0025f) { f.pts.Add(p); if (f.pts.Count > 16) f.pts.RemoveAt(0); } f.fwd = p - f.at; f.at = p; }
+        public static void End(Fx f) { if (f == null || f.ended) return; f.ended = true; f.life = f.t + 0.22f; }
+        /// lightning along nodes (start, then each target), forking and re-striking as it lives
+        public static Fx Bolt(List<Vector3> nodes, Color c, float life = 0.4f, float w = 0.1f)
+        { return Add(new Fx { k = K.Bolt, pts = nodes, c = c, c2 = Hot(c, 0.8f), life = life, w = w, bright = 2.2f, at = nodes[0] }); }
+        /// an ice crystal bursting out of the ground, leaning along lean
+        public static Fx Shard(Vector3 at, Vector3 lean, float h, float w, Color c, float life, float delay = 0)
+        { return Add(new Fx { k = K.Shard, at = at, fwd = lean, h = h, w = w, c = c, life = life, delay = delay, bright = 1.4f, cell = C_SHARD }); }
+        /// something falling from the sky onto 'to' over 'fall' seconds (a meteor, ice), calling done as it lands
+        public static Fx Fall(Vector3 from, Vector3 to, float fall, float size, Color c, int n, System.Action done = null, float delay = 0)
+        { return Add(new Fx { k = K.Fall, at = from, p1 = from, fwd = to, sweep = fall, size = size, c = c, c2 = Hot(c, 0.75f), n = n, life = fall + 0.25f, delay = delay, bright = 1.9f, w = size * 1.2f, pts = new List<Vector3>(), done = done, ph = R() * 6.28f }); }
         public static Fx Beam(Vector3 at, float r, float h, Color c, float life, float delay = 0, float bright = 1.5f)
         { return Add(new Fx { k = K.Beam, at = at, r = r, h = h, c = c, life = life, delay = delay, bright = bright }); }
         public static Fx Sword(Vector3 at, float size, Color c, float fall, float life, float delay = 0)
@@ -272,7 +292,7 @@ namespace Aldara
         void LateUpdate()
         {
             var cam = Camera.main; float dt = Mathf.Min(0.05f, Time.deltaTime);
-            if (!On || !cam) { fx.Clear(); return; }
+            if (!Live || !cam) { fx.Clear(); return; }
             if (!tex && texReady && texPx != null)
             {
                 tex = new Texture2D(AT, AT, TextureFormat.RGBA32, true, true) { wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Trilinear, anisoLevel = 4, name = "KnightFxAtlas" };
@@ -285,6 +305,14 @@ namespace Aldara
                 if (f.delay > 0) { f.delay -= dt; continue; }
                 f.t += dt; if (f.t >= f.life) { fx.RemoveAt(i); continue; }
                 if (f.follow && f.k != K.Line) f.at = hero;
+                if (f.k == K.Fall)
+                {
+                    float u = Mathf.Clamp01(f.t / f.sweep); var p = Vector3.Lerp(f.p1, f.fwd, u * u);
+                    if (u < 1) { f.pts.Add(p); if (f.pts.Count > 18) f.pts.RemoveAt(0); f.at = p; }
+                    else { if (!f.ended) { f.ended = true; f.at = f.fwd; if (f.done != null) f.done(); } if (f.pts.Count > 0) f.pts.RemoveAt(0); }
+                }
+                if ((f.k == K.Orb || f.k == K.Fall) && !f.ended) Trailing(f, dt);
+                if (f.k == K.Orb && f.ended && f.pts.Count > 1) f.pts.RemoveAt(0);
                 if (f.k == K.Slash && f.t < f.sweep && R() < 0.8f) { var hp = SlashPoint(f, EOut(f.t / f.sweep), f.r); AldaraVfxPlus.SparkBurst(hp, Hot(f.c, 0.6f), 1, 2.5f, 0.3f, 4); }
             }
             if (!tex) return;
@@ -308,7 +336,7 @@ namespace Aldara
             }
         }
 
-        static bool Body(K k, int cell) { return k == K.Slash || k == K.Spin || k == K.Plate || k == K.Sword || k == K.Helix || k == K.Line || k == K.Dome || (k == K.Ring && cell != C_WIND); }
+        static bool Body(K k, int cell) { return k == K.Shard || k == K.Slash || k == K.Spin || k == K.Plate || k == K.Sword || k == K.Helix || k == K.Line || k == K.Dome || (k == K.Ring && cell != C_WIND); }
         void P(Vector3 p, Vector3 n, Color c, float a, float u, float v, int cell, float hot, float bright, float fres = 0, float scroll = 0, bool wrap = false)
         {
             vs.Add(p); ns.Add(n); cs.Add(new Color(c.r, c.g, c.b, Mathf.Clamp01(a))); u0.Add(new Vector4(u, v, cell, hot)); u1.Add(new Vector4(bright, fres, scroll, wrap ? 1 : 0)); u2.Add(new Vector2(pull, 0));
@@ -340,7 +368,7 @@ namespace Aldara
         void Draw(Fx f, Camera cam)
         {
             float k = f.t / f.life;
-            pull = f.k == K.Ring || f.k == K.Decal ? 2.2f : f.k == K.Wall || f.k == K.Flare ? 1.6f : f.k == K.Beam || f.k == K.Sword ? 0.6f : 1.2f;
+            pull = f.k == K.Orb || f.k == K.Bolt || f.k == K.Fall ? 1.0f : f.k == K.Shard ? 0.9f : f.k == K.Ring || f.k == K.Decal ? 2.2f : f.k == K.Wall || f.k == K.Flare ? 1.6f : f.k == K.Beam || f.k == K.Sword ? 0.6f : 1.2f;
             switch (f.k)
             {
                 case K.Slash:
@@ -412,10 +440,11 @@ namespace Aldara
                     }
                 case K.Flare:
                     {
-                        float s = f.size * (0.5f + 0.7f * EOut(f.t / 0.05f)) * (1 - 0.35f * k), a = f.alpha * (1 - k) * (1 - k);
+                        float s = f.cell == C_DOT ? f.size * (0.4f + 0.8f * EOut(f.t / 0.08f)) : f.size * (0.5f + 0.7f * EOut(f.t / 0.05f)) * (1 - 0.35f * k), a = f.alpha * (1 - k) * (1 - k);
                         var r = cam.transform.right; var u = cam.transform.up; float cr = Mathf.Cos(f.ph), sr = Mathf.Sin(f.ph);
                         var ax = (r * cr + u * sr) * s; var ay = (-r * sr + u * cr) * s; var n = -cam.transform.forward; int b = vs.Count; var o = f.at + ToCam * 0.6f;
-                        P(o - ax - ay, n, f.c, a, 0, 0, C_FLARE, 1, f.bright); P(o + ax - ay, n, f.c, a, 1, 0, C_FLARE, 1, f.bright); P(o + ax + ay, n, f.c, a, 1, 1, C_FLARE, 1, f.bright); P(o - ax + ay, n, f.c, a, 0, 1, C_FLARE, 1, f.bright);
+                        int fc = f.cell == 0 ? C_FLARE : f.cell;
+                        P(o - ax - ay, n, f.c, a, 0, 0, fc, 1, f.bright); P(o + ax - ay, n, f.c, a, 1, 0, fc, 1, f.bright); P(o + ax + ay, n, f.c, a, 1, 1, fc, 1, f.bright); P(o - ax + ay, n, f.c, a, 0, 1, fc, 1, f.bright);
                         Q(b, b + 1, b + 2, b + 3); break;
                     }
                 case K.Beam:
@@ -498,6 +527,21 @@ namespace Aldara
                         P(p0 - side, n, f.c, 0, 0, 0, C_BAND, 1, f.bright); P(f.p1 - side, n, f.c, a, 1, 0, C_BAND, 1, f.bright); P(f.p1 + side, n, f.c, a, 1, 1, C_BAND, 1, f.bright); P(p0 + side, n, f.c, 0, 0, 1, C_BAND, 1, f.bright);
                         Q(b, b + 1, b + 2, b + 3); break;
                     }
+                case K.Orb: case K.Fall: DrawOrb(f, cam); break;
+                case K.Bolt: DrawBolt(f, cam); break;
+                case K.Shard:
+                    {
+                        float grow = EOut(f.t / 0.1f) * (1 - EIn(Mathf.Clamp01((k - 0.7f) / 0.3f))); if (grow <= 0.01f) break;
+                        var up = (Vector3.up + f.fwd * 0.6f).normalized * f.h * grow; var sd = Vector3.Cross(up.normalized, Vector3.forward).normalized; var sd2 = Vector3.Cross(up.normalized, sd).normalized;
+                        float a = Mathf.Min(1, f.t / 0.04f) * (1 - Mathf.Clamp01((k - 0.85f) / 0.15f)), ww = f.w * (0.6f + 0.4f * grow);
+                        foreach (var side in new[] { sd, sd2 })
+                        {
+                            int b = vs.Count; var nn = Vector3.Cross(side, up).normalized; var o = f.at - up.normalized * 0.05f;
+                            P(o - side * ww * 0.5f, nn, f.c, a, 0, 0, C_SHARD, 0.6f, f.bright); P(o + side * ww * 0.5f, nn, f.c, a, 1, 0, C_SHARD, 0.6f, f.bright);
+                            P(o + side * ww * 0.5f + up, nn, f.c, a, 1, 1, C_SHARD, 0.6f, f.bright); P(o - side * ww * 0.5f + up, nn, f.c, a, 0, 1, C_SHARD, 0.6f, f.bright); Q(b, b + 1, b + 2, b + 3);
+                        }
+                        break;
+                    }
                 case K.Plate:
                     {
                         float e = EOut(k), s = f.size * (0.6f + 0.7f * e), a = (1 - k) * (1 - k) * Mathf.Min(1, f.t / 0.04f); var fw = f.fwd.normalized;
@@ -508,12 +552,83 @@ namespace Aldara
             }
         }
 
+        // ---------- shots in flight, lightning ----------
+        void Trailing(Fx f, float dt)
+        {
+            var p = f.at;
+            switch (f.n)
+            {
+                case 1: if (R() < 0.9f) AldaraVfxPlus.Embers(p, new Color(1, 0.55f, 0.2f), 1, 0.12f, 0.8f); if (R() < 0.35f) AldaraVfxPlus.Smoke(p, new Color(0.2f, 0.16f, 0.14f, 0.35f), 1, 0.08f, 0.5f, 0.22f * f.size / 0.4f); break;
+                case 2: if (R() < 0.6f) AldaraVfxPlus.Motes(p, new Color(0.8f, 0.95f, 1f), 1, 0.1f, 0.2f); break;
+                case 3: if (R() < 0.6f) AldaraVfxPlus.Motes(p, Hot(f.c, 0.3f), 1, 0.08f, 0.3f); break;
+                default: if (R() < 0.5f) AldaraVfxPlus.SparkBurst(p, Hot(f.c, 0.5f), 1, 0.8f, 0.2f, 2); break;
+            }
+        }
+        void Strip(List<Vector3> pts, float w0, float w1, Color c, float a0, float a1, int cell, float hot, float bright)
+        {
+            if (pts.Count < 2) return; int b = vs.Count; var n = ToCam;
+            for (int i = 0; i < pts.Count; i++)
+            {
+                float s = i / (float)(pts.Count - 1); var d = i < pts.Count - 1 ? pts[i + 1] - pts[i] : pts[i] - pts[i - 1]; if (d.sqrMagnitude < 1e-8f) d = Vector3.right;
+                var side = Vector3.Cross(d.normalized, ToCam).normalized * Mathf.Lerp(w0, w1, s) * 0.5f; float a = Mathf.Lerp(a0, a1, s);
+                P(pts[i] - side, n, c, a, s, 0, cell, hot, bright); P(pts[i] + side, n, c, a, s, 1, cell, hot, bright);
+                if (i > 0) Q(b + (i - 1) * 2, b + (i - 1) * 2 + 1, b + i * 2 + 1, b + i * 2);
+            }
+        }
+        void Bill(Vector3 at, float size, Color c, float a, int cell, float hot, float bright, float rot, Camera cam)
+        {
+            var r = cam.transform.right; var u = cam.transform.up; float cr = Mathf.Cos(rot), sr = Mathf.Sin(rot);
+            var ax = (r * cr + u * sr) * size; var ay = (-r * sr + u * cr) * size; int b = vs.Count; var o = at + ToCam * 0.3f;
+            P(o - ax - ay, ToCam, c, a, 0, 0, cell, hot, bright); P(o + ax - ay, ToCam, c, a, 1, 0, cell, hot, bright); P(o + ax + ay, ToCam, c, a, 1, 1, cell, hot, bright); P(o - ax + ay, ToCam, c, a, 0, 1, cell, hot, bright); Q(b, b + 1, b + 2, b + 3);
+        }
+        void DrawOrb(Fx f, Camera cam)
+        {
+            float env = f.ended ? Mathf.Clamp01((f.life - f.t) / 0.22f) : Mathf.Min(1, f.t / 0.05f), fl = 0.85f + 0.15f * Mathf.Sin(f.t * 40 + f.ph);
+            if (f.k == K.Fall && f.ended) env *= 0; 
+            // the trail behind it, widening to the head
+            if (f.pts.Count > 1) { var tr = new List<Vector3>(f.pts); if ((tr[tr.Count - 1] - f.at).sqrMagnitude > 1e-6f && !f.ended) tr.Add(f.at); Strip(tr, 0, f.w * (f.n == 1 ? 1.4f : 1), f.c, 0, 0.9f * (f.ended ? Mathf.Clamp01((f.life - f.t) / 0.22f) : 1), C_BAND, 0.7f, f.bright); }
+            if (env <= 0) return;
+            Bill(f.at, f.size * 2.6f, f.c, 0.55f * env * fl, C_DOT, 0.2f, f.bright);
+            Bill(f.at, f.size * (f.n == 1 ? 1.3f : 1.7f), f.c2, 0.8f * env, C_FLARE, 1, f.bright, f.ph + f.t * 6, cam);
+            Bill(f.at, f.size * 0.75f, f.c2, env, C_DOT, 1, f.bright * 1.4f, 0, cam);
+            if (f.n == 1) { for (int i = 0; i < 3; i++) Bill(f.at + new Vector3(Mathf.Cos(f.t * 9 + i * 2.1f), Mathf.Sin(f.t * 11 + i * 2.1f) * 0.6f, 0) * f.size * 0.35f, f.size * 0.9f, new Color(1, 0.5f, 0.15f), 0.6f * env, C_DOT, 0.5f, f.bright, 0, cam); }
+            if (f.n == 3) Bill(f.at, f.size * 1.15f, f.c, 0.5f * env, C_RUNE, 0.25f, f.bright * 0.8f, f.t * 5, cam);
+            if (f.n == 2)
+            {   // the crystal itself, point first
+                var d = f.fwd.sqrMagnitude > 1e-6f ? f.fwd.normalized : Vector3.right; var sd = Vector3.Cross(d, ToCam).normalized; float L = f.size * 2.4f, W = f.size * 0.9f; int b = vs.Count;
+                var tail = f.at - d * L * 0.6f; var tip = f.at + d * L * 0.4f;
+                P(tail - sd * W * 0.5f, ToCam, f.c, env, 0, 0, C_SHARD, 0.8f, f.bright); P(tail + sd * W * 0.5f, ToCam, f.c, env, 1, 0, C_SHARD, 0.8f, f.bright);
+                P(tip + sd * W * 0.5f, ToCam, f.c, env, 1, 1, C_SHARD, 0.8f, f.bright); P(tip - sd * W * 0.5f, ToCam, f.c, env, 0, 1, C_SHARD, 0.8f, f.bright); Q(b, b + 1, b + 2, b + 3);
+            }
+        }
+        void Bill(Vector3 at, float size, Color c, float a, int cell, float hot, float bright) { var cam = Camera.main; if (cam) Bill(at, size, c, a, cell, hot, bright, 0, cam); }
+        void DrawBolt(Fx f, Camera cam)
+        {
+            float k = f.t / f.life, env = (1 - k * k) * (0.55f + 0.45f * Mathf.PerlinNoise(f.t * 30, 0.3f)); if (f.pts == null || f.pts.Count < 2) return;
+            int seed = (int)(f.t / 0.05f);
+            for (int sgi = 0; sgi < f.pts.Count - 1; sgi++)
+            {
+                var A = f.pts[sgi]; var B = f.pts[sgi + 1]; var rng = new System.Random(seed * 7919 + sgi * 131 + 17); System.Func<float> rf = () => (float)rng.NextDouble() - 0.5f;
+                var d = B - A; float len = d.magnitude; if (len < 0.05f) continue; var side = Vector3.Cross(d / len, ToCam).normalized;
+                var path = new List<Vector3>(); int N = Mathf.Clamp((int)(len * 3), 6, 22);
+                for (int i = 0; i <= N; i++) { float s = i / (float)N, taper = Mathf.Sin(s * Mathf.PI); path.Add(A + d * s + (side * rf() * len * 0.22f + Vector3.up * rf() * len * 0.08f) * taper); }
+                Strip(path, f.w * 6, f.w * 6, f.c, 0.35f * env, 0.35f * env, C_BAND, 0.3f, f.bright * 0.8f);
+                Strip(path, f.w * 1.6f, f.w * 1.6f, f.c2, env, env, C_BAND, 1, f.bright * 1.5f);
+                for (int q = 0; q < 2; q++)
+                {   // forks
+                    int at = 2 + rng.Next(Mathf.Max(1, N - 4)); var p0 = path[at]; var fd = (d / len + side * rf() * 2.4f + Vector3.up * rf()).normalized; var br = new List<Vector3> { p0 };
+                    for (int i = 1; i <= 4; i++) br.Add(p0 + fd * len * 0.07f * i + side * rf() * len * 0.05f);
+                    Strip(br, f.w * 1.2f, 0.01f, f.c2, 0.8f * env, 0, C_BAND, 1, f.bright);
+                }
+            }
+        }
+
         // ---------- the atlas, painted once in the background ----------
         const int CS = 256, AT = 1024;
         static Color32[] Atlas()
         {
             var px = new Color32[AT * AT]; var A = new float[CS * CS]; var Rc = new float[CS * CS];
-            for (int cell = 0; cell < 12; cell++)
+            for (int cell = 0; cell < 13; cell++)
             {
                 System.Array.Clear(A, 0, A.Length); System.Array.Clear(Rc, 0, Rc.Length); Paint(cell, A, Rc);
                 int cx = (cell % 4) * CS, cy = (cell / 4) * CS;
@@ -615,6 +730,15 @@ namespace Aldara
                                 float wv = Fbm(u * 3, v * 2, 3, 2, 45, 2), n = Fbm(u * 7 + wv * 1.5f, v * 2, 7, 2, 41, 4); float tongue = SS(0.38f, 0.72f, n) * (0.6f + 0.4f * Mathf.Abs(Mathf.Sin(u * Mathf.PI * 14 + wv * 4))); a = tongue; r = SS(0.64f, 0.86f, n); break;
                             }
                         case C_DOT: a = Mathf.Exp(-d * d * 4.5f) * (1 - SS(0.85f, 1, d)); r = Mathf.Exp(-d * d * 25); break;
+                        case C_SHARD:
+                            {   // an ice crystal standing up (bottom v = 0): a long faceted point with a bright edge and inner facets
+                                float cx = u - 0.5f, hw = 0.2f * SS(0f, 0.12f, v) * (1 - SS(0.62f, 1f, v)) + 0.2f * SS(0.62f, 1f, v) * (1 - v) * 2.4f;
+                                hw = v < 0.62f ? 0.2f * SS(0f, 0.1f, v) : 0.2f * (1 - (v - 0.62f) / 0.38f);
+                                float dd = Mathf.Abs(cx) - hw; bool inside = dd < 0 && v > 0.01f && v < 0.99f;
+                                float edge = Mathf.Exp(-Sq(dd / 0.012f)), facet = Mathf.Exp(-Sq((cx + 0.06f * (v - 0.4f)) / 0.01f)) * (inside ? 1 : 0), glow = Mathf.Exp(-Mathf.Max(dd, 0) / 0.03f) * 0.4f;
+                                float n = Fbm(u * 6, v * 3, 0, 0, 71, 2);
+                                a = (inside ? 0.42f + 0.25f * n + 0.25f * v : 0) + edge * 0.9f + facet * 0.6f + glow; r = edge * 0.8f + facet * 0.6f + (inside ? 0.15f * v : 0); break;
+                            }
                         case C_BAND:
                             {
                                 float n = Fbm(u * 4, v * 6, 4, 0, 51, 2);

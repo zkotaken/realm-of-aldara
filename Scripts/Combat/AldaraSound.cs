@@ -186,7 +186,7 @@ namespace Aldara
 
         // ---- hooks into the game ----
         static bool arm; static float lastFight = -99;
-        static void Fight() { float now = Time.unscaledTime; if (!arm && now - lastFight > 8) { var c = SheathClass(); if (c != null) Play("MEL_" + c + "_Unsheathe", new Opt { vol = -6 }); arm = true; } lastFight = now; }
+        static void Fight() { float now = Time.unscaledTime; if (!arm && now - lastFight > 6) { var c = SheathClass(); if (c != null) Play("MEL_" + c + "_Unsheathe", new Opt { vol = -6 }); arm = true; } lastFight = now; }
         class Ctx { public string sch, wpn; public bool slam; public float until; }
         static Ctx ctxS;
         /// basicAttack (and a free swing that connects)
@@ -279,7 +279,7 @@ namespace Aldara
             watchT -= Time.unscaledDeltaTime; if (watchT > 0) return; watchT = 0.25f; var H = AldaraHero.I; var P = AldaraPlayer.I; if (!H || !P || !AldaraSave.Ready) return;
             bool low = H.alive && H.hp > 0 && H.hp < H.maxHp * 0.25f;
             if (low != lowHp) { lowHp = low; if (low) { var v = VoiceSet(); hb = Play(v != null ? "VO_EFF_" + v + "_LowHealthBreath_Loop" : "SPL_Blood_LingerLoop", new Opt { loop = true, vol = v != null ? -6 : -9, fadeIn = 0.8f }); } else { Stop(hb, 0.8f); hb = null; } }
-            if (arm && Time.unscaledTime - lastFight > 8) { arm = false; var c = SheathClass(); if (c != null && H.alive) Play("MEL_" + c + "_Sheathe", new Opt { vol = -7 }); }
+            if (arm && Time.unscaledTime - lastFight > 6) { arm = false; var c = SheathClass(); if (c != null && H.alive) Play("MEL_" + c + "_Sheathe", new Opt { vol = -7 }); }
             bool atk = H.atkBuff > 0, haste = H.hasteBuff > 0; if (atkWas && !atk) Play("SPL_Blood_Fade", new Opt { vol = -5 }); if (hasteWas && !haste) Play("SPL_Nature_Fade", new Opt { vol = -5 }); atkWas = atk; hasteWas = haste;
             var M = AldaraMonsters.I;
             if (M != null && M.all.Count > 0 && Random.value < 0.06f) { var m = M.all[Random.Range(0, M.all.Count)]; if (m != null && !m.dead && !(m.engT > 0) && Mathf.Sqrt((m.x - P.x) * (m.x - P.x) + (m.y - P.y) * (m.y - P.y)) < 520) { var c = Cre(m); if (c != null && c != "Human") CreVo(m, "Idle", -1, -9); } }

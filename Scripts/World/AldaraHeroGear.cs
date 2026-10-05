@@ -190,6 +190,7 @@ namespace Aldara
                 wingNodes = made; wingName = wg.name; wingRarity = wg.rarity;
                 foreach (var r in (JArray)wj["roles"]) wings.Add(new Wing { n = made[(int)r["n"]], f = (int)r["f"] >= 0 ? made[(int)r["f"]] : null, sd = (int)r["sd"], fairy = (int)r["fairy"] != 0 });
             }
+            Holsters(b, w);
             return true;
         }
         void Hide(Transform t) { if (!t || !t.gameObject.activeSelf) return; t.gameObject.SetActive(false); hidden.Add(t); }
@@ -200,10 +201,49 @@ namespace Aldara
         static readonly Dictionary<string, float[]> FLY_STYLE = new Dictionary<string, float[]> {   // rate, rateM, base, climb, bob, amp
             { "knight", new[] { 2.0f, 1.6f, 13, 6, 4.2f, 0.5f } }, { "mage", new[] { 1.5f, 1.2f, 26, 5, 2.6f, 0.2f } }, { "archer", new[] { 3.3f, 2.4f, 16, 10, 4.5f, 0.36f } } };
         float lastX, lastY; bool haveLast;
+
+        // ---- weapons put away out of combat: the sword and shield go on the back, a staff or bow across it ----
+        class Holster { public Renderer hand; public GameObject back; }
+        readonly List<Holster> holsters = new List<Holster>(); bool sheathed;
+        void Holsters(Base b, Item w)
+        {
+            holsters.Clear(); sheathed = false; if (w == null) return;
+            var wl = b.meta["V"]["weapons"][w.name + "|" + w.rarity] as JArray; var torso = Rig(1); if (wl == null || !torso) return;
+            float top = b.meta["info"]["capeTop"] != null ? (float)b.meta["info"]["capeTop"] * UK : 0.6f;
+            var items = new List<KeyValuePair<Transform, Mesh>>();
+            foreach (var i in wl) { int n = (int)i; if (n < 0 || n >= T.Length || !T[n]) continue; var mf = T[n].GetComponent<MeshFilter>(); if (mf && mf.sharedMesh) items.Add(new KeyValuePair<Transform, Mesh>(T[n], mf.sharedMesh)); }
+            int longN = 0;
+            foreach (var kv in items)
+            {
+                var node = kv.Key; var mb = kv.Value.bounds; var e = mb.extents;
+                // the item's axes, longest to thinnest
+                var ax = new List<KeyValuePair<float, Vector3>> { new KeyValuePair<float, Vector3>(e.x, Vector3.right), new KeyValuePair<float, Vector3>(e.y, Vector3.up), new KeyValuePair<float, Vector3>(e.z, Vector3.forward) };
+                ax.Sort((a, c) => c.Key.CompareTo(a.Key));
+                Vector3 La = ax[0].Value, Th = ax[2].Value; bool isLong = ax[0].Key > ax[1].Key * 2.2f;
+                if (Vector3.Dot(mb.center, La) < 0) La = -La;   // grip to tip (or bottom to top)
+                Quaternion q; Vector3 at;
+                if (isLong) { var tip = new Vector3(longN % 2 == 0 ? -0.26f : 0.26f, -0.97f, 0).normalized; q = Quaternion.LookRotation(tip, Vector3.forward) * Quaternion.Inverse(Quaternion.LookRotation(La, Th)); at = new Vector3(longN % 2 == 0 ? 0.04f : -0.04f, top * 0.64f, 0.34f); longN++; }   // grip over the shoulder, tip down the back
+                else { q = Quaternion.LookRotation(Vector3.up, Vector3.back) * Quaternion.Inverse(Quaternion.LookRotation(La, Th)); at = new Vector3(0, top * 0.7f, 0.4f); }   // a shield flat on the back, over the blade
+                var rel = torso.worldToLocalMatrix * node.localToWorldMatrix; float sc = new Vector3(rel.m00, rel.m10, rel.m20).magnitude;
+                var g = new GameObject("holster"); g.transform.SetParent(torso, false); g.transform.localRotation = q; g.transform.localScale = Vector3.one * sc;
+                g.transform.localPosition = at - q * (mb.center * sc);
+                g.AddComponent<MeshFilter>().sharedMesh = kv.Value; var hr = node.GetComponent<MeshRenderer>(); var r = g.AddComponent<MeshRenderer>(); r.sharedMaterials = hr ? hr.sharedMaterials : new[] { mat };
+                g.SetActive(false); added.Add(g); holsters.Add(new Holster { hand = hr, back = g });
+            }
+        }
+        /// out of a fight for a few seconds the hero puts the weapon away (the same moment the sheathing sound plays)
+        void Sheath(bool isPlayer)
+        {
+            if (holsters.Count == 0) return; var H = AldaraHero.I;
+            bool want = isPlayer && H && H.alive && !H.InFight;
+            if (want == sheathed) return; sheathed = want;
+            foreach (var h in holsters) { if (h.hand) h.hand.enabled = !want; if (h.back) h.back.SetActive(want); }
+        }
         void LateUpdate()
         {
             if (T == null) return;
             var PL = AldaraPlayer.I; bool isPlayer = PL && transform.parent == PL.transform;
+            Sheath(isPlayer);
             flying = isPlayer && wings.Count > 0;
             if (isPlayer) ry = Mathf.Atan2(Mathf.Cos(PL.facing), Mathf.Sin(PL.facing));
             float dt = Mathf.Min(0.05f, Time.deltaTime), t = Time.time;

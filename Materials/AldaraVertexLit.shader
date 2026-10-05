@@ -94,7 +94,15 @@ Shader "Aldara/VertexLit"
             struct V { float4 pos : SV_POSITION; };
             V vert(A i){ V o; UNITY_SETUP_INSTANCE_ID(i);
                 float3 wp = Sway(TransformObjectToWorld(i.pos.xyz), i.pos.xyz); float3 wn = TransformObjectToWorldNormal(i.n);
-                float4 p = TransformWorldToHClip(ApplyShadowBias(wp, wn, _LightDirection));
+                // characters stand squashed in depth (AldaraView.Squash) so they read like the browser's sprites: the
+                // usual normal bias eats such thin bodies, so theirs is much gentler and a hero, a townsman or a goblin
+                // throws a solid shadow rather than a faint sliver
+                float kz = length(UNITY_MATRIX_M[2].xyz) / max(1e-4, length(UNITY_MATRIX_M[0].xyz));
+                float nb = 1;
+                if (kz < 0.7) nb = 0.15;
+                float invNdotL = 1.0 - saturate(dot(_LightDirection, wn));
+                wp = _LightDirection * _ShadowBias.xxx + wp; wp = wn * (invNdotL * _ShadowBias.y * nb) + wp;
+                float4 p = TransformWorldToHClip(wp);
                 #if UNITY_REVERSED_Z
                 p.z = min(p.z, UNITY_NEAR_CLIP_VALUE);
                 #else
