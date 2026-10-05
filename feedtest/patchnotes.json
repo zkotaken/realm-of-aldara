@@ -1,0 +1,231 @@
+{
+ "entries": [
+  {
+   "v": "150",
+   "date": "October 5, 2026",
+   "type": "update",
+   "title": "Realm of Aldara, rebuilt",
+   "notes": [
+    "The Unity edition is now the game. Press Play in the launcher and Realm of Aldara starts in its new engine, with the characters you already have.",
+    "High-resolution ground: grass, dirt paths, rock faces, sand, snow, ash and swamp mud now have sharp, detailed surfaces that catch the light, instead of the soft painted map.",
+    "Depth of field is now off by default and no longer part of any quality preset, so the world stays sharp. Turn it on in Settings, Graphics, if you want it.",
+    "New Graphics option: High-resolution ground (on for Medium and up).",
+    "If the launcher asks you to, close it and open it again once so it can finish updating itself."
+   ]
+  },
+  {
+   "v": "149.1",
+   "date": "October 5, 2026",
+   "type": "update",
+   "title": "Realm of Aldara Classic is here",
+   "notes": [
+    "Realm of Aldara Classic, the whole game rebuilt in Unity, can now be installed from the launcher. Find it at the top of the Home page and press Install.",
+    "Classic picks up the characters you already have, so you can carry on where you left off. The browser edition stays as it is and still opens with Play.",
+    "Classic adds enhanced rendering: ambient occlusion, soft shadows, a moving sun and moon, torchlight on models at night, deeper water, molten lava, rocky cliffs and wind-blown grass. Turn any of it off in Settings, Graphics.",
+    "New Graphics settings: aspect ratio, resolution and a working world zoom. The interface now scales to fit any screen shape, and Interface has a Whole interface size.",
+    "The launcher keeps Classic up to date, downloading only the files that change, and updates itself to do so. If Classic does not appear yet, close the launcher and open it again."
+   ]
+  },
+  {
+   "v": "149",
+   "date": "October 1, 2026",
+   "type": "update",
+   "title": "Smooth sliding along mountains",
+   "notes": [
+    "Running into a mountainside, a cliff, the coast or a building at an angle now slides you smoothly along it instead of catching on its edge or stopping dead.",
+    "Hitting a wall nearly head-on still lets you glide along it at a little over half speed, so you can steer around mountains without fighting them.",
+    "In a tight pocket between two walls you now stand still instead of shaking back and forth."
+   ]
+  },
+  {
+   "v": "148",
+   "date": "October 1, 2026",
+   "type": "update",
+   "title": "New HUD layout",
+   "notes": [
+    "The bottom of the screen now holds only what you use in a fight: your health and mana orbs, the skill bar, vials and auto-combat.",
+    "Character, Inventory, Skills, Quests, Map, Dungeons, Vault, Guild, Play Together and Settings have moved to their own menu in the bottom-right corner, grouped by type, like a classic MMO.",
+    "On smaller windows the menu stands up along the right edge instead.",
+    "Settings now has a gear icon."
+   ]
+  },
+  {
+   "v": "147",
+   "date": "October 1, 2026",
+   "type": "update",
+   "title": "Smoother frame rate, sun shafts and camera zoom",
+   "notes": [
+    "Dynamic resolution: when frames run long the game trims the render resolution first (every effect stays on) and gives it back once things are smooth.",
+    "Render resolution Auto now follows your quality preset, up to 4K on Ultra. The FPS counter shows the current resolution.",
+    "Lights are drawn from cached glow sprites, which saves time every frame.",
+    "The game drops to 30 frames a second while another window has focus, to save power and heat (can be turned off in Settings).",
+    "Sun shafts and depth haze on High and Ultra.",
+    "The screen edges pulse red when your health is below 30%.",
+    "Camera zoom with the mouse wheel or the + and - keys, middle-click resets it.",
+    "F8 hides the interface for a clean view.",
+    "Backpack items show how their stats compare to what you are wearing.",
+    "New option: Sound in the background."
+   ]
+  },
+  {
+   "v": "146",
+   "date": "October 1, 2026",
+   "type": "update",
+   "title": "Sharper graphics",
+   "notes": [
+    "The world now draws at your screen's full resolution. Before, zooming in drew a smaller picture and stretched it, which made everything blurry.",
+    "Characters, monsters, bosses, pets, text and effects stay crisp at every World zoom level, and on high-density displays.",
+    "New Render resolution setting on the Graphics page: Auto (sharp, eases off on very large screens), Full, High, Medium, or Low (the old look). Lower it if the game runs slowly."
+   ]
+  },
+  {
+   "v": "145",
+   "date": "October 1, 2026",
+   "type": "update",
+   "title": "Music, display modes and a new raid title",
+   "notes": [
+    "Music: every town, zone and dungeon has its own tracks, crossfading as you travel between them. Quiet places leave a little silence between songs.",
+    "Boss music: an intro plays when a boss comes into view, its battle theme fades in when the fight starts, and it fades out when the boss falls (or you do).",
+    "A Music volume slider is on the Sound page.",
+    "Settings: Sound is now a page inside Settings, and the graphics card options are on the Graphics page.",
+    "Display mode setting on the Graphics page: Windowed, Borderless windowed or Fullscreen. The desktop game remembers your choice.",
+    "New glowing title, Breaker of the Eclipse, for completing the Vault of the Eclipse raid.",
+    "Fixed skill cooldown numbers getting stuck at 1 on the skill bar.",
+    "Jewelry can now be dismantled, and Auto Dismantle includes weaker jewelry.",
+    "Knights now hear their swing and grunt when attacking thin air.",
+    "The Celestial Phoenix pet is back to its original model.",
+    "Launcher: the update source option is gone. The launcher now updates itself, and downloads the music with the game."
+   ]
+  },
+  {
+   "v": "144",
+   "date": "October 1, 2026",
+   "type": "hotfix",
+   "title": "Glowing titles really glow",
+   "notes": [
+    "Glowing titles (Legend of Aldara, The Ascended, Voidwalker, Dungeon Conqueror, Godforged, The Relentless) now shine over your head: a halo of light that breathes, a band of light that sweeps across the letters, and small twinkles.",
+    "The same glow shows on the title under your portrait and in the titles list in your Inventory."
+   ]
+  },
+  {
+   "v": "143",
+   "date": "October 1, 2026",
+   "type": "update",
+   "title": "New bosses, new sounds, and the game gets its own program",
+   "notes": [
+    "All sixteen bosses have new models: Goblin Warchief, Bone Tyrant, Shadowfen Dragon, Frost Giant King, Infernal Lord, Void Emperor, Grak the Goblin King, Lich Morvain, Queen Glacia, Ignar the Forgemaster, The Hollow King, Nerissa the Tide Queen, Arachna, Countess Sanguine, The Grand Artificer and Astraeus.",
+    "Every boss has its own animations: idle, walk, a flinch when hit, a death, and a matching animation for each of its attacks, timed to the wind-up and the strike.",
+    "Nerissa, Arachna, Countess Sanguine, The Grand Artificer and Astraeus now fight with their own signature moves instead of generic ones.",
+    "Sound is in: 505 recorded sounds for weapon swings, two-layer hits, blocks, parries, crits, seven spell schools and enemy spells.",
+    "Your character has a voice: grunts on attacks, casts, pain, death, and heavy breathing at low health. Choose Human male, Human female, Orc or Off in Settings, Sound.",
+    "Creatures growl when they notice you, attack, get hurt and die: wolves and beasts, trolls and giants, ghouls and undead, spiders, wraiths and human enemies.",
+    "The launcher and the game are now separate. The launcher installs the game, keeps it updated, and pressing Play closes the launcher and opens the game in its own window.",
+    "If you have the old launcher, download the new one once from the link. From then on the launcher installs and updates everything."
+   ]
+  },
+  {
+   "v": "142",
+   "date": "October 1, 2026",
+   "type": "update",
+   "title": "The Aldara Launcher",
+   "notes": [
+    "The game now opens on a launcher with a Home page, this Updates and Hotfixes page and Settings.",
+    "New versions download by themselves when the launcher opens. No more re-downloading the game.",
+    "Your saves stay on your computer and are never touched by an update.",
+    "Settings: automatic updates, check for updates, graphics card choice and a button to open your saves folder.",
+    "If the update server cannot be reached, you can still play the version you have."
+   ]
+  },
+  {
+   "v": "141",
+   "date": "October 1, 2026",
+   "type": "hotfix",
+   "title": "Raid enemy names",
+   "notes": [
+    "Every enemy in the Vault of the Eclipse has a new name: Gloam Wretches, Duskguard Spearmen, Shade Chanters, Emberhelm Templars, Glyphbound Sentinels, Heralds of Dusk and Dawn, Veilrenders, the Sealwarden Behemoth and the Spanwatch Revenant.",
+    "The twin bosses are now the Twin Regents, Vesper and Solace.",
+    "The final boss is now Maelthar, the Sunless King, and the Templars drop Sun Embers."
+   ]
+  },
+  {
+   "v": "140",
+   "date": "October 1, 2026",
+   "type": "update",
+   "title": "Raids: the Vault of the Eclipse",
+   "notes": [
+    "A new Raids tab in the Dungeons window, for up to 4 players. Requires level 100.",
+    "Eight sections and six encounters: the plates of the Eclipsed Gate, the Shattered Descent, the Hall of the Oracles glyph puzzle, the levers of the Sunken Gallery, the Twin Regents, the Eclipse Bridge hold-out and Maelthar, the Sunless King.",
+    "Waves of enemies during every encounter, enrage timers and wipe mechanics.",
+    "Checkpoints are saved: leave and continue later, and a wipe sends the whole party back to the last one.",
+    "Fallen players can be revived by an ally standing over them.",
+    "A hidden cache on the way, and a treasury full of loot at the end."
+   ]
+  },
+  {
+   "v": "139",
+   "date": "October 1, 2026",
+   "type": "update",
+   "title": "Knight skill animations",
+   "notes": [
+    "New one-handed and two-handed animations for all 11 knight skills.",
+    "Every Paladin, Berserker, Guardian and Blademaster ability has its own animation.",
+    "New hit reactions and a new death animation for the knight.",
+    "Bladestorm spins for its whole duration and Undying Rage plays when it saves you."
+   ]
+  },
+  {
+   "v": "138",
+   "date": "October 1, 2026",
+   "type": "update",
+   "title": "New pet models, walk and run",
+   "notes": [
+    "All 19 pets have brand new models, with walking, flying, idle and attack motion.",
+    "Press Ctrl to switch between walking and running. You walk by default.",
+    "A Walking or Running tag sits in the bottom left corner; click it to switch."
+   ]
+  },
+  {
+   "v": "137",
+   "date": "October 1, 2026",
+   "type": "update",
+   "title": "Warrior animations",
+   "notes": [
+    "New combat idle, walk, run and three-hit combo for the knight with sword and shield.",
+    "New two-handed set for greatswords, including a new whirlwind.",
+    "The shield now turns to face your enemies."
+   ]
+  },
+  {
+   "v": "136",
+   "date": "September 30, 2026",
+   "type": "update",
+   "title": "Mythic armor models",
+   "notes": [
+    "Every mythic armor set has a new model, with its glowing aura."
+   ]
+  },
+  {
+   "v": "135",
+   "date": "September 30, 2026",
+   "type": "hotfix",
+   "title": "Subclass window fix",
+   "notes": [
+    "Fixed the subclass window crashing for characters with a broken saved subclass. Their points are refunded and the next choice is free.",
+    "The combat sound pack is switched off for now."
+   ]
+  },
+  {
+   "label": "Earlier",
+   "date": "September 2026",
+   "type": "update",
+   "title": "Armor, weapons and quality of life",
+   "notes": [
+    "New armor models for every class and tier, with helmets that hide your hair and closed faceplates.",
+    "New weapon models for swords, staves and bows.",
+    "Auto combat uses your subclass abilities.",
+    "Level scaling: being far above a monster's level now makes a real difference.",
+    "Inventory tabs and sorting."
+   ]
+  }
+ ]
+}
