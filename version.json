@@ -4,7 +4,7 @@
  "sha256": "2ca36332c90f21234c21aec1ab1760b1dcab59205e03b2eed23444a438b94f91",
  "file": "game.html",
  "date": "October 6, 2026",
- "title": "Orb frames fixed",
+ "title": "Minimap and region banner fixed",
  "launcher": "6",
  "launcher_sha256": "450cbc0cd6d23a68f1b6e8f3b455f4ea291374150382cdb4ab1b986a05ebb832",
  "assets": [
@@ -141,14 +141,14 @@
  ],
  "exe": "Realm of Aldara Launcher.exe",
  "exe_build": "5",
- "exe_sha256": "46e0943f7263602fbd6130c50bb61fd7ef867015ad2949ad2cbae4f2a465ff0f",
+ "exe_sha256": "881de9007ed831044714fdf90a85565f466973a5944eeeb029818f771a4579fa",
  "classic": {
-  "version": "154",
+  "version": "155",
   "title": "Realm of Aldara",
   "exe": "Realm of Aldara.exe",
   "base": "https://raw.githubusercontent.com/zkotaken/realm-of-aldara/classic-builds/",
-  "manifest": "manifests/154.json",
-  "manifest_sha": "4c5f010974339693f6aa80e74cf8383c8c01518f6bf7c5c7ce8be755221e55b4",
-  "size": 839327807
+  "manifest": "manifests/155.json",
+  "manifest_sha": "647be3d4e828518cb798e90547b34d1ebb226350cefc302b3ccdad32c1617c53",
+  "size": 839346965
  }
 }

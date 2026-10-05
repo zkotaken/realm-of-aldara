@@ -1,6 +1,17 @@
 {
  "entries": [
   {
+   "v": "155",
+   "date": "October 6, 2026",
+   "type": "fix",
+   "title": "Minimap and region banner fixed",
+   "notes": [
+    "The compass round the minimap is drawn whole: its N, E, S and W markers and points are no longer cut off.",
+    "The region banner under the minimap grows to fit the name, so long names like The Bloodmoor keep both pointed ends.",
+    "The gold claws round the health and mana orbs are drawn whole, with their gems."
+   ]
+  },
+  {
    "v": "154",
    "date": "October 6, 2026",
    "type": "fix",
