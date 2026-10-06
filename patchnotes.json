@@ -1,6 +1,22 @@
 {
  "entries": [
   {
+   "v": "161",
+   "date": "October 6, 2026",
+   "type": "update",
+   "title": "Heroes remastered",
+   "notes": [
+    "Every hero body and every piece of armour has been remastered with real materials. Steel is polished and mirrors the sky, gold shines and is engraved, dark iron has a dull sheen, chain mail and dragon scale catch the light, leather has grain, cloth has a soft woven sheen, and gems sparkle.",
+    "Heroes are smoothly shaded now instead of faceted, while plate edges stay crisp.",
+    "Helmets have been reshaped. A knight's helm is taller and squarer with a ridge along the crown, a pointed faceplate, a longer jaw down to the chin and a guard over the back of the neck. Mage and archer hoods rise into a peak that falls back over the head, with a face opening as long as a face.",
+    "Heroes' faces have a longer jaw and chin, so heads look like heads rather than balls.",
+    "A mage's robes and hoods are always cloth and an archer's jerkins and hoods are always leather, whatever their colour.",
+    "Monsters no longer have a glow, glowing veins, a coloured aura or a pool of light under them. Bosses keep their rune ring.",
+    "Fixed armour sometimes going invisible after the game unloaded unused assets.",
+    "The new hero materials need Enhanced rendering in Graphics."
+   ]
+  },
+  {
    "v": "160",
    "date": "October 6, 2026",
    "type": "update",
