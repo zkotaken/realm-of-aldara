@@ -4,7 +4,7 @@
  "sha256": "2ca36332c90f21234c21aec1ab1760b1dcab59205e03b2eed23444a438b94f91",
  "file": "game.html",
  "date": "October 7, 2026",
- "title": "In the saddle",
+ "title": "Standing tall",
  "launcher": "6",
  "launcher_sha256": "450cbc0cd6d23a68f1b6e8f3b455f4ea291374150382cdb4ab1b986a05ebb832",
  "assets": [
@@ -141,14 +141,14 @@
  ],
  "exe": "Realm of Aldara Launcher.exe",
  "exe_build": "5",
- "exe_sha256": "57f63a269dfc7e71b0d7312024ec38c48e2f36d7041014bf72a4dccb32701b70",
+ "exe_sha256": "fa5ff2cb744cbd66b181ba254f06bc051d57ffb04966119027886df6c0194c97",
  "classic": {
-  "version": "165",
+  "version": "166",
   "title": "Realm of Aldara",
   "exe": "Realm of Aldara.exe",
   "base": "https://raw.githubusercontent.com/zkotaken/realm-of-aldara/classic-builds/",
-  "manifest": "manifests/165.json",
-  "manifest_sha": "576befc52301eafd1eb3f71fee5e1938086392c2841098adb063ef0f6e0f2f54",
-  "size": 721845594
+  "manifest": "manifests/166.json",
+  "manifest_sha": "c6111f18c0d94be6be92f89c641b9d388ad45a971b6b69785d126c8667b427a2",
+  "size": 721846258
  }
 }

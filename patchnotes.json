@@ -1,6 +1,20 @@
 {
  "entries": [
   {
+   "v": "166",
+   "date": "October 7, 2026",
+   "type": "update",
+   "title": "Standing tall",
+   "notes": [
+    "Your hero no longer stands with an empty hand stuck out in front of them. Standing still with no weapon out, they now stand easy: arms relaxed at their sides, a slow breath, the weight shifting from foot to foot, and a glance around now and then.",
+    "Standing still with a weapon drawn, each class now takes a proper ready stance with bent knees, feet apart and a slight lean in.",
+    "Knights with a sword and shield hold the sword up with the point high and the shield across the body. Knights with a great blade hold it up in front of them in both hands.",
+    "Mages hold the staff forward with its head up, and the free hand raised, ready to cast.",
+    "Archers turn side-on, the bow held low in front and the other hand at the string by the grip.",
+    "Each stance blends in and out smoothly when you stop, start moving or put the weapon away."
+   ]
+  },
+  {
    "v": "165",
    "date": "October 7, 2026",
    "type": "update",
