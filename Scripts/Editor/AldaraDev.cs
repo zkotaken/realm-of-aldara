@@ -41,6 +41,64 @@ namespace Aldara
             File.WriteAllBytes(AldaraImport.INBOX + "/" + file + ".jpg", tex.EncodeToJPG(90));
             cam.targetTexture = null; Object.DestroyImmediate(go); rt.Release(); Object.DestroyImmediate(tex); return file;
         }
+        /// in play mode: a hero of any class in an outfit ("slot=Name;..."), from the front three-quarter, the side and the
+        /// back, lit by the world's sun, side by side in one picture in the inbox
+        public static string Lookbook(string cls, string items, string file, string rarity = "Epic", int px = 420)
+        {
+            var eq = new Dictionary<string, Item>();
+            foreach (var kv in items.Split(';')) { var p = kv.Split('='); if (p.Length == 2) eq[p[0]] = new Item { type = p[0], name = p[1], rarity = rarity, cls = cls }; }
+            Item w; eq.TryGetValue("weapon", out w); string id = AldaraHeroGear.BaseFor(cls, w);
+            var P = AldaraPlayer.I; var home = P ? P.transform.position + new Vector3(0, 0, -30) : new Vector3(-8000, 0, -8000);
+            var rig = new GameObject("LookRig"); rig.transform.position = home;
+            var hero = Object.Instantiate(AldaraHeroGear.Prefab(id), rig.transform, false);
+            var g = hero.GetComponent<AldaraHeroGear>(); g.Apply(eq);
+            var cg = new GameObject("cam"); var cam = cg.AddComponent<Camera>(); cam.orthographic = true; cam.clearFlags = CameraClearFlags.SolidColor; cam.backgroundColor = new Color(0.19f, 0.2f, 0.23f, 1);
+            cam.orthographicSize = 1.25f; cam.nearClipPlane = 0.1f; cam.farClipPlane = 60; cam.aspect = 0.62f;
+            int W = Mathf.RoundToInt(px * 0.62f), H = px; var sheet = new Texture2D(W * 3, H, TextureFormat.RGB24, false);
+            float[] yaw = { 145, 90, 0 };
+            foreach (var tr in hero.GetComponentsInChildren<Transform>(true)) tr.gameObject.layer = 31; cam.cullingMask = 1 << 31;
+            for (int v = 0; v < 3; v++)
+            {
+                hero.transform.localRotation = Quaternion.Euler(0, yaw[v], 0); Step(4); foreach (var tr in hero.GetComponentsInChildren<Transform>(true)) tr.gameObject.layer = 31;
+                var tgt = home + Vector3.up * 1.05f; cg.transform.rotation = Quaternion.Euler(18, 0, 0); cg.transform.position = tgt - cg.transform.forward * 20;
+                var rt = new RenderTexture(W, H, 24, RenderTextureFormat.ARGB32) { antiAliasing = 8 }; cam.targetTexture = rt; cam.Render();
+                RenderTexture.active = rt; var t = new Texture2D(W, H, TextureFormat.RGB24, false); t.ReadPixels(new Rect(0, 0, W, H), 0, 0); t.Apply(); RenderTexture.active = null;
+                sheet.SetPixels(v * W, 0, W, H, t.GetPixels()); cam.targetTexture = null; rt.Release(); Object.DestroyImmediate(t);
+            }
+            sheet.Apply(); File.WriteAllBytes(AldaraImport.INBOX + "/" + file + ".jpg", sheet.EncodeToJPG(92)); Object.DestroyImmediate(sheet);
+            Object.DestroyImmediate(cg); Object.DestroyImmediate(rig); return id;
+        }
+        /// in play mode: every helmet of a class up close (front three-quarter and side), in a 7 x 4 sheet
+        public static string Helmets(string cls, string file, string rarity = "Epic", int px = 220)
+        {
+            var meta = AldaraHeroGear_Pieces(cls); var names = new List<string>();
+            foreach (var kv in meta) if ((string)kv.Value["slot"] == "helmet") names.Add(kv.Key);
+            var P = AldaraPlayer.I; var home = P ? P.transform.position + new Vector3(0, 0, -30) : new Vector3(-8000, 0, -8000);
+            int cols = 7, rows = (names.Count + cols - 1) / cols; var sheet = new Texture2D(px * 2 * cols, px * rows, TextureFormat.RGB24, false);
+            var cg = new GameObject("cam"); var cam = cg.AddComponent<Camera>(); cam.orthographic = true; cam.clearFlags = CameraClearFlags.SolidColor; cam.backgroundColor = new Color(0.19f, 0.2f, 0.23f, 1);
+            cam.orthographicSize = 0.26f; cam.nearClipPlane = 0.1f; cam.farClipPlane = 60; cam.aspect = 1; cam.cullingMask = 1 << 31;
+            for (int i = 0; i < names.Count; i++)
+            {
+                var eq = new Dictionary<string, Item>(); eq["helmet"] = new Item { type = "helmet", name = names[i], rarity = rarity, cls = cls };
+                var rig = new GameObject("HelmRig"); rig.transform.position = home; var hero = Object.Instantiate(AldaraHeroGear.Prefab(AldaraHeroGear.BaseFor(cls, null)), rig.transform, false);
+                hero.GetComponent<AldaraHeroGear>().Apply(eq);
+                float[] yaw = { 150, 90 };
+                for (int v = 0; v < 2; v++)
+                {
+                    hero.transform.localRotation = Quaternion.Euler(0, yaw[v], 0); Step(3); foreach (var tr in hero.GetComponentsInChildren<Transform>(true)) tr.gameObject.layer = 31;
+                    bool any = false; var b = new Bounds(home + Vector3.up * 1.45f, Vector3.zero);
+                    foreach (var mf in hero.GetComponentsInChildren<MeshFilter>()) { var r = mf.GetComponent<Renderer>(); if (!r || !r.enabled || !mf.sharedMesh || !mf.sharedMesh.name.StartsWith(names[i] + ":")) continue; if (!any) b = r.bounds; else b.Encapsulate(r.bounds); any = true; }
+                    var tgt = b.center; cg.transform.rotation = Quaternion.Euler(12, 0, 0); cg.transform.position = tgt - cg.transform.forward * 20;
+                    var rt = new RenderTexture(px, px, 24, RenderTextureFormat.ARGB32) { antiAliasing = 8 }; cam.targetTexture = rt; cam.Render();
+                    RenderTexture.active = rt; var t = new Texture2D(px, px, TextureFormat.RGB24, false); t.ReadPixels(new Rect(0, 0, px, px), 0, 0); t.Apply(); RenderTexture.active = null;
+                    sheet.SetPixels(((i % cols) * 2 + v) * px, (rows - 1 - i / cols) * px, px, px, t.GetPixels()); cam.targetTexture = null; rt.Release(); Object.DestroyImmediate(t);
+                }
+                Object.DestroyImmediate(rig);
+            }
+            sheet.Apply(); File.WriteAllBytes(AldaraImport.INBOX + "/" + file + ".jpg", sheet.EncodeToJPG(92)); Object.DestroyImmediate(sheet); Object.DestroyImmediate(cg);
+            return string.Join(",", names.ToArray());
+        }
+        static Newtonsoft.Json.Linq.JObject AldaraHeroGear_Pieces(string cls) { var ta = Resources.Load<TextAsset>("Gear/pieces_" + cls + "_meta"); return Newtonsoft.Json.Linq.JObject.Parse(ta.text); }
         /// in play mode: the hero up close at several facings (wings and pet hidden for the shot only), out of a fight and in one
         public static string HeroShots(string prefix, float size = 1.3f)
         {

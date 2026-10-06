@@ -8,9 +8,11 @@ namespace Aldara
     // "AGQ1", int count, then per entry: string key, int len (-1 = same mesh as the key that follows), mesh bytes:
     // int nv, int ni, float min[3], float ext[3], ushort pos[nv*3], sbyte normal[nv*3], rgba[nv*4], emission[nv],
     // indices (ushort when nv < 65536, else int). Meshes are built on first use and shared.
+    // "AGQ2" (AldaraHeroRemaster) adds a surface byte per vertex after the emission (steel, gold, leather, cloth, skin...),
+    // read into uv2.y for the hero shading, and its normals are the remastered smooth ones.
     public class AldaraGearPack
     {
-        readonly byte[] data; readonly Dictionary<string, int> at = new Dictionary<string, int>(); readonly Dictionary<string, string> alias = new Dictionary<string, string>();
+        readonly byte[] data; bool v2; readonly Dictionary<string, int> at = new Dictionary<string, int>(); readonly Dictionary<string, string> alias = new Dictionary<string, string>();
         readonly Dictionary<string, Mesh> cache = new Dictionary<string, Mesh>();
         static readonly Dictionary<string, AldaraGearPack> packs = new Dictionary<string, AldaraGearPack>();
         public static AldaraGearPack Load(string res)
@@ -22,7 +24,7 @@ namespace Aldara
         {
             data = b; using (var r = new BinaryReader(new MemoryStream(b)))
             {
-                r.ReadChars(4); int n = r.ReadInt32();
+                v2 = new string(r.ReadChars(4)) == "AGQ2"; int n = r.ReadInt32();
                 for (int i = 0; i < n; i++)
                 {
                     string k = r.ReadString(); int len = r.ReadInt32();
@@ -36,11 +38,11 @@ namespace Aldara
         public Mesh Get(string k)
         {
             string a; while (alias.TryGetValue(k, out a)) k = a;
-            Mesh m; if (cache.TryGetValue(k, out m)) return m;
+            Mesh m; if (cache.TryGetValue(k, out m) && m) return m;   // (a mesh unloaded with the unused assets is made again)
             int o; if (!at.TryGetValue(k, out o)) return null;
-            m = Read(data, o, k); cache[k] = m; return m;
+            m = Read(data, o, k, v2); cache[k] = m; return m;
         }
-        public static Mesh Read(byte[] d, int o, string name)
+        public static Mesh Read(byte[] d, int o, string name, bool v2 = false)
         {
             using (var r = new BinaryReader(new MemoryStream(d, o, d.Length - o)))
             {
@@ -51,9 +53,11 @@ namespace Aldara
                 for (int i = 0; i < nv; i++) n[i] = new Vector3(r.ReadSByte() / 127f, r.ReadSByte() / 127f, r.ReadSByte() / 127f).normalized;
                 for (int i = 0; i < nv; i++) c[i] = new Color32(r.ReadByte(), r.ReadByte(), r.ReadByte(), r.ReadByte());
                 for (int i = 0; i < nv; i++) e[i] = new Vector2(r.ReadByte() / 255f, 0);
+                if (v2) for (int i = 0; i < nv; i++) e[i].y = r.ReadByte();
                 if (nv < 65536) for (int i = 0; i < ni; i++) ix[i] = r.ReadUInt16(); else for (int i = 0; i < ni; i++) ix[i] = r.ReadInt32();
                 var m = new Mesh { name = name, indexFormat = nv > 65000 ? UnityEngine.Rendering.IndexFormat.UInt32 : UnityEngine.Rendering.IndexFormat.UInt16 };
                 m.vertices = p; m.normals = n; m.colors32 = c; m.uv2 = e; m.triangles = ix; m.RecalculateBounds();
+                m.hideFlags = HideFlags.DontUnloadUnusedAsset;
                 return m;
             }
         }

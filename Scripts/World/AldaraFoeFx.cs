@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Aldara
 {
     // The monsters of Aldara, enhanced (Graphics, Enhanced rendering, Menacing monsters):
-    // - every monster model gets a darker, harsher hide with glowing veins crawling over it, a glow from below and the richer shading the townsfolk have, with an aura in its land's colour (sickly green in
+    // - every monster model gets a darker, harsher hide (no glow, veins or aura any more); its land's colour (sickly green in
     //   the fields and the fen, ember orange in the waste, frost blue on the peaks, violet in the void and Gloomwood, blood
     //   red on the Bloodmoor), stronger the higher its tier, flaring while it is fighting you;
     // - bosses stand on a slowly turning ring of jagged runes with embers or motes rising off them, and a light of their
@@ -77,10 +77,7 @@ namespace Aldara
                 if (m.dead || !m.view || !m.view.activeInHierarchy) continue;
                 var c = ColorOf(m); float h = AldaraVfx.LZ(m.x, m.y), ky = 0.42f;
                 if (!m.boss)
-                {   // a faint pool of its colour under it while it fights
-                    AldaraVfx.Glow(A, m.x, m.y, m.r * 1.6f, c, (m.aggroT > 0 || m.engT > 0) ? 0.2f : 0.07f, h, m.r * 1.6f * ky);
-                    continue;
-                }
+                    continue;   // ordinary monsters: no glow under them
                 float r = Mathf.Max(40, m.r * 1.5f), pul = 0.75f + 0.25f * Mathf.Sin(t * 2.1f), a = 0.5f * pul, rot = -t * 0.25f;
                 AldaraVfx.Glow(A, m.x, m.y, r * 1.4f, c, 0.3f * pul, h, r * 1.4f * ky);
                 A.Arc(m.x, m.y, r, r * ky, 0, Mathf.PI * 2, 2.2f, AldaraVfx.A(c, a), h);
