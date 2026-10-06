@@ -85,7 +85,7 @@ namespace Aldara.EditorTools
             // knight's cloth and leather caps), a proper helm for the knight's metal ones
             var pm = meta[nm] as JObject;
             if (pm != null && (string)pm["slot"] == "helmet" && node == "2" && (int)(pm["covers"] ?? 0) == 1)
-                ctx.shape = cls != "knight" || Any(nm, "Cloth Cap", "Leather Cap") ? "hood" : "helm";
+                ctx.shape = cls == "mage" || Any(nm, "Cloth Cap", "Leather Cap") || (cls == "archer" && !Any(nm, "Helm", "Visor")) ? "hood" : "helm";
             return ctx;
         }
         static bool Any(string s, params string[] w) { foreach (var x in w) if (s.IndexOf(x, System.StringComparison.OrdinalIgnoreCase) >= 0) return true; return false; }
@@ -215,24 +215,30 @@ namespace Aldara.EditorTools
             }
         }
         static float G2(float x, float s) { return Mathf.Exp(-(x / s) * (x / s)); }
-        // a knight's helm: a squarer, taller shell with a keel along the crown, a pointed ridge down the face, the cheeks
-        // and chin brought down into a bevor and a flared guard over the back of the neck
+        // a great helm (after the user's references): a round dome with no point, a squarer body, a flat faceplate with
+        // a ridge down its middle and a brow over the eyes, a long jaw drawn down to a chin and a flared guard behind
         static Vector3 Helm(Vector3 q, Vector3 d, float r)
         {
+            // the old comb along the crown pressed down to a low ridge, so the top reads as a dome, not a cone
+            if (d.y > 0.6f && r > 1.03f && r < 1.32f) { float rr = 1.03f + (r - 1.03f) * 0.3f; q = d * Mathf.Lerp(r, rr, Mathf.Clamp01((d.y - 0.6f) / 0.2f)); }
+            if (d.y > 0) q.y *= 1 - 0.05f * d.y;   // the dome stays round, a touch lower
             float hx = Mathf.Abs(d.x), hz = Mathf.Abs(d.z), hm = Mathf.Max(hx, hz);
-            float sq = hm > 1e-3f ? Mathf.Sqrt(hx * hx + hz * hz) / hm : 1; float k = Mathf.Lerp(1, sq, 0.4f * (1 - Mathf.Clamp01((d.y - 0.35f) / 0.5f)));
-            q.x *= k; q.z *= k * 1.06f;
-            if (d.y > 0) { q.x *= 1 - 0.1f * d.y; q.y += 0.22f * d.y * d.y * G2(d.x, 0.26f) * r; q.y *= 1.05f; }
-            if (d.y < 0)
-            {   // a head's proportions: the lower half drawn down into a long jaw that narrows to the chin, a short guard behind
-                q = Jaw(q, d, r);
-                float t = Mathf.Clamp01(-d.y);
-                if (d.z > 0) { q.z += 0.16f * t * t * d.z * r; q.y -= 0.06f * t * d.z * r; }
-            }
+            float sq = hm > 1e-3f ? Mathf.Sqrt(hx * hx + hz * hz) / hm : 1; float k = Mathf.Lerp(1, sq, 0.32f * (1 - Mathf.Clamp01((d.y - 0.15f) / 0.5f)));
+            q.x *= k; q.z *= k;
             if (d.z < 0)
-            {   // the face: a pointed ridge down its middle and a brow jutting over the eyes
-                q.z -= 0.16f * (-d.z) * G2(d.x, 0.22f) * Mathf.Clamp01(1 - Mathf.Abs(d.y + 0.1f) * 1.1f) * r;
-                q.z -= 0.1f * (-d.z) * G2(d.y - 0.22f, 0.12f) * r;
+            {
+                float face = Mathf.Clamp01(-d.z * 1.4f - 0.2f) * (1 - Mathf.Clamp01((d.y - 0.45f) / 0.35f));
+                const float zf = -0.9f; if (q.z < zf) q.z = Mathf.Lerp(q.z, zf, 0.75f * face);   // the flat faceplate
+                q.z -= 0.07f * face * G2(d.x, 0.11f) * r;                                     // its middle ridge
+                q.z -= 0.07f * face * G2(d.y - 0.3f, 0.09f) * r;                              // the brow over the eye slit
+            }
+            if (d.y < 0)
+            {
+                float t = Mathf.Clamp01(-d.y), front = Mathf.Clamp01(-d.z * 1.2f + 0.25f);
+                q = Jaw(q, d, r);
+                q.y -= 0.12f * t * front * G2(d.x, 0.35f) * r;          // the faceplate comes to a chin
+                q.z -= 0.05f * t * front * G2(d.x, 0.35f) * r;
+                if (d.z > 0) { q.z += 0.2f * t * t * d.z * r; q.y -= 0.04f * t * d.z * r; }   // the neck guard flares out
             }
             return q;
         }
@@ -245,17 +251,12 @@ namespace Aldara.EditorTools
             q.z -= 0.07f * s * front * r;
             return q;
         }
-        // a hood: drawn up into a soft peak that falls back, narrower over the crown, wider where it settles on the shoulders
+        // a hood: soft and round over the crown, falling back a little, with a face opening as long as a face
         static Vector3 Hood(Vector3 q, Vector3 d, float r)
         {
-            if (d.y > 0)
-            {   // the crown pinched into a ridge whose point trails back over the head
-                float up = d.y; q.x *= 1 - 0.26f * up * up; float pk = up * up * up;
-                q.y += 0.14f * pk * r; q.z += 0.5f * pk * r;
-                if (d.z > 0) { q.z += 0.3f * up * d.z * r; q.y += 0.08f * up * d.z * r; }
-            }
-            if (d.y < 0) q = Jaw(q, d, r);   // the face opening as long as a face
-            if (d.z < 0) q.z -= (0.05f + 0.14f * Mathf.Clamp01(d.y * 2)) * (-d.z) * r;   // the brim drawn forward over the face
+            if (d.y > 0) { q.x *= 1 - 0.08f * d.y * d.y; q.z += 0.12f * d.y * d.y * Mathf.Clamp01(d.z + 0.6f) * r; }
+            if (d.y < 0) q = Jaw(q, d, r);
+            if (d.z < 0) q.z -= 0.05f * (-d.z) * Mathf.Clamp01(d.y * 2) * r;   // the brim over the face
             return q;
         }
 
