@@ -70,6 +70,7 @@ namespace Aldara
             if (t == null && tx == 0 && ty == 0) { tx = P.x; ty = P.y; }
             if (AldaraKnightFx.On && AldaraKnightFx.Skill(id, t, tx, ty, sk, ph)) return;
             if (AldaraMageFx.On && AldaraMageFx.Skill(id, t, tx, ty, sk, ph, col)) return;
+            if (AldaraArcherFx.On && AldaraArcherFx.Skill(id, t, tx, ty, sk, ph, col)) return;
             switch (id)
             {
                 // knight

@@ -237,7 +237,7 @@ namespace Aldara
         {
             float dt = Mathf.Min(Time.deltaTime, 0.1f);
             if (!AldaraSave.Ready) return;
-            if ((cls == "knight" || cls == "mage") && !AldaraKnightFx.I && AldaraKnightFx.Live) AldaraKnightFx.Ensure();   // paint the knight's effects before the first swing
+            if ((cls == "knight" || cls == "mage" || cls == "archer") && !AldaraKnightFx.I && AldaraKnightFx.Live) AldaraKnightFx.Ensure();   // paint the knight's effects before the first swing
             if (!anim) anim = GetComponentInChildren<AldaraCharacterAnimator>();
             if (hurt > 0) hurt -= dt; if (slowT > 0) slowT -= dt; if (atkBuff > 0) atkBuff -= dt; if (hasteBuff > 0) hasteBuff -= dt;
             if (shieldT > 0) { shieldT -= dt; if (shieldT <= 0) shield = 0; }
@@ -389,6 +389,7 @@ namespace Aldara
             if (spd <= 0) spd = kind == "arrow" ? 780 : kind == "fireball" ? 430 : 540;
             var np = new HProj { kind = kind, x = tx, y = ty, t = t, tx = t.x, ty = t.y, spd = spd, fn = fn, ang = P.facing, glow = glow, color = color };
             if (kind != "arrow" && AldaraMageFx.On) np.fx = AldaraMageFx.Proj(kind, color);   // the enhanced 3D shot
+            else if (kind == "arrow" && AldaraArcherFx.On) np.fx = AldaraArcherFx.Proj(glow);   // an arrow of light
             projectiles.Add(np);
         }
         void UpdateShots(float dt)
@@ -402,11 +403,11 @@ namespace Aldara
                 {
                     AldaraMonsters.Mon hit = null;
                     foreach (var m in AldaraMonsters.I.all) { if (m.dead || !AldaraDungeon.Reachable(m) || Mathf.Abs(m.x - pr.x) > 80 || Mathf.Abs(m.y - pr.y) > 80) continue; if (Mathf.Sqrt((m.x - pr.x) * (m.x - pr.x) + (m.y - pr.y) * (m.y - pr.y)) < m.r + 6) { hit = m; break; } }
-                    if (hit != null) { projectiles.RemoveAt(i); AldaraMageFx.End(pr.fx); pr.fn(hit); continue; }
+                    if (hit != null) { projectiles.RemoveAt(i); Land(pr, hit); pr.fn(hit); continue; }
                 }
                 float dx = pr.tx - pr.x, dy = pr.ty - pr.y, d = Mathf.Sqrt(dx * dx + dy * dy); pr.ang = Mathf.Atan2(dy, dx);
                 float step = pr.spd * dt;
-                if (d <= step + (pr.t.dead ? 4 : pr.t.r * 0.6f)) { projectiles.RemoveAt(i); AldaraMageFx.End(pr.fx); if (!pr.t.dead) pr.fn(pr.t); continue; }
+                if (d <= step + (pr.t.dead ? 4 : pr.t.r * 0.6f)) { projectiles.RemoveAt(i); Land(pr, pr.t.dead ? null : pr.t); if (!pr.t.dead) pr.fn(pr.t); continue; }
                 pr.x += dx / d * step; pr.y += dy / d * step;
                 if (pr.fx != null)
                 {   // the 3D shot follows, arcing like the browser's arcane missiles
@@ -418,6 +419,7 @@ namespace Aldara
                 if (pr.kind == "bolt" && Random.value < 0.5f) AldaraVfx.Particle(pr.x, pr.y, 0, 0, 0.2f, AldaraRules.Hex("#8ab4ff"), 2);
             }
         }
+        static void Land(HProj pr, AldaraMonsters.Mon m) { if (pr.fx != null && pr.kind == "arrow") AldaraArcherFx.Impact(m, pr.glow); AldaraMageFx.End(pr.fx); }
         bool hooked; void OnDestroy() { if (hooked) AldaraVfx.DrawAir -= DrawProj; }
         static List<Vector2> TrailOf(HProj pr, float x, float y, int n) { pr.trail.Add(new Vector2(x, y)); if (pr.trail.Count > n) pr.trail.RemoveAt(0); return pr.trail; }
         static Vector2 Rt(float x, float y, float a, float lx, float ly) { float c = Mathf.Cos(a), s = Mathf.Sin(a); return new Vector2(x + c * lx - s * ly, y + s * lx + c * ly); }

@@ -111,7 +111,7 @@ namespace Aldara
         static void Later(float t, System.Action fn) { AldaraSkills.I.Later_(t, fn); }
         static void RunFx(JArray fx, AldaraMonsters.Mon t, SkillDef sk)
         {
-            var S = AldaraTree.SubCur(); string col0 = S != null ? S.col : "#ffffff"; bool KF = AldaraKnightFx.On; const float UPX = AldaraWorld.PX;
+            var S = AldaraTree.SubCur(); string col0 = S != null ? S.col : "#ffffff"; bool KF = AldaraKnightFx.On || AldaraArcherFx.On; const float UPX = AldaraWorld.PX;
             foreach (JObject o in fx)
             {
                 string cs = (string)o["col"] ?? col0; var col = Hx(cs); var oo = (JObject)o.DeepClone(); oo["col"] = cs;
@@ -120,7 +120,7 @@ namespace Aldara
                     case "strike":
                         {
                             var m = t != null && !t.dummy ? t : (H.target != null && !H.target.dead ? H.target : NearestTo(P.x, P.y, 220)); if (m == null) break; H.StartSwing(0.35f, true);
-                            if (KF) AldaraKnightFx.SubStrike(m, col);
+                            if (AldaraArcherFx.On) AldaraArcherFx.SubShot(m, col); else if (KF) AldaraKnightFx.SubStrike(m, col);
                             else
                             {
                                 AldaraVfx.Mfx(new AldaraVfx.Mf { k = "impact", x = m.x, y = m.y, h = AldaraMonsters.Chest(m), a = Mathf.Atan2(m.y - P.y, m.x - P.x), c = col, c2 = Color.white, T = 0.3f, big = true });

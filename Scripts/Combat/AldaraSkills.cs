@@ -102,14 +102,14 @@ namespace Aldara
                 case "heal":
                     {
                         float amt = Mathf.Round(H.maxHp * sk.heal), hb = H.hp; H.hp = Mathf.Min(H.maxHp, H.hp + amt); DStat.Heal(H.hp - hb); AldaraFx.Text(P.x, P.y - 58, "+" + amt + " HP", Hx("#7fe07f"));
-                        Burst(P.x, P.y - 10, "#9fffa0", 22, 150); if (!AldaraMageFx.On && !AldaraKnightFx.On) { var f = AldaraVfx.Effect("heal", P.x, P.y, 0, 1.1f, Color.white); f.hasCol = true; f.col = Hx(H.cls == "mage" ? "#7fffb0" : "#7fe07f"); }
+                        Burst(P.x, P.y - 10, "#9fffa0", 22, 150); if (!AldaraMageFx.On && !AldaraKnightFx.On && !AldaraArcherFx.On) { var f = AldaraVfx.Effect("heal", P.x, P.y, 0, 1.1f, Color.white); f.hasCol = true; f.col = Hx(H.cls == "mage" ? "#7fffb0" : "#7fe07f"); }
                         if (H.cls == "mage") H.Cast(0.5f); break;
                     }
                 case "buff": if (sk.buff == "atk") H.atkBuff = sk.dur; else H.hasteBuff = sk.dur; Burst(P.x, P.y, sk.buff == "atk" ? "#ff6a4a" : "#7fe07f", 14, 160); break;
                 case "shield":
                     {
                         H.shield = Mathf.Round(H.maxHp * sk.shield); H.shieldT = sk.dur; H.shieldName = null; string bc = H.cls == "mage" ? "#8ab4ff" : "#ffd35a";
-                        if (!AldaraMageFx.On && !AldaraKnightFx.On) { var f = AldaraVfx.Effect("pulse", P.x, P.y, 34, 0.5f, Color.white); f.col = Hx(bc); } Burst(P.x, P.y - 10, bc, 16, 140); if (H.cls == "mage") H.Cast(0.4f); break;
+                        if (!AldaraMageFx.On && !AldaraKnightFx.On && !AldaraArcherFx.On) { var f = AldaraVfx.Effect("pulse", P.x, P.y, 34, 0.5f, Color.white); f.col = Hx(bc); } Burst(P.x, P.y - 10, bc, 16, 140); if (H.cls == "mage") H.Cast(0.4f); break;
                     }
                 case "self_aoe":
                     {
@@ -273,8 +273,9 @@ namespace Aldara
                             var hits = new List<AldaraMonsters.Mon>();
                             foreach (var o in AldaraMonsters.I.all) { if (o.dead) continue; float px = o.x - sx, py = o.y - sy, along = px * Mathf.Cos(ang) + py * Mathf.Sin(ang), off = Mathf.Abs(-px * Mathf.Sin(ang) + py * Mathf.Cos(ang)); if (along > 0 && along < len && off < o.r + 14) hits.Add(o); }
                             if (!hits.Contains(m)) hits.Add(m);
-                            AldaraVfx.Mfx(new AldaraVfx.Mf { k = "streak", x = sx, y = sy, h = AldaraVfx.LIFT, a = ang, len = len, c = Hx("#ffd35a"), c2 = Color.white, w = 9, T = 0.3f });
-                            for (int k = 1; k < 5; k++) AldaraVfx.Mfx(new AldaraVfx.Mf { k = "ringA", x = sx + Mathf.Cos(ang) * k * len / 5, y = sy + Mathf.Sin(ang) * k * len / 5, h = AldaraVfx.LIFT, r = 16, c = Hx("#ffe07a"), T = 0.3f, dl = k * 0.03f });
+                            if (AldaraArcherFx.On) AldaraArcherFx.Pierce(sx, sy, ang, len);
+                            else AldaraVfx.Mfx(new AldaraVfx.Mf { k = "streak", x = sx, y = sy, h = AldaraVfx.LIFT, a = ang, len = len, c = Hx("#ffd35a"), c2 = Color.white, w = 9, T = 0.3f });
+                            if (!AldaraArcherFx.On) for (int k = 1; k < 5; k++) AldaraVfx.Mfx(new AldaraVfx.Mf { k = "ringA", x = sx + Mathf.Cos(ang) * k * len / 5, y = sy + Mathf.Sin(ang) * k * len / 5, h = AldaraVfx.LIFT, r = 16, c = Hx("#ffe07a"), T = 0.3f, dl = k * 0.03f });
                             foreach (var o in hits) { Hit(o, sk.mult, "#ffe07a"); Burst(o.x, o.y, "#ffe07a", 5, 120); }
                         }, "#ffe07a", null, 1100); break;
                     }
@@ -283,7 +284,8 @@ namespace Aldara
                 case "rain_of_arrows":
                     {
                         Muzzle(); float ix = t.x, iy = t.y;
-                        for (int k = 0; k < 14; k++) { float a = Random.value * Mathf.PI * 2, r = Random.value * sk.radius; var f = AldaraVfx.Effect("arrowfall", ix + Mathf.Cos(a) * r, iy + Mathf.Sin(a) * r, 0, 0.35f + Random.value * 0.2f, Hx("#d8c8a0")); f.max = 0.5f; f.hasCol = true; }
+                        if (AldaraArcherFx.On) AldaraArcherFx.Rain(ix, iy, sk.radius, 0.4f);
+                        else for (int k = 0; k < 14; k++) { float a = Random.value * Mathf.PI * 2, r = Random.value * sk.radius; var f = AldaraVfx.Effect("arrowfall", ix + Mathf.Cos(a) * r, iy + Mathf.Sin(a) * r, 0, 0.35f + Random.value * 0.2f, Hx("#d8c8a0")); f.max = 0.5f; f.hasCol = true; }
                         Later_(0.4f, () => { AldaraSkillFx.Pfx("rain_land", null, ix, iy, sk); foreach (var m in Nearby(ix, iy, sk.radius)) { Hit(m, sk.mult, "#ffd35a"); Burst(m.x, m.y, "#e8d8b0", 4, 90); } });
                         break;
                     }

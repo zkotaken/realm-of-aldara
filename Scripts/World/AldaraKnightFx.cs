@@ -561,6 +561,7 @@ namespace Aldara
                 case 1: if (R() < 0.9f) AldaraVfxPlus.Embers(p, new Color(1, 0.55f, 0.2f), 1, 0.12f, 0.8f); if (R() < 0.35f) AldaraVfxPlus.Smoke(p, new Color(0.2f, 0.16f, 0.14f, 0.35f), 1, 0.08f, 0.5f, 0.22f * f.size / 0.4f); break;
                 case 2: if (R() < 0.6f) AldaraVfxPlus.Motes(p, new Color(0.8f, 0.95f, 1f), 1, 0.1f, 0.2f); break;
                 case 3: if (R() < 0.6f) AldaraVfxPlus.Motes(p, Hot(f.c, 0.3f), 1, 0.08f, 0.3f); break;
+                case 4: if (f.hot > 0.5f ? R() < 0.5f : R() < 0.08f) AldaraVfxPlus.Motes(p, Hot(f.c, 0.35f), 1, 0.05f, 0.25f); break;
                 default: if (R() < 0.5f) AldaraVfxPlus.SparkBurst(p, Hot(f.c, 0.5f), 1, 0.8f, 0.2f, 2); break;
             }
         }
@@ -585,6 +586,7 @@ namespace Aldara
         {
             float env = f.ended ? Mathf.Clamp01((f.life - f.t) / 0.22f) : Mathf.Min(1, f.t / 0.05f), fl = 0.85f + 0.15f * Mathf.Sin(f.t * 40 + f.ph);
             if (f.k == K.Fall && f.ended) env *= 0; 
+            if (f.n == 4) { DrawArrow(f, cam, env, fl); return; }
             // the trail behind it, widening to the head
             if (f.pts.Count > 1) { var tr = new List<Vector3>(f.pts); if ((tr[tr.Count - 1] - f.at).sqrMagnitude > 1e-6f && !f.ended) tr.Add(f.at); Strip(tr, 0, f.w * (f.n == 1 ? 1.4f : 1), f.c, 0, 0.9f * (f.ended ? Mathf.Clamp01((f.life - f.t) / 0.22f) : 1), C_BAND, 0.7f, f.bright); }
             if (env <= 0) return;
@@ -600,6 +602,26 @@ namespace Aldara
                 P(tail - sd * W * 0.5f, ToCam, f.c, env, 0, 0, C_SHARD, 0.8f, f.bright); P(tail + sd * W * 0.5f, ToCam, f.c, env, 1, 0, C_SHARD, 0.8f, f.bright);
                 P(tip + sd * W * 0.5f, ToCam, f.c, env, 1, 1, C_SHARD, 0.8f, f.bright); P(tip - sd * W * 0.5f, ToCam, f.c, env, 0, 1, C_SHARD, 0.8f, f.bright); Q(b, b + 1, b + 2, b + 3);
             }
+        }
+        /// an arrow of light (the archer's, AldaraArcherFx): a bright shaft along its flight with a hot point, a soft glow
+        /// round it, swept-back fletching and a faint streak of wind behind
+        void DrawArrow(Fx f, Camera cam, float env, float fl)
+        {
+            var d = f.k == K.Fall ? f.fwd - f.p1 : f.fwd; d = d.sqrMagnitude > 1e-8f ? d.normalized : Vector3.right;
+            float fade = f.ended ? Mathf.Clamp01((f.life - f.t) / 0.22f) : 1;
+            if (f.pts.Count > 1) { var tr = new List<Vector3>(f.pts); if ((tr[tr.Count - 1] - f.at).sqrMagnitude > 1e-6f && !f.ended) tr.Add(f.at); Strip(tr, 0, f.w, f.c, 0, 0.5f * fade, C_BAND, 0.45f, f.bright); }
+            if (env <= 0) return;
+            float L = f.size * 7; var tail = f.at - d * L; var sd = Vector3.Cross(d, ToCam).normalized;
+            var shaft = new List<Vector3> { tail, f.at };
+            Strip(shaft, f.size * 1.8f, f.size * 2.4f, f.c, 0.22f * env, 0.4f * env, C_BAND, 0.3f, f.bright);
+            Strip(shaft, f.size * 0.45f, f.size * 0.8f, f.c2, 0.85f * env, env, C_BAND, 1, f.bright * 1.35f);
+            for (int side = -1; side <= 1; side += 2)
+            {   // the fletching
+                var a0 = tail + d * f.size * 1.6f; var a1 = tail - d * f.size * 0.6f + sd * side * f.size * 1.3f;
+                Strip(new List<Vector3> { a0, a1 }, f.size * 0.55f, f.size * 0.2f, f.c2, 0.75f * env, 0.2f * env, C_BAND, 0.8f, f.bright);
+            }
+            Bill(f.at, f.size * 2.4f, f.c2, 0.9f * env * fl, C_FLARE, 1, f.bright * 1.35f, f.ph + f.t * 4, cam);
+            Bill(f.at - d * L * 0.3f, f.size * 4, f.c, 0.3f * env, C_DOT, 0.3f, f.bright, 0, cam);
         }
         void Bill(Vector3 at, float size, Color c, float a, int cell, float hot, float bright) { var cam = Camera.main; if (cam) Bill(at, size, c, a, cell, hot, bright, 0, cam); }
         void DrawBolt(Fx f, Camera cam)
