@@ -1,6 +1,23 @@
 {
  "entries": [
   {
+   "v": "163",
+   "date": "October 6, 2026",
+   "type": "update",
+   "title": "The archer, in light",
+   "notes": [
+    "Every archer shot has new 3D effects. Arrows fly as arrows of light with fletching and a streak of wind behind them: gold for a plain shot and the skill's colour for a skill. Each one strikes with a spark and a flash, and the bow flares as it looses.",
+    "Piercing Arrow tears a blazing gold line through everything in its path.",
+    "Rain of Arrows marks the ground with a golden sigil, arrows of light fall onto it out of the sky, and the ground is left bristling with arrows.",
+    "Frost Arrow bursts ice crystals out of the ground. Poison Arrow splashes into a toxic green cloud. Explosive Arrow blows up in fire and scorches the ground.",
+    "Explosive Trap sits armed on a turning fire sigil before it blows, cracking the earth.",
+    "Starfall Arrow calls a falling star down in a pillar of light.",
+    "Eagle Eye wreathes the archer in gold, and Evasive Roll leaves a streak of wind.",
+    "Archer subclass skills now use the new 3D effects too: strikes fire a shot of light into the target, and the area, nova, buff and dash skills look like the knight's.",
+    "The archer effects need Enhanced rendering and Enhanced effects in Graphics, like the knight's and the mage's. The archer's armour and body were already remastered with the other classes."
+   ]
+  },
+  {
    "v": "162",
    "date": "October 6, 2026",
    "type": "update",
