@@ -244,7 +244,8 @@ namespace Aldara
             if (T == null) return;
             var PL = AldaraPlayer.I; bool isPlayer = PL && transform.parent == PL.transform;
             Sheath(isPlayer);
-            flying = isPlayer && wings.Count > 0;
+            bool riding = isPlayer && AldaraMount.Riding;
+            flying = isPlayer && wings.Count > 0 && !riding;
             if (isPlayer) ry = Mathf.Atan2(Mathf.Cos(PL.facing), Mathf.Sin(PL.facing));
             float dt = Mathf.Min(0.05f, Time.deltaTime), t = Time.time;
             float[] FS = null;
@@ -256,9 +257,18 @@ namespace Aldara
                 flyPh += dt * (FS[0] + FS[1] * flyM); flyH = FS[2] + flyM * FS[3] - FS[4] * Mathf.Sin(flyPh);
                 transform.localPosition = new Vector3(0, flyH / AldaraWorld.PX / AldaraView.TCP, 0);
             }
-            else if (isPlayer && transform.localPosition.y != 0) { transform.localPosition = Vector3.zero; flyM = 0; }
+            else if (isPlayer && !riding && transform.localPosition.y != 0) { transform.localPosition = Vector3.zero; flyM = 0; }
+            if (riding && !(anim && anim.Busy))
+            {   // in the saddle (AldaraMount): thighs forward along the horse's sides, knees bent, feet in the stirrups
+                for (int k = 0; k < 2; k++)
+                {
+                    var hip = Rig(9 + k * 3); var knee = Rig(10 + k * 3); var ankle = Rig(11 + k * 3); float sd = k == 1 ? -1 : 1;
+                    if (hip) hip.localRotation = Rot(-1.3f, 0, sd * 0.34f); if (knee) knee.localRotation = Rot(1.45f, 0, 0); if (ankle) ankle.localRotation = Rot(0.25f, 0, 0);
+                }
+            }
             if (panels.Count == 0 && cape.Count == 0 && wings.Count == 0) return;
             var ax = (float[])(anim ? anim.aux : new float[13]).Clone();
+            if (riding) for (int k = 0; k < 2; k++) { ax[k * 4] = -1.3f; ax[k * 4 + 1] = (k == 1 ? -1 : 1) * 0.34f; ax[k * 4 + 3] = 1.45f; }
             // legs trail and the body leans into the flight (poseP3, o.hover > 0)
             if (flying)
             {

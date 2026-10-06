@@ -75,6 +75,32 @@ namespace Aldara
             }
         }
 
+        // ---- the developer menu (AldaraDevWin) ----
+        public List<MonDef> Book { get { return new List<MonDef>(book.monsters); } }
+        /// a monster of the book standing at (x, y): it fights as it would in its camp and never comes back once killed
+        public Mon DevSpawn(string name, float x, float y, int lvl = 0)
+        {
+            var t = book.Get(name); if (t == null) return null;
+            if (AldaraWorld.BlockedAt(x, y)) { var f = AldaraPlayer.FreeSpotNear(x, y); x = f.x; y = f.y; }
+            Mon m;
+            if (t.boss != 0)
+            {
+                float bhp = Mathf.Round(t.hpBase * Mathf.Pow(1.32f, t.tier - 1) * 1.6f), batk = Mathf.Round(t.atk * Mathf.Pow(1.16f, t.tier - 1));
+                m = new Mon { def = t, name = t.name, r = t.r, tier = t.tier, boss = true, lvl = t.lv0, x = x, y = y, homeX = x, homeY = y, hp = bhp, maxHp = bhp, atk = batk, xp = t.xp, gold = t.gold };
+            }
+            else
+            {
+                int L = lvl > 0 ? lvl : t.lv0; var st = MonStats(t, L);
+                m = new Mon { def = t, name = t.name, r = t.r, tier = t.tier, x = x, y = y, homeX = x, homeY = y, lvl = L, hp = st.hp, maxHp = st.hp, atk = st.atk, xp = st.xp, gold = st.gold };
+            }
+            m.ambush = "dev"; all.Add(m); return m;
+        }
+        public void DevKillNear(float x, float y, float r)
+        {
+            AldaraMonsters.HitSrc = "player";
+            foreach (var m in all.ToArray()) if (!m.dead && !m.dummy && Mathf.Abs(m.x - x) < r && Mathf.Abs(m.y - y) < r) HitMonster(m, m.hp + 1, Color.white);
+        }
+
         // ---- level scaling (lvsNorm): every monster is capped to what a player of its level can handle ----
         Dictionary<int, float> tierHp, tierAtk;
         public static float LvsAtk(float L) { return 14 + 5.5f * (Mathf.Max(1, L) - 1); }
@@ -302,6 +328,7 @@ namespace Aldara
             if (m.dummy || m.dead) return; if (AldaraRaid.Immune(m)) return; if (AldaraRaid.On && m.rVuln) dmg = Mathf.Round(dmg * 1.3f);
             var H = AldaraHero.I; int g = m.lvl - H.lvl; bool mine = HitSrc == "player"; AldaraPlayer.lastCombat = Time.time; string src = HitSrc;
             if (mine && AldaraAuto.on && dmg > 0) dmg = Mathf.Max(1, Mathf.Round(dmg * AldaraAuto.DMG));   // auto combat deals 25% less
+            if (mine && AldaraDevWin.OneShot) dmg = Mathf.Max(dmg, m.hp + 1);
             dmg = AldaraSubclass.PreHit(m, dmg, src); float hp0 = m.hp; bool crit = mine && H.critFrame == Time.frameCount;
             HitCore(m, dmg, col, g, mine); AldaraSound.Hit(m, col, crit, src, false);
             AldaraSubclass.PostHit(m, Mathf.Max(0, hp0 - Mathf.Max(0, m.hp)), src);

@@ -18,7 +18,7 @@ namespace Aldara
             A("slot6","Skill slot 6","6"), A("slot7","Skill slot 7","7"), A("slot8","Skill slot 8","8"), A("slot9","Skill slot 9","9"), A("slot10","Skill slot 10","0"),
             A("inv","Inventory","i"), A("att","Attributes","c"), A("skills","Skill tree","k"), A("quest","Quest log","l"), A("dun","Dungeons","j"), A("guild","Guilds","g"),
             A("coop","Play Together","o"), A("map","World map","n"), A("vault","Vault","b"), A("sub1","Subclass ability 1","z"), A("sub2","Subclass ability 2","x"),
-            A("sub3","Subclass ability 3","r"), A("sub4","Subclass ability 4","t"), A("zoomin","Zoom in","="), A("zoomout","Zoom out","-"), A("hideui","Hide the interface","f8") };
+            A("sub3","Subclass ability 3","r"), A("sub4","Subclass ability 4","t"), A("zoomin","Zoom in","="), A("zoomout","Zoom out","-"), A("hideui","Hide the interface","f8"), A("mount","Ride or dismiss your mount","v") };
         static Action A(string a, string n, string d) { return new Action { a = a, n = n, d = d }; }
         static Dictionary<string, string> bind;
         static Dictionary<string, string> B { get { if (bind == null) { try { bind = JsonConvert.DeserializeObject<Dictionary<string, string>>(PlayerPrefs.GetString("aldara/keys", "{}")); } catch { } if (bind == null) bind = new Dictionary<string, string>(); } return bind; } }

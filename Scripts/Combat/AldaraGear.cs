@@ -78,6 +78,8 @@ namespace Aldara
             if (pool.Count == 0) return null; var def = pool[Random.Range(0, pool.Count)];
             return new Item { id = AldaraItems.itemSeq++, type = "relic", relic = def.id, name = def.name, rarity = r.k, color = r.c, lvl = level };
         }
+        public static List<RelicDef> AllRelics { get { return RelicList; } }
+        public static Item BuildRelic(RelicDef def, AldaraItems.Rar r, int level) { return new Item { id = AldaraItems.itemSeq++, type = "relic", relic = def.id, name = def.name, rarity = r.k, color = r.c, lvl = level }; }
         public static Item MaybeDropRelic(int i, int level, float x, float y)
         {
             if (Random.value >= 0.22f + i * 0.03f) return null; var it = RollRelic(i, level); if (it == null || !H.AddLoot(it)) return null;

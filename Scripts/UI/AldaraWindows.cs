@@ -32,7 +32,7 @@ namespace Aldara
             var go = new GameObject("WindowsUI"); go.SetActive(false); doc = go.AddComponent<UIDocument>();
             doc.panelSettings = Resources.Load<PanelSettings>("UI/AldaraPanel"); doc.sortingOrder = 5; go.SetActive(true);
             root = doc.rootVisualElement; root.pickingMode = PickingMode.Ignore; root.style.position = Position.Absolute; root.style.left = root.style.top = root.style.right = root.style.bottom = 0;
-            Register(new AldaraInvWin()); Register(new AldaraAttWin()); Register(new AldaraSkillWin()); Register(new AldaraSubWin()); Register(new AldaraVaultWin()); Register(new AldaraMenuWin()); Register(new AldaraMapWin()); Register(new AldaraQuestLog()); Register(new AldaraQuestDlg()); Register(new AldaraLoreWin()); Register(new AldaraWsWin()); Register(new AldaraDunWin()); Register(new AldaraDunResWin()); Register(new AldaraGuildWin());
+            Register(new AldaraInvWin()); Register(new AldaraAttWin()); Register(new AldaraSkillWin()); Register(new AldaraSubWin()); Register(new AldaraVaultWin()); Register(new AldaraMenuWin()); Register(new AldaraMapWin()); Register(new AldaraQuestLog()); Register(new AldaraQuestDlg()); Register(new AldaraLoreWin()); Register(new AldaraWsWin()); Register(new AldaraDunWin()); Register(new AldaraDunResWin()); Register(new AldaraGuildWin()); Register(new AldaraDevWin()); Register(new AldaraDevPw());
             AldaraSettings.Apply();
             if (!GetComponent<AldaraTitle>()) gameObject.AddComponent<AldaraTitle>();
             if (!GetComponent<AldaraFolk>()) gameObject.AddComponent<AldaraFolk>();
@@ -139,6 +139,7 @@ namespace Aldara
                 // Esc closes whatever is open; with nothing open it opens the Game Menu
                 if (kb.escapeKey.wasPressedThisFrame) { if (IsOpen("map")) Toggle("map", false); else if (AnyOpen()) CloseAll(); else Toggle("set", true); }
                 if (kb.f11Key.wasPressedThisFrame && !Application.isEditor) AldaraMenuWin.ToggleFullscreen();
+                if (kb.f10Key.wasPressedThisFrame) AldaraDevWin.Open();   // the developer menu, behind its password
             }
             if (!AldaraSave.Ready)
             {   // on the title screens only the Game Menu (its settings) can be open

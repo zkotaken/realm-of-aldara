@@ -148,7 +148,7 @@ namespace Aldara
         public static AldaraMonsters.Mon LvSrc;
         public void Damage(float dmg, float ang, int srcLvl)
         {
-            if (!alive) return; bool env = srcLvl < 0; AldaraPlayer.lastCombat = Time.time;
+            if (!alive) return; bool env = srcLvl < 0; AldaraPlayer.lastCombat = Time.time; if (AldaraDevWin.God) return;
             dmg = AldaraSubclass.PreDamage(dmg, LvSrc, env); if (dmg < 0) return;
             float hp0 = hp, sh0 = shield; DamageCore(dmg, ang, srcLvl); AldaraSound.Damaged(sh0, hp0);
             AldaraSubclass.PostDamage(Mathf.Max(0, hp0 - hp), LvSrc, env);

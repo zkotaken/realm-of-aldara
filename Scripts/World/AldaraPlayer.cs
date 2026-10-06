@@ -41,6 +41,7 @@ namespace Aldara
             if (CAP_DIRS == null) { CAP_DIRS = new Vector2[CAP_N]; for (int i = 0; i < CAP_N; i++) CAP_DIRS[i] = new Vector2(Mathf.Cos(i / (float)CAP_N * Mathf.PI * 2), Mathf.Sin(i / (float)CAP_N * Mathf.PI * 2)); }
             if (AldaraWorld.BlockedAt(x, y)) { var f = FreeSpotNear(x, y); x = f.x; y = f.y; }
             shownFacing = facing;
+            if (!GetComponent<AldaraMount>()) gameObject.AddComponent<AldaraMount>();
             transform.localScale = AldaraView.Squash;   // drawn like the browser: depth x TSP, height x TCP
             if (!anim) anim = GetComponentInChildren<AldaraCharacterAnimator>();
         }
@@ -51,7 +52,13 @@ namespace Aldara
             float liqK = liq == 2 ? 0.45f : liq != 0 ? 0.62f : 1f;
             float slow = AldaraHero.I && AldaraHero.I.slowT > 0 ? 0.65f : 1f;
             if (AldaraDungeon.Active) road = 1;
+            if (AldaraMount.Riding)
+            {   // in the saddle: a canter, or a gallop when running
+                float rv = road * speed * AldaraRelics.SpeedMult() * AldaraSubclass.SpeedMult() * liqK * slow * (Rested ? 1.15f : 1) * AldaraMount.SpeedK * AldaraDevWin.SpeedK;
+                return rv * (Run ? 1.38f : 0.86f);
+            }
             float v = road * speed * AldaraRelics.SpeedMult() * AldaraSubclass.SpeedMult() * (wings ? 1.15f : 0.72f) * liqK * slow * (Rested ? 1.15f : 1);
+            v *= AldaraDevWin.SpeedK;
             return OnFoot ? v * (Run ? RUNM : WALK) : v;
         }
 
@@ -106,7 +113,7 @@ namespace Aldara
             // browser facing 0 = east (+x), PI/2 = south (Unity -z). Unity yaw: 0 = +z, 90 = +x
             if (model) model.localRotation = Quaternion.Euler(0, 90 + shownFacing * Mathf.Rad2Deg, 0);
             // with wings you fly: no running gait (the browser's _movingNow is false while hovering)
-            if (anim) anim.SetMoving(Moving && !wings, MovingBack, mv / Mathf.Max(dt, 1e-4f));
+            if (anim) anim.SetMoving(Moving && !wings && !AldaraMount.Riding, MovingBack, mv / Mathf.Max(dt, 1e-4f));
         }
 
         void Ctrl(Keyboard kb)
@@ -128,7 +135,7 @@ namespace Aldara
         void Liquid(float dt, AldaraHero H)
         {
             if (AldaraDungeon.Active || (H && !H.alive)) { liq = 0; sink = Mathf.Max(0, sink - dt * 60); return; }
-            int L = wings ? 0 : AldaraWorld.LiquidAt(x, y); liq = L;
+            int L = wings && !AldaraMount.Riding ? 0 : AldaraWorld.LiquidAt(x, y); liq = L;
             float target = L == 2 ? 42 : (L != 0 ? 22 : 0); sink += (target - sink) * Mathf.Min(1, dt * (L == 2 ? 0.9f : 5));
             if (L == 2)
             {

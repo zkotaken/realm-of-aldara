@@ -46,7 +46,7 @@ namespace Aldara
             raw = new JObject(); slot = s; var H = AldaraHero.I; var P = AldaraPlayer.I;
             H.heroName = name; ApplyClass(cls); H.lvl = 1; H.xp = 0; H.gold = 0; H.statPoints = 0; H.equip.Clear(); H.inventory.Clear(); H.vialHp = 0; H.vialMp = 0;
             H.SetClass(cls); P.x = AldaraWorld.TOWN_SPAWN.x; P.y = AldaraWorld.TOWN_SPAWN.y;
-            AldaraSkills.I.Load(cls); AldaraTree.Init(null); AldaraQuests.Init(raw); H.Recompute(); H.hp = H.maxHp; H.mana = H.maxMana;
+            AldaraSkills.I.Load(cls); AldaraTree.Init(null); AldaraQuests.Init(raw); AldaraMount.Load(null); H.Recompute(); H.hp = H.maxHp; H.mana = H.maxMana;
             Save();
         }
         static readonly Dictionary<string, string> PET_RENAME = new Dictionary<string, string> {
@@ -83,7 +83,7 @@ namespace Aldara
                 if (sk["equipped"] is JArray eqd) foreach (var t in eqd) if (S.Get((string)t) != null && S.equipped.Count < 10) S.equipped.Add((string)t);
                 if (S.owned.Count == 0 && S.classSkills.Count > 0) { S.owned.Add(S.classSkills[0].id); S.equipped.Add(S.classSkills[0].id); }
             }
-            AldaraTree.Init(j); AldaraQuests.Init(j);
+            AldaraTree.Init(j); AldaraQuests.Init(j); AldaraMount.Load(j);
             H.maxHp = 0; H.maxMana = 0; H.Recompute(); H.hp = H.maxHp; H.mana = H.maxMana;
             if (H.title != null) { var tt = AldaraGear.TitleById(H.title); if (tt == null || !tt.ok()) H.title = null; }
             P.x = F(j["x"], AldaraWorld.TOWN_SPAWN.x); P.y = F(j["y"], AldaraWorld.TOWN_SPAWN.y);
@@ -114,7 +114,7 @@ namespace Aldara
             while (mine.Count > 0) eqd.Add(mine.Dequeue());
             sk["owned"] = own; sk["equipped"] = eqd; j["skills"] = sk;
             j["potions"] = new JObject { ["hp"] = H.vialHp, ["mp"] = H.vialMp };
-            var st = (j["stats"] as JObject) ?? new JObject(); st["kills"] = H.kills; st["bosses"] = H.bossKills; st["deaths"] = H.deaths; j["stats"] = st; j["title"] = H.title; AldaraTree.Write(j); AldaraQuests.Write(j);
+            var st = (j["stats"] as JObject) ?? new JObject(); st["kills"] = H.kills; st["bosses"] = H.bossKills; st["deaths"] = H.deaths; j["stats"] = st; j["title"] = H.title; AldaraTree.Write(j); AldaraQuests.Write(j); AldaraMount.Write(j);
             Ints(j); raw = j; Directory.CreateDirectory(UnityDir); var p = PathOf(UnityDir, slot);
             File.WriteAllText(p + ".tmp", j.ToString(Newtonsoft.Json.Formatting.None)); if (File.Exists(p)) File.Delete(p); File.Move(p + ".tmp", p);
         }

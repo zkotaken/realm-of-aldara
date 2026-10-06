@@ -13,7 +13,9 @@ namespace Aldara
         public TextAsset data;
         public string cls = "knight";
         public bool combat;
-        public float strideK = 0.078f;  // browser walkT per px (knight .078, mage .082, archer .074)
+        public float strideK = 0.078f;
+        /// in the saddle (AldaraMount): the thighs forward and apart, the knees bent; seatNodes = thigh L, knee L, thigh R, knee R
+        [System.NonSerialized] public bool seated; [System.NonSerialized] public int[] seatNodes; float seatW;  // browser walkT per px (knight .078, mage .082, archer .074)
 
         class Clip { public string name; public bool loop; public float dur; public int F; public float[] d; public int A; public float[] ax; }
         int N; Transform[] T; readonly Dictionary<string, Clip> clips = new Dictionary<string, Clip>();
@@ -106,6 +108,18 @@ namespace Aldara
                 }
             }
             Apply(bufA);
+            seatW = Mathf.MoveTowards(seatW, seated ? 1 : 0, dt * 6);
+            if (false && seatW > 0 && seatNodes != null && seatNodes.Length == 4)   // the saddle pose is set by AldaraHeroGear
+            {
+                for (int s = 0; s < 2; s++)
+                {
+                    int th = seatNodes[s * 2], kn = seatNodes[s * 2 + 1]; if (th >= N || kn >= N || !T[th] || !T[kn]) continue;
+                    float side = T[th].localPosition.x < 0 ? -1 : 1;
+                    var sit = Quaternion.AngleAxis(side * 16, Vector3.forward) * Quaternion.AngleAxis(-80, Vector3.right);
+                    T[th].localRotation = Quaternion.Slerp(T[th].localRotation, T[th].localRotation * sit, seatW);
+                    T[kn].localRotation = Quaternion.Slerp(T[kn].localRotation, T[kn].localRotation * Quaternion.AngleAxis(78, Vector3.right), seatW);
+                }
+            }
         }
 
         void Sample(Clip c, float t, float[] o)

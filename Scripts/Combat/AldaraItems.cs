@@ -34,6 +34,22 @@ namespace Aldara
         static ItemBook B { get { if (book == null) book = JsonUtility.FromJson<ItemBook>(Resources.Load<TextAsset>("items").text); return book; } }
         static string[] Names(string type) { foreach (var s in B.slots) if (s.type == type) return s.names; return new string[0]; }
         static string[] WNames(string cls) { foreach (var w in B.weapons) if (w.cls == cls) return w.names; return new string[0]; }
+        // the developer menu (AldaraDevWin): every name the item book knows
+        public static string[] NamesOf(string type) { return type == "wings" ? B.wings : type == "mythpet" ? B.mythicPets : Names(type); }
+        public static string[] WeaponNamesOf(string cls) { return WNames(cls); }
+        public static MythicSet[] MythicSets { get { return B.mythicSets; } }
+        public static string[] MythicSlots { get { return B.mythicSlots; } }
+        public static Item BuildWings(string name, Rar r, int level)
+        {
+            level = Mathf.Max(10, level);
+            return new Item { id = itemSeq++, type = "wings", name = name, rarity = r.k, color = r.c, lvl = level, hp = Mathf.Round((6 + level * 0.8f) * r.m * 0.5f), speed = Mathf.Round((10 + level * 0.3f) * r.m * 0.5f), agi = Mathf.Round((8 + level * 0.8f) * r.m * 0.6f) };
+        }
+        public static Item BuildMythic(MythicSet S, int si, int level)
+        {
+            string sl = B.mythicSlots[si]; var it = Build(sl, S.pieces[si], RARITY[4], Mathf.Max(40, level));
+            it.hp = Mathf.Round(it.hp * 1.8f); it.speed = Mathf.Round(it.speed * 1.5f);
+            it.atk = Mathf.Round(it.atk * 1.8f + (4 + it.lvl / 4f) * (sl == "chest" ? 2.2f : 1.2f)); it.myth = S.id; return it;
+        }
         static bool IsMythSlot(string t) { return System.Array.IndexOf(B.mythicSlots, t) >= 0; }
         public static MythicSet MythSetById(string id) { foreach (var s in B.mythicSets) if (s.id == id) return s; return null; }
         public static MythicSet MythSetOf(Item it)
