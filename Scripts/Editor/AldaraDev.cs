@@ -100,6 +100,45 @@ namespace Aldara
         }
         static Newtonsoft.Json.Linq.JObject AldaraHeroGear_Pieces(string cls) { var ta = Resources.Load<TextAsset>("Gear/pieces_" + cls + "_meta"); return Newtonsoft.Json.Linq.JObject.Parse(ta.text); }
         /// in play mode: the hero up close at several facings (wings and pet hidden for the shot only), out of a fight and in one
+        /// in play mode: the hero standing in the given class and weapon (wings off), in its ready stance; each candidate
+        /// ("rig,rx,ry,rz,rig,rx,ry,rz|...") overrides those rig joints, shot front and side to t{i}f / t{i}s; ready=false shoots the easy stance
+        public static string PoseTest(string cls, string weapon, string cands, bool ready = true, float size = 1.3f)
+        {
+            var P = AldaraPlayer.I; var H = AldaraHero.I; if (!P || !H) return "no hero"; H.target = null;
+            var lf = typeof(AldaraHero).GetField("lastFight", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            var rigM = typeof(AldaraHeroGear).GetMethod("Rig", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var origCls = H.cls; Item origW; H.equip.TryGetValue("weapon", out origW); Item origWings; H.equip.TryGetValue("wings", out origWings); H.equip.Remove("wings");
+            System.Action<string, float> Shot = (file, yaw) =>
+            {
+                var main = Camera.main; var go = new GameObject("zcam"); var cam = go.AddComponent<Camera>(); cam.CopyFrom(main); cam.rect = new Rect(0, 0, 1, 1); cam.ResetWorldToCameraMatrix(); cam.ResetProjectionMatrix();
+                var tgt = P.transform.position + Vector3.up * 0.8f; var rot = Quaternion.Euler(0, yaw, 0) * main.transform.rotation; cam.transform.rotation = rot; cam.transform.position = tgt - (rot * Vector3.forward) * 80f; cam.orthographic = true; cam.orthographicSize = size;
+                var rt = new RenderTexture(300, 300, 24, RenderTextureFormat.ARGB32) { antiAliasing = 4 }; cam.targetTexture = rt; cam.aspect = 1; cam.Render();
+                RenderTexture.active = rt; var tex = new Texture2D(300, 300, TextureFormat.RGB24, false); tex.ReadPixels(new Rect(0, 0, 300, 300), 0, 0); tex.Apply(); RenderTexture.active = null;
+                File.WriteAllBytes(AldaraImport.INBOX + "/" + file + ".jpg", tex.EncodeToJPG(88)); cam.targetTexture = null; Object.DestroyImmediate(go); rt.Release(); Object.DestroyImmediate(tex);
+            };
+            var off = new List<Renderer>(); int n = 0;
+            try
+            {
+                H.cls = cls; if (!string.IsNullOrEmpty(weapon)) H.equip["weapon"] = new Item { type = "weapon", name = weapon, cls = cls, rarity = "Epic" }; AldaraHeroGear.SyncPlayer();
+                var pet = GameObject.Find("Pet"); if (pet) foreach (var r in pet.GetComponentsInChildren<Renderer>()) if (r.enabled) { r.enabled = false; off.Add(r); }
+                P.facing = 1.57f; lf.SetValue(H, -99f);
+                for (int f = 0; f < 40; f++) { if (ready) H.MarkFight(); Step(1); }
+                var g = P.model.GetComponent<AldaraHeroGear>();
+                foreach (var c in cands.Split('|'))
+                {
+                    if (ready) H.MarkFight(); Step(1);
+                    var v = new List<float>(); foreach (var x in c.Split(',')) { float q; if (float.TryParse(x.Trim(), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out q)) v.Add(q); }
+                    for (int j = 0; j + 3 < v.Count; j += 4) { var tr = (Transform)rigM.Invoke(g, new object[] { (int)v[j] }); if (tr) tr.localRotation = AldaraHeroGear.Rot(v[j + 1], v[j + 2], v[j + 3]); }
+                    Shot("t" + n + "f", 0); Shot("t" + n + "s", 70); n++;
+                }
+            }
+            finally
+            {
+                foreach (var r in off) if (r) r.enabled = true;
+                lf.SetValue(H, -99f); H.cls = origCls; if (origW != null) H.equip["weapon"] = origW; if (origWings != null) H.equip["wings"] = origWings; AldaraHeroGear.SyncPlayer();
+            }
+            return "shots " + n;
+        }
         public static string HeroShots(string prefix, float size = 1.3f)
         {
             var P = AldaraPlayer.I; var H = AldaraHero.I; if (!P || !H) return "no hero"; H.target = null;

@@ -257,7 +257,7 @@ namespace Aldara
                 flyPh += dt * (FS[0] + FS[1] * flyM); flyH = FS[2] + flyM * FS[3] - FS[4] * Mathf.Sin(flyPh);
                 transform.localPosition = new Vector3(0, flyH / AldaraWorld.PX / AldaraView.TCP, 0);
             }
-            else if (isPlayer && !riding && transform.localPosition.y != 0) { transform.localPosition = Vector3.zero; flyM = 0; }
+            else if (isPlayer && !riding && transform.localPosition.y != 0 && crouch == 0) { transform.localPosition = Vector3.zero; flyM = 0; }
             if (riding && !(anim && anim.Busy))
             {   // in the saddle (AldaraMount): thighs forward along the horse's sides, knees bent, heels down in the stirrups;
                 // hands forward on the reins; the rider leans into the gallop, rocks with the stride, and at rest sits easy,
@@ -286,6 +286,7 @@ namespace Aldara
                 var head = Rig(2);
                 if (head) head.localRotation = head.localRotation * Rot(-0.12f * g * mv, rest * Mathf.Sin(t * 0.33f) * 0.35f, 0);   // eyes up the road; at rest, a look round
             }
+            IdleLayer(isPlayer, riding, dt, t);
             if (panels.Count == 0 && cape.Count == 0 && wings.Count == 0) return;
             var ax = (float[])(anim ? anim.aux : new float[13]).Clone();
             if (riding) for (int k = 0; k < 2; k++) { ax[k * 4] = -1.3f; ax[k * 4 + 1] = (k == 1 ? -1 : 1) * 0.34f; ax[k * 4 + 3] = 1.45f; }
@@ -348,6 +349,80 @@ namespace Aldara
             }
         }
         /// the browser's rotation (m3TRS: R = Ry Rx Rz) in Unity's frame (S R S, S = diag(1, 1, -1))
+        // ---------- the idle poses, layered over the browser's clips ----------
+        // Standing with the weapon put away (or with none), the hero stands easy: arms hanging relaxed a little off the
+        // body with the elbows soft, breathing, weight shifting from foot to foot, head looking about. Standing in a
+        // fight with the weapon out, each class takes a ready stance: the knight's sword up and shield across the body,
+        // the mage's staff forward and the free hand raised with a spell, the archer's bow held low in front with the
+        // other hand at the string; knees bent, a slow breathing bob.
+        float relaxW, readyW;
+        void IdleLayer(bool isPlayer, bool riding, float dt, float t)
+        {
+            if (!anim || T == null) return;
+            bool still = isPlayer && !riding && !anim.Moving && !anim.Busy && AldaraHero.I && AldaraHero.I.alive;
+            // a weapon with a holster is out until it is sheathed; one that never goes on the back (the great blades) counts as
+            // out while the fight lasts; bare hands never take the ready stance
+            var HH = AldaraHero.I;
+            bool armed = holsters.Count > 0 ? !sheathed : (HH && HH.Eq("weapon") != null && HH.InFight);
+            relaxW = Mathf.MoveTowards(relaxW, still && !armed ? 1 : 0, dt * 4);
+            readyW = Mathf.MoveTowards(readyW, still && armed ? 1 : 0, dt * 5);
+            if (relaxW <= 0 && readyW <= 0) { if (crouch != 0 && !flying) { crouch = 0; transform.localPosition = Vector3.zero; } return; }
+            float br = Mathf.Sin(t * 1.9f), sh = Mathf.Sin(t * 0.42f), look = Mathf.Sin(t * 0.23f) * Mathf.Max(0, Mathf.Sin(t * 0.11f + 1));
+            int wk = cls == "archer" ? 0 : 1;   // the side that holds the weapon (the bow is in the other hand)
+            if (relaxW > 0) Pose(relaxW, br, sh, look, -1, t);
+            if (readyW > 0) Pose(readyW, br, sh, look * 0.4f, wk, t);
+        }
+        float crouch;
+        void Blend(Transform x, Quaternion q, float w) { if (x) x.localRotation = Quaternion.Slerp(x.localRotation, q, w); }
+        /// wk < 0: the easy stance; otherwise the class's ready stance with the weapon in side wk
+        void Pose(float w, float br, float sh, float look, int wk, float t)
+        {
+            bool ready = wk >= 0;
+            for (int k = 0; k < 2; k++)
+            {
+                float sd = k == 1 ? -1 : 1;   // +z swings this side's limb outward
+                Transform s0 = Rig(3 + k * 3), e0 = Rig(4 + k * 3), h0 = Rig(5 + k * 3);
+                float srx, srz, sry = 0, erx, hrx = 0, hry = 0, hrz = 0;
+                if (!ready) { srx = 0.06f + br * 0.015f; srz = sd * (0.14f + br * 0.01f); erx = -0.28f - br * 0.03f; hrx = 0.1f; }
+                else if (cls == "archer")
+                {
+                    if (k == wk) { srx = -0.75f + br * 0.02f; srz = -sd * 0.05f; erx = -0.25f; }      // the bow, low and forward
+                    else { srx = -0.3f + br * 0.02f; sry = sd * 0.8f; srz = 0; erx = -1.4f; }          // fingers on the string, by the grip
+                }
+                else if (cls == "mage")
+                {
+                    if (k == wk) { srx = -0.4f + br * 0.02f; srz = sd * 0.06f; erx = -0.95f; hrx = -0.8f; }   // the staff forward, its head up
+                    else { srx = -0.8f + br * 0.03f + Mathf.Sin(t * 2.6f) * 0.03f; srz = -sd * 0.12f; erx = -1.25f; hrx = -0.4f; }   // the casting hand up
+                }
+                else if (baseId == "knight_great")
+                {
+                    if (k == wk) { srx = -0.5f + br * 0.025f; srz = sd * 0.4f; erx = -1.3f; hrx = -0.6f; hrz = 0.8f * sd; }   // the great blade held up before you in both hands
+                    else { srx = -0.6f + br * 0.025f; srz = -sd * 0.6f; erx = -1.1f; }                                   // the other hand on the grip
+                }
+                else
+                {
+                    if (k == wk) { srx = -0.35f + br * 0.025f; srz = sd * 0.1f; erx = -1.25f; hrx = -0.6f; hry = sd * 0.5f; }   // the sword up before you, point high
+                    else { srx = -0.62f + br * 0.02f; srz = -sd * 0.3f; erx = -1.35f; }                                         // the shield across the body
+                }
+                Blend(s0, Rot(srx, sry, srz), w); Blend(e0, Rot(erx, 0, 0), w); if (hrx != 0 || hry != 0 || hrz != 0 || !ready) Blend(h0, Rot(hrx, hry, hrz), ready ? w : w * 0.7f);
+            }
+            // legs: the easy stance shifts its weight from foot to foot; the ready stance bends the knees and spreads the feet
+            if (!flying)
+            {
+                for (int k = 0; k < 2; k++)
+                {
+                    float sd = k == 1 ? -1 : 1; Transform hp = Rig(9 + k * 3), kn = Rig(10 + k * 3), an = Rig(11 + k * 3);
+                    float bend = ready ? 0.34f + br * 0.02f : Mathf.Max(0, (k == 0 ? sh : -sh)) * 0.16f;
+                    float spread = ready ? 0.1f : 0.04f;
+                    Blend(hp, Rot(-bend * 0.5f + (ready && k == 0 ? -0.12f : 0), 0, sd * spread), w); Blend(kn, Rot(bend, 0, 0), w); Blend(an, Rot(-bend * 0.5f, 0, 0), w);
+                }
+                float c = ready ? 0.045f + br * 0.006f : Mathf.Abs(sh) * 0.012f; crouch = c * w; transform.localPosition = new Vector3(0, -crouch, 0);
+            }
+            // the body breathes and sways; the ready stance leans in a little; the head looks round now and then
+            var r1 = Rig(1); var waist = r1 ? r1.parent : null;
+            if (waist) waist.localRotation = Rot((ready ? 0.12f : 0.02f) + br * 0.012f, ready ? (cls == "archer" ? 0.25f : 0.12f) * w : 0, sh * (ready ? 0.015f : 0.03f)) * Quaternion.Slerp(Quaternion.identity, waist.localRotation, 1 - w);
+            var head = Rig(2); if (head) Blend(head, Rot(ready ? -0.06f : 0.04f + br * 0.01f, look * (ready ? 0.15f : 0.45f) - (ready && cls == "archer" ? 0.2f : 0), 0), w * 0.9f);
+        }
         public static Quaternion Rot(float rx, float ry, float rz)
         {
             float cx = Mathf.Cos(rx), sx = Mathf.Sin(rx), cy = Mathf.Cos(ry), sy = Mathf.Sin(ry), cz = Mathf.Cos(rz), sz = Mathf.Sin(rz);
