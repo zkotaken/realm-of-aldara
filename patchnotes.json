@@ -1,6 +1,19 @@
 {
  "entries": [
   {
+   "v": "165",
+   "date": "October 7, 2026",
+   "type": "update",
+   "title": "In the saddle",
+   "notes": [
+    "Mounts now have their own Mount slot in your equipment, next to your pet. A mount is an item: put one in the Mount slot and press V to ride it. Mounts you already had are moved into the slot. In the backpack, mounts sit under the Pets & Mounts tab.",
+    "Your hero now rides properly. At a gallop they lean forward over the horse's neck with the reins in both hands, rise and fall with each stride and grip with their knees. At a canter they sit upright and rock with the trot. Standing still, they sit easy, breathe and look around.",
+    "Climbing into the saddle is now a quick hop up onto the horse's back.",
+    "You can zoom in much further, up to 6x (was 3x).",
+    "While you are typing in any text box (chat, searches, names), no game or menu key does anything."
+   ]
+  },
+  {
    "v": "164",
    "date": "October 6, 2026",
    "type": "update",
