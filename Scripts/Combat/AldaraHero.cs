@@ -275,7 +275,7 @@ namespace Aldara
             }
             var kb = Keyboard.current;
             if (kb != null && (AldaraKeys.Held("attack") || freeQueued) && atkCd <= 0 && !(target != null && !target.dead && aiming)) FreeAttack();
-            if (kb != null && kb.tabKey.wasPressedThisFrame) target = AldaraMonsters.I.FindNearest(P.x, P.y, 700);
+            if (kb != null && !AldaraHud.Typing && kb.tabKey.wasPressedThisFrame) target = AldaraMonsters.I.FindNearest(P.x, P.y, 700);
             if (AldaraKeys.Pressed("hp")) DrinkVial(true);
             if (AldaraKeys.Pressed("mp")) DrinkVial(false);
             if (AldaraKeys.Pressed("auto") && !AldaraHud.Typing) AldaraAuto.Set(!AldaraAuto.on);

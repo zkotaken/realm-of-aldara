@@ -23,10 +23,10 @@ namespace Aldara
             new Rar { k = "Common", c = "#b8b8c8", m = 1 }, new Rar { k = "Rare", c = "#4a90e2", m = 1.7f }, new Rar { k = "Epic", c = "#c04ad0", m = 2.6f },
             new Rar { k = "Legendary", c = "#ff9a2a", m = 3.6f }, new Rar { k = "Mythical", c = "#ff3a7a", m = 5 } };
         public static readonly string[] GEAR_TYPES = { "helmet", "chest", "gauntlets", "leggings", "boots", "weapon", "back", "accessory" };
-        public static readonly string[] LEFT_SLOTS = { "helmet", "chest", "gauntlets", "leggings", "boots", "relic1" }, RIGHT_SLOTS = { "weapon", "back", "wings", "accessory", "pet", "relic2" };
+        public static readonly string[] LEFT_SLOTS = { "helmet", "chest", "gauntlets", "leggings", "boots", "relic1" }, RIGHT_SLOTS = { "weapon", "back", "wings", "accessory", "pet", "mount", "relic2" };
         public static readonly Dictionary<string, string> SLOT_LABEL = new Dictionary<string, string> {
             {"helmet","Helmet"},{"chest","Chest Armor"},{"gauntlets","Gauntlets"},{"leggings","Leggings"},{"boots","Boots"},{"weapon","Weapon"},{"back","Cape"},
-            {"wings","Back"},{"accessory","Accessory"},{"pet","Pet"},{"relic1","Relic"},{"relic2","Relic"} };
+            {"wings","Back"},{"accessory","Accessory"},{"pet","Pet"},{"mount","Mount"},{"relic1","Relic"},{"relic2","Relic"} };
         public static readonly Dictionary<string, float> PET_PCT = new Dictionary<string, float> { { "Common", 0.05f }, { "Rare", 0.10f }, { "Epic", 0.15f }, { "Legendary", 0.20f }, { "Mythical", 0.35f } };
         public const int BACKPACK_MAX = 100, BASE_NAME_COUNT = 11, WINGS_LEVEL = 40, VIAL_MAX = 30;
         public static int itemSeq = 1;
@@ -134,6 +134,7 @@ namespace Aldara
             float pp = PetPct(it); if (pp > 0) p.Add("+" + Mathf.RoundToInt(pp * 100) + "% ALL STATS");
             var ms = MythSetOf(it); if (ms != null) p.Add(ms.name + " Set");
             if (it.type == "wings") p.Add("Level " + WINGS_LEVEL + "+");
+            if (it.type == "mount") p.Add("Ride with " + AldaraKeys.Name(AldaraKeys.KeyOf("mount")) + "  Gallops 1.5x faster than running");
             return string.Join("  ", p);
         }
     }

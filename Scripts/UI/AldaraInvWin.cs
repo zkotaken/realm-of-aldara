@@ -162,9 +162,9 @@ namespace Aldara
         }
 
         // ---------- right column ----------
-        static readonly string[][] TABS = { new[] { "all", "All" }, new[] { "weapon", "Weapons" }, new[] { "armor", "Armour" }, new[] { "back", "Back & Wings" }, new[] { "jewel", "Jewellery & Relics" }, new[] { "pet", "Pets" }, new[] { "other", "Other" } };
+        static readonly string[][] TABS = { new[] { "all", "All" }, new[] { "weapon", "Weapons" }, new[] { "armor", "Armour" }, new[] { "back", "Back & Wings" }, new[] { "jewel", "Jewellery & Relics" }, new[] { "pet", "Pets & Mounts" }, new[] { "other", "Other" } };
         static readonly string[] ARMOR = { "helmet", "chest", "gauntlets", "leggings", "boots" };
-        static readonly string[] KNOWN = { "weapon", "helmet", "chest", "gauntlets", "leggings", "boots", "back", "wings", "accessory", "relic", "pet" };
+        static readonly string[] KNOWN = { "weapon", "helmet", "chest", "gauntlets", "leggings", "boots", "back", "wings", "accessory", "relic", "pet", "mount" };
         static bool InTab(string t, Item it)
         {
             switch (t)
@@ -173,7 +173,7 @@ namespace Aldara
                 case "armor": return Array.IndexOf(ARMOR, it.type) >= 0;
                 case "back": return it.type == "back" || it.type == "wings";
                 case "jewel": return it.type == "accessory" || it.type == "relic";
-                case "pet": return it.type == "pet";
+                case "pet": return it.type == "pet" || it.type == "mount";
                 case "other": return Array.IndexOf(KNOWN, it.type) < 0;
                 default: return true;
             }

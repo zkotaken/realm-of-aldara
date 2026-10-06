@@ -70,7 +70,7 @@ namespace Aldara
             var kb = Keyboard.current; var hero = AldaraHero.I;
             Ctrl(kb); Rest(dt, hero);
             float dx = 0, dy = 0;
-            if (kb != null && (hero == null || hero.alive))
+            if (kb != null && (hero == null || hero.alive) && !AldaraHud.Typing)
             {
                 if (AldaraKeys.Held("up") || kb.upArrowKey.isPressed) dy -= 1;
                 if (AldaraKeys.Held("down") || kb.downArrowKey.isPressed) dy += 1;
@@ -118,7 +118,8 @@ namespace Aldara
 
         void Ctrl(Keyboard kb)
         {
-            if (kb == null) return; bool c = kb.leftCtrlKey.isPressed || kb.rightCtrlKey.isPressed; var m = Mouse.current;
+            if (kb == null) return; if (AldaraHud.Typing) { ctrlDown = false; return; }   // Ctrl+A, Ctrl+C in a text box are not the walk toggle
+            bool c = kb.leftCtrlKey.isPressed || kb.rightCtrlKey.isPressed; var m = Mouse.current;
             if (c && !ctrlDown) { ctrlDown = true; ctrlUsed = false; }
             else if (c && ctrlDown) { if (kb.anyKey.wasPressedThisFrame && !kb.leftCtrlKey.wasPressedThisFrame && !kb.rightCtrlKey.wasPressedThisFrame) ctrlUsed = true; if (m != null && (m.leftButton.wasPressedThisFrame || m.rightButton.wasPressedThisFrame)) ctrlUsed = true; }
             else if (!c && ctrlDown) { ctrlDown = false; if (!ctrlUsed && !AldaraHud.Typing) ToggleRun(); }

@@ -102,7 +102,7 @@ namespace Aldara
             float sx = AldaraDungeon.Active ? AldaraDungeon.Ret.x : P.x, sy = AldaraDungeon.Active ? AldaraDungeon.Ret.y : P.y;
             if (j["x"] == null || Mathf.Abs((float)j["x"] - sx) > 0.01f || Mathf.Abs((float)j["y"] - sy) > 0.01f) { j["x"] = sx; j["y"] = sy; } j["lvl"] = H.lvl; j["xp"] = H.xp; j["xpNeed"] = H.xpNeed; j["gold"] = H.gold;
             j["baseAtk"] = H.baseAtk; j["baseHp"] = H.baseHp; j["str"] = H.str; j["agi"] = H.agi; j["vit"] = H.vit; j["ene"] = H.ene; j["statPoints"] = H.statPoints;
-            var eq = new JObject(); foreach (var sl in new[] { "helmet", "chest", "gauntlets", "leggings", "boots", "weapon", "back", "wings", "accessory", "pet", "relic1", "relic2" }) { var it = H.Eq(sl); eq[sl] = it == null ? null : ItemJ(it); }
+            var eq = new JObject(); foreach (var sl in new[] { "helmet", "chest", "gauntlets", "leggings", "boots", "weapon", "back", "wings", "accessory", "pet", "mount", "relic1", "relic2" }) { var it = H.Eq(sl); eq[sl] = it == null ? null : ItemJ(it); }
             j["equip"] = eq;
             var inv = new JArray(); foreach (var it in H.inventory) inv.Add(ItemJ(it)); j["inventory"] = inv;
             j["itemSeq"] = AldaraItems.itemSeq;

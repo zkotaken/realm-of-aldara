@@ -150,6 +150,20 @@ namespace Aldara
             sv.mouseWheelScrollSize = 60;
         }
 
+        /// does any text box anywhere have the keyboard (chat, searches, names, passwords): checked once a frame, so a box
+        /// that forgot to say it is typing still keeps the game's and the menus' keys quiet
+        static UIDocument[] docs; static float docsT = -10; static int focusF = -1; static bool focusV;
+        public static bool TextFocused()
+        {
+            if (Time.frameCount == focusF) return focusV; focusF = Time.frameCount; focusV = false;
+            if (docs == null || Time.unscaledTime - docsT > 1f) { docs = UnityEngine.Object.FindObjectsByType<UIDocument>(FindObjectsSortMode.None); docsT = Time.unscaledTime; }
+            foreach (var d in docs)
+            {
+                if (!d) continue; var root = d.rootVisualElement; var p = root != null ? root.panel : null; if (p == null || p.focusController == null) continue;
+                for (var e = p.focusController.focusedElement as VisualElement; e != null; e = e.parent) if (e is TextField) { focusV = true; return true; }
+            }
+            return false;
+        }
         /// is the pointer over a window or a clickable HUD piece (so a click there does not attack in the world)
         public static bool PointerOverUi(Vector2 screenPos)
         {

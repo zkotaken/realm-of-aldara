@@ -259,12 +259,32 @@ namespace Aldara
             }
             else if (isPlayer && !riding && transform.localPosition.y != 0) { transform.localPosition = Vector3.zero; flyM = 0; }
             if (riding && !(anim && anim.Busy))
-            {   // in the saddle (AldaraMount): thighs forward along the horse's sides, knees bent, feet in the stirrups
+            {   // in the saddle (AldaraMount): thighs forward along the horse's sides, knees bent, heels down in the stirrups;
+                // hands forward on the reins; the rider leans into the gallop, rocks with the stride, and at rest sits easy,
+                // breathing and looking about
+                float ph = AldaraMount.Phase, g = AldaraMount.Gallop, mv = AldaraMount.Move, s1 = Mathf.Sin(ph), s2 = Mathf.Sin(ph * 2 + 0.4f), rest = 1 - mv;
                 for (int k = 0; k < 2; k++)
                 {
                     var hip = Rig(9 + k * 3); var knee = Rig(10 + k * 3); var ankle = Rig(11 + k * 3); float sd = k == 1 ? -1 : 1;
-                    if (hip) hip.localRotation = Rot(-1.3f, 0, sd * 0.34f); if (knee) knee.localRotation = Rot(1.45f, 0, 0); if (ankle) ankle.localRotation = Rot(0.25f, 0, 0);
+                    float grip = mv * (0.05f + 0.08f * g) * s2;   // knees squeeze and the heels sink with each stride
+                    if (hip) hip.localRotation = Rot(-1.3f + grip * 0.5f, 0, sd * (0.34f - 0.04f * g * mv)); if (knee) knee.localRotation = Rot(1.45f - grip, 0, 0); if (ankle) ankle.localRotation = Rot(0.25f + grip * 0.6f, 0, 0);
                 }
+                var r1 = Rig(1); var body = r1 ? r1.parent : null;   // the waist: the upper body leans, the legs stay in the stirrups
+                if (body)
+                {
+                    float lean = 0.05f + mv * (0.06f + 0.24f * g) + mv * s2 * (0.025f + 0.04f * g) + rest * Mathf.Sin(t * 1.6f) * 0.012f;
+                    float sway = rest * Mathf.Sin(t * 0.55f) * 0.04f + mv * Mathf.Sin(ph) * 0.03f * (1 - g);
+                    body.localRotation = Rot(lean, 0, sway) * body.localRotation;
+                }
+                for (int k = 0; k < 2; k++)
+                {   // the reins: upper arms forward and in, elbows bent, hands low over the pommel
+                    var sh = Rig(3 + k * 3); var el = Rig(4 + k * 3); float sd = k == 1 ? -1 : 1;
+                    float pull = mv * (0.08f + 0.1f * g) * s2;
+                    if (sh) sh.localRotation = Rot(-0.5f - 0.18f * g * mv + pull, 0, -sd * 0.16f);
+                    if (el) el.localRotation = Rot(-1.0f - pull * 0.6f, 0, sd * 0.12f);
+                }
+                var head = Rig(2);
+                if (head) head.localRotation = head.localRotation * Rot(-0.12f * g * mv, rest * Mathf.Sin(t * 0.33f) * 0.35f, 0);   // eyes up the road; at rest, a look round
             }
             if (panels.Count == 0 && cape.Count == 0 && wings.Count == 0) return;
             var ax = (float[])(anim ? anim.aux : new float[13]).Clone();

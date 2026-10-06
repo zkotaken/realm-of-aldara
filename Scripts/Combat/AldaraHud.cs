@@ -9,7 +9,10 @@ namespace Aldara
         static string banner; static float bannerT;
         static Rect[] uiRects = new Rect[0];
         public static void Banner(string s) { banner = s; bannerT = 1.4f; AldaraHudUI.ShowBanner(s); }
-        public static bool Typing;
+        /// a text box has the keyboard: no game or menu key does anything. It stays set for the frame the box lets go,
+        /// so the Esc or Enter that closed it does not also open the Game Menu or the chat again
+        public static bool Typing { get { return typing || Time.frameCount - typingOff <= 1 || AldaraUI.TextFocused(); } set { if (typing && !value) typingOff = Time.frameCount; typing = value; } }
+        static bool typing; static int typingOff = -10;
         static Rect blockR; static int blockF = -10;
         public static void Block(Rect r) { blockR = r; blockF = Time.frameCount; }
         public static bool MouseOverUi()

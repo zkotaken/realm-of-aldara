@@ -17,31 +17,63 @@ namespace Aldara
                 coat = new Color(0.45f, 0.27f, 0.14f), mane = new Color(0.09f, 0.075f, 0.07f), legs = new Color(0.12f, 0.1f, 0.09f), blanket = new Color(0.55f, 0.12f, 0.12f), trim = new Color(0.88f, 0.68f, 0.28f) } };
         public static Def Get(string id) { foreach (var d in ALL) if (d.id == id) return d; return null; }
 
-        public static readonly List<string> owned = new List<string>();
-        public static string active;
+        // ---------- mounts are items: worn in the Mount slot of the equipment (type "mount", named after the mount) ----------
+        public static Def OfItem(Item it) { if (it == null || it.type != "mount") return null; foreach (var d in ALL) if (d.name == it.name) return d; return null; }
+        static AldaraHero Hr { get { return AldaraHero.I; } }
+        /// every mount you hold, worn or in the backpack
+        public static List<string> owned
+        {
+            get
+            {
+                var o = new List<string>(); if (!Hr) return o; var w = OfItem(Hr.Eq("mount")); if (w != null) o.Add(w.id);
+                foreach (var it in Hr.inventory) { var d = OfItem(it); if (d != null && !o.Contains(d.id)) o.Add(d.id); }
+                return o;
+            }
+        }
+        /// the mount in the Mount slot
+        public static string active { get { var d = Hr ? OfItem(Hr.Eq("mount")) : null; return d != null ? d.id : null; } }
         public static bool Riding { get { return I && I.riding; } }
         /// how fast a rider goes, as a share of the hero's base speed (on foot running is 0.88)
-        public static float SpeedK { get { if (!Riding) return 1; var d = Get(I.riding ? I.ridingId : active); return d != null ? d.speed : 1; } }
+        public static float SpeedK { get { if (!Riding) return 1; var d = Get(I.ridingId); return d != null ? d.speed : 1; } }
+        /// the horse's stride for the rider's animation (AldaraHeroGear)
+        public static float Phase { get { return I ? I.phase : 0; } }
+        public static float Gallop { get { return I ? I.gallop : 0; } }
+        public static float Move { get { return I ? Mathf.Clamp01(I.spdPx / 30f) : 0; } }
 
-        // ---------- the save ----------
+        public static Item MakeItem(Def d) { return new Item { id = AldaraItems.itemSeq++, type = "mount", name = d.name, rarity = "Epic", color = "#c04ad0", lvl = 1 }; }
+        // ---------- the save: v164 kept owned mounts as a list ("mounts", "mount"); they become items in the Mount slot ----------
         public static void Load(JObject j)
         {
-            owned.Clear(); active = null; if (I) I.Dismount(false);
-            if (j != null && j["mounts"] is JArray a) foreach (var t in a) { var id = (string)t; if (Get(id) != null && !owned.Contains(id)) owned.Add(id); }
-            if (j != null && j["mount"] != null && j["mount"].Type == JTokenType.String) { var id = (string)j["mount"]; if (owned.Contains(id)) active = id; }
-            if (active == null && owned.Count > 0) active = owned[0];
+            if (I) I.Dismount(false);
+            if (j == null || !(j["mounts"] is JArray a)) return;
+            string want = j["mount"] != null && j["mount"].Type == JTokenType.String ? (string)j["mount"] : null;
+            foreach (var t in a)
+            {
+                var d = Get((string)t); if (d == null || owned.Contains(d.id)) continue; var it = MakeItem(d);
+                if (Hr.Eq("mount") == null && (want == null || want == d.id)) Hr.equip["mount"] = it; else Hr.inventory.Add(it);
+            }
+            j.Remove("mounts"); j.Remove("mount");
         }
-        public static void Write(JObject j) { j["mounts"] = new JArray(owned.ToArray()); j["mount"] = active; }
+        public static void Write(JObject j) { j.Remove("mounts"); j.Remove("mount"); }
         public static void Give(string id)
         {
-            var d = Get(id); if (d == null || owned.Contains(id)) return; owned.Add(id); if (active == null) active = id;
-            AldaraHud.Banner("New mount: " + d.name + ". Press " + AldaraKeys.Name(AldaraKeys.KeyOf("mount")) + " to ride"); AldaraSave.Dirty();
+            var d = Get(id); if (d == null || !Hr) return; var it = MakeItem(d);
+            if (Hr.Eq("mount") == null) { Hr.equip["mount"] = it; Hr.Recompute(); } else Hr.inventory.Add(it);
+            AldaraHud.Banner("New mount: " + d.name + ". Press " + AldaraKeys.Name(AldaraKeys.KeyOf("mount")) + " to ride"); AldaraSave.Dirty(); AldaraWindows.Refresh("inv");
         }
-        public static void Take(string id) { if (I && I.riding && I.ridingId == id) I.Dismount(true); owned.Remove(id); if (active == id) active = owned.Count > 0 ? owned[0] : null; AldaraSave.Dirty(); }
-        public static void Choose(string id) { if (!owned.Contains(id)) return; active = id; if (I && I.riding && I.ridingId != id) { I.Dismount(false); I.Mount(); } AldaraSave.Dirty(); }
+        public static void Take(string id)
+        {
+            var d = Get(id); if (d == null || !Hr) return; if (I && I.riding && I.ridingId == id) I.Dismount(true);
+            if (OfItem(Hr.Eq("mount")) == d) Hr.equip.Remove("mount"); Hr.inventory.RemoveAll(it => OfItem(it) == d); Hr.Recompute(); AldaraSave.Dirty(); AldaraWindows.Refresh("inv");
+        }
+        public static void Choose(string id)
+        {
+            var d = Get(id); if (d == null || !Hr || active == id) return; var it = Hr.inventory.Find(x => OfItem(x) == d); if (it == null) return;
+            Hr.EquipItem(it); if (I && I.riding) { I.Dismount(false); I.Mount(); }
+        }
 
         // ---------- riding ----------
-        bool riding; string ridingId; GameObject horse; Horse rig; float phase, idleT, appear, lx, ly, spdPx, gallop;
+        bool riding; string ridingId; GameObject horse; Horse rig; float mountT, phase, idleT, appear, lx, ly, spdPx, gallop;
         static AldaraPlayer P { get { return AldaraPlayer.I; } }
         static AldaraHero H { get { return AldaraHero.I; } }
 
@@ -50,12 +82,12 @@ namespace Aldara
         public void Mount()
         {
             if (riding || !P || !H) return;
-            if (active == null) { AldaraHud.Banner("You have no mount"); return; }
+            if (active == null) { AldaraHud.Banner(owned.Count > 0 ? "Put a mount in your Mount slot first (Inventory)" : "You have no mount"); return; }
             if (!H.alive) return;
             if (AldaraDungeon.Active) { AldaraHud.Banner("You cannot ride in here"); return; }
             if (P.liq == 2) { AldaraHud.Banner("Your mount will not go into lava"); return; }
             if (Fighting()) { AldaraHud.Banner("You cannot mount while fighting"); return; }
-            ridingId = active; riding = true; appear = 0; lx = P.x; ly = P.y; spdPx = 0; Build(Get(ridingId));
+            ridingId = active; riding = true; mountT = 0; appear = 0; lx = P.x; ly = P.y; spdPx = 0; Build(Get(ridingId));
             Puff();
         }
         public void Dismount(bool fx)
@@ -89,7 +121,7 @@ namespace Aldara
             if (!AldaraSave.Ready || !P || !H) { if (riding) Dismount(false); return; }
             if (AldaraKeys.Pressed("mount")) Toggle();
             if (!riding) return;
-            if (!H.alive || AldaraDungeon.Active || P.liq == 2 || Fighting() || !owned.Contains(ridingId)) { Dismount(true); return; }
+            if (!H.alive || AldaraDungeon.Active || P.liq == 2 || Fighting() || active != ridingId) { Dismount(true); return; }
         }
         void LateUpdate()
         {
@@ -106,8 +138,12 @@ namespace Aldara
             // the rider in the saddle
             if (P.model)
             {   // the seat, in the hero's own space (the model's hips stand 0.83 above its feet)
-                var seat = P.transform.InverseTransformPoint(rig.seat.position);
-                P.model.localPosition = seat - new Vector3(0, 0.72f, 0);
+                var seat = P.transform.InverseTransformPoint(rig.seat.position) - new Vector3(0, 0.72f, 0);
+                // climbing into the saddle: up from the ground in a third of a second, with a little hop over the top
+                mountT = Mathf.Min(1, mountT + dt * 3.2f); float u = 1 - (1 - mountT) * (1 - mountT);
+                // the rider rises a little out of the saddle with each stride (posting the trot, standing in the gallop)
+                float post = Move * Mathf.Abs(Mathf.Sin(phase)) * Mathf.Lerp(0.03f, 0.05f, gallop);
+                P.model.localPosition = Vector3.Lerp(Vector3.zero, seat, u) + Vector3.up * (Mathf.Sin(mountT * Mathf.PI) * 0.25f + post);
             }
             if (P.anim) { if (P.anim.seatNodes == null || P.anim.seatNodes.Length != 4) P.anim.seatNodes = SeatNodes(); P.anim.seated = true; }
         }

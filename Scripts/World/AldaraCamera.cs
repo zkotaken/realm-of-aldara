@@ -7,7 +7,7 @@ namespace Aldara
     // screen at zoom 1) and a point at height h is drawn h higher on screen. Nearer = further south, as in the
     // browser's depth buffer. Models are squashed in depth by TSP and in height by TCP (their 0.36 rad view pitch)
     // through AldaraView.Squash, so they stand on their footprints exactly as in the original.
-    // Mouse wheel zooms like the browser (CAM_Z 0.8 .. 1.6). There is no camera turning.
+    // Mouse wheel zooms like the browser (CAM_Z 0.8 .. 1.6), and further in, up to 3x. There is no camera turning.
     [ExecuteAlways]
     public class AldaraCamera : MonoBehaviour
     {
@@ -18,7 +18,7 @@ namespace Aldara
         public float viewHeightPx = 760f;           // world px shown top to bottom at zoom 1
         Vector3 focus; bool hasFocus;
         Camera cam; bool loaded; float lastStep;
-        static readonly float[] QZ_STEPS = { 0.8f, 0.9f, 1, 1.1f, 1.2f, 1.35f, 1.5f, 1.6f };
+        static readonly float[] QZ_STEPS = { 0.8f, 0.9f, 1, 1.1f, 1.2f, 1.35f, 1.5f, 1.6f, 1.8f, 2.0f, 2.3f, 2.6f, 3.0f, 3.5f, 4.0f, 4.6f, 5.3f, 6.0f };
         /// camZoom: the next step in or out, kept between sessions, with a short note
         public void Zoom(int dir)
         {
