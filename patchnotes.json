@@ -1,6 +1,16 @@
 {
  "entries": [
   {
+   "v": "162",
+   "date": "October 6, 2026",
+   "type": "update",
+   "title": "Proper great helms",
+   "notes": [
+    "Knight helmets are no longer pointed. They are great helms with a round dome, a flat faceplate with a ridge down the middle, a brow over the eye slit, a long faceplate coming down to the chin and a flared guard over the neck.",
+    "An archer's metal helmets take the same great-helm shape. Mage and archer hoods are soft and round over the head instead of peaked."
+   ]
+  },
+  {
    "v": "161",
    "date": "October 6, 2026",
    "type": "update",
