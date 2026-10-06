@@ -1,6 +1,20 @@
 {
  "entries": [
   {
+   "v": "164",
+   "date": "October 6, 2026",
+   "type": "update",
+   "title": "Saddle up",
+   "notes": [
+    "Mounts have arrived. The first is the Bay Horse: a bay with a black mane and tail, a white blaze, a red saddle blanket trimmed in gold, a leather saddle, stirrups and a bridle.",
+    "Press V (rebindable in Controls) to call your mount and climb into the saddle, and press it again to get down. Your hero sits astride with feet in the stirrups.",
+    "The horse walks, trots and gallops as you go faster, rocking into a gallop and kicking up dust. When it stands still it breathes, swishes its tail and now and then lowers its head.",
+    "Riding is faster than running: a canter when walking and a full gallop when running.",
+    "Attacking, casting or taking damage puts you back on your feet. You cannot ride in dungeons or into lava.",
+    "Mounts are not dropped anywhere yet."
+   ]
+  },
+  {
    "v": "163",
    "date": "October 6, 2026",
    "type": "update",

@@ -4,7 +4,7 @@
  "sha256": "2ca36332c90f21234c21aec1ab1760b1dcab59205e03b2eed23444a438b94f91",
  "file": "game.html",
  "date": "October 6, 2026",
- "title": "The archer, in light",
+ "title": "Saddle up",
  "launcher": "6",
  "launcher_sha256": "450cbc0cd6d23a68f1b6e8f3b455f4ea291374150382cdb4ab1b986a05ebb832",
  "assets": [
@@ -141,14 +141,14 @@
  ],
  "exe": "Realm of Aldara Launcher.exe",
  "exe_build": "5",
- "exe_sha256": "4796a7eb609d8867f75746b76330b6c9791653523785a538fbbba25c7bd7718c",
+ "exe_sha256": "c639d9a971423c665d983121fd18797c5b06e2040e85d5a62f664745cb742830",
  "classic": {
-  "version": "163",
+  "version": "164",
   "title": "Realm of Aldara",
   "exe": "Realm of Aldara.exe",
   "base": "https://raw.githubusercontent.com/zkotaken/realm-of-aldara/classic-builds/",
-  "manifest": "manifests/163.json",
-  "manifest_sha": "7f80f848daa342e4a9ac2a0458c5b9f0816a7daca252a90f946fae8f271f954a",
-  "size": 721831006
+  "manifest": "manifests/164.json",
+  "manifest_sha": "21ebdb1a8f1b07b88f326fa42a1efc512bb606c072e67e3a39f4f0cc8cffb06e",
+  "size": 721844500
  }
 }
